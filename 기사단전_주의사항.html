@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>기사단전 주의사항 — 샘플4B (주의: 아군 표형)</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --panel:#ffffff; --panel2:#f7f4ed; --border:#ddd5c2;
+    --text:#3a3324; --text-dim:#8a8168; --accent:#a8791f; --accent-bg:#fdf3df;
+    --warn:#b5482f; --warn-bg:#fbeae5; --ok:#3f7d4a; --ok-bg:#eaf5ec;
+    --manual:#5a4a9c; --manual-bg:#efe9fb; --ally:#2f5fa8;
+  }
+  * { box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
+    margin:0; padding:16px; line-height:1.45; font-size:13px;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; display:flex; gap:16px; align-items:flex-start; }
+  h1{ font-size:18px; margin:0 0 4px; color:var(--accent); }
+  .sub{ color:var(--text-dim); font-size:12px; margin-bottom:4px; }
+  .mockbadge{ display:inline-block; background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn);
+    border-radius:5px; padding:2px 8px; font-size:11px; font-weight:bold; margin-bottom:14px; }
+  .header{ max-width:1180px; margin:0 auto 12px; }
+
+  .sidebar{ flex:0 0 200px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px; position:sticky; top:16px; }
+  .sidebar h4{ margin:0 0 8px; font-size:12.5px; color:var(--text-dim); }
+  .sidebar input[type=text]{
+    width:100%; box-sizing:border-box; background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:6px 8px; font-size:12.5px; margin-bottom:8px;
+  }
+  .char-list{ max-height:340px; overflow-y:auto; }
+  .sidebar label{ display:flex; align-items:center; gap:6px; padding:5px 4px; border-radius:5px; font-size:12.5px; cursor:pointer; }
+  .sidebar label.picked{ background:var(--accent-bg); color:var(--accent); font-weight:bold; }
+  .sidebar label.filtered-out{ display:none; }
+  .sidebar .count{ margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-dim); text-align:center; }
+
+  .main{ flex:1 1 auto; min-width:0; }
+
+  .matrix-box{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:14px; overflow-x:auto; }
+  .matrix-box h2{ font-size:14px; margin:0 0 10px; color:var(--accent); }
+  table{ border-collapse:collapse; width:100%; font-size:12px; }
+  th, td{ border:1px solid var(--border); padding:6px 8px; text-align:center; vertical-align:top; }
+  th{ background:var(--panel2); color:var(--text-dim); font-weight:bold; }
+  td.name{ text-align:left; font-weight:bold; }
+  td.yes{ background:var(--warn-bg); color:var(--warn); font-weight:bold; }
+  td.no{ color:var(--border); }
+  .cond-note{ display:block; font-weight:normal; font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .note-cell{ text-align:left; color:var(--text-dim); font-size:11.5px; max-width:220px; }
+
+  .ally-box{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .ally-box h2{ font-size:14px; margin:0 0 10px; color:var(--accent); }
+  .ally-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+  .ally-col{ border:1px solid var(--border); border-radius:6px; padding:10px; }
+  .ally-col.ok{ background:var(--ok-bg); border-color:var(--ok); }
+  .ally-col.risk{ background:var(--warn-bg); border-color:var(--warn); }
+  .ally-col h4{ margin:0 0 8px; font-size:12.5px; }
+  .ally-col.ok h4{ color:var(--ok); }
+  .ally-col.risk h4{ color:var(--warn); }
+  .placeholder{ color:var(--text-dim); font-size:12px; font-style:italic; }
+
+  table.risk-table{ background:var(--panel); }
+  table.risk-table th, table.risk-table td{ text-align:left; font-size:11.5px; padding:5px 6px; }
+  table.risk-table td.effect{ color:var(--warn); font-weight:bold; text-align:center; }
+  table.risk-table td.target{ font-weight:bold; text-align:center; color:#d32f2f; font-size:12.5px; }
+  table.risk-table td.cond{ color:var(--text-dim); font-size:11px; }
+
+  /* 상성 주의 — 아군 이름만 먼저 보여주고 클릭(펼침)해야 상세 표가 나옴 */
+  .risk-accordion details{ background:var(--panel); border:1px solid var(--warn); border-radius:6px; margin-bottom:6px; overflow:hidden; }
+  .risk-accordion summary{ list-style:none; cursor:pointer; padding:7px 10px; display:flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:bold; color:var(--ally); }
+  .risk-accordion summary::-webkit-details-marker{ display:none; }
+  .risk-accordion summary::before{ content:'▶'; font-size:9px; color:var(--ally); transition:transform .1s; }
+  .risk-accordion details[open] summary::before{ content:'▼'; }
+  .risk-accordion summary .cnt{ margin-left:auto; font-size:10.5px; font-weight:normal; color:var(--text-dim); }
+  .risk-accordion .detail-wrap{ border-top:1px solid var(--border); padding:6px 10px 8px; }
+  .risk-accordion table{ margin-top:2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>기사단전 주의사항</h1>
+  <div class="sub">좌측에서 적 4명을 고르면 저항 매트릭스가 갱신되고, "상성 주의" 표에는 아군별로 저항되는 효과·대상·조건만 표로 정리합니다.</div>
+  <div class="mockbadge">⚠ 디자인 목업 — 아래 데이터는 전부 예시입니다 (검색창만 실제 동작)</div>
+</div>
+
+<div class="wrap">
+  <div class="sidebar">
+    <h4>적 선택 (4/4)</h4>
+    <input type="text" id="charSearch" placeholder="캐릭터 검색" oninput="filterChars(this.value)">
+    <div class="char-list" id="charList">
+      <label class="picked"><input type="checkbox" checked disabled> 헬카이트</label>
+      <label class="picked"><input type="checkbox" checked disabled> 자비에르</label>
+      <label class="picked"><input type="checkbox" checked disabled> 아네모네</label>
+      <label class="picked"><input type="checkbox" checked disabled> 시라노</label>
+      <label><input type="checkbox" disabled> 철가면</label>
+      <label><input type="checkbox" disabled> 흑태자</label>
+      <label><input type="checkbox" disabled> 알테어</label>
+      <label><input type="checkbox" disabled> 자드</label>
+      <label><input type="checkbox" disabled> 벨제부르</label>
+      <label><input type="checkbox" disabled> 프레데릭</label>
+      <label><input type="checkbox" disabled> 하이델룬</label>
+    </div>
+    <div class="count">최대 4명까지 선택 가능</div>
+  </div>
+
+  <div class="main">
+    <div class="matrix-box">
+      <h2>고유저항 매트릭스</h2>
+      <div class="sub" style="margin-bottom:8px;">캐릭터는 항상 4명 고정이라 열로, 상태이상/메모는 늘어날 수 있어서 행으로 배치했습니다.</div>
+      <table>
+        <thead>
+          <tr><th>상태이상 / 메모</th><th>헬카이트</th><th>자비에르</th><th>아네모네</th><th>시라노</th><th>비고</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="name">기절</td>
+            <td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">-</td>
+          </tr>
+          <tr>
+            <td class="name">침묵</td>
+            <td class="yes">면역</td><td class="no">—</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">치유 방해·스킬 제어도 고유 면역(항상 적용)</td>
+          </tr>
+          <tr>
+            <td class="name">빙결</td>
+            <td class="no">—</td><td class="yes">면역</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">빙결 외엔 전부 유효</td>
+          </tr>
+          <tr>
+            <td class="name">추방</td>
+            <td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">-</td>
+          </tr>
+          <tr>
+            <td class="name">TP 감소</td>
+            <td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">-</td>
+          </tr>
+          <tr>
+            <td class="name">넉백</td>
+            <td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td>
+            <td class="note-cell">-</td>
+          </tr>
+          <tr>
+            <td class="name">전투공격 무효 (1~2턴)</td>
+            <td class="no">—</td><td class="no">—</td>
+            <td class="yes">해당</td><td class="yes">해당</td>
+            <td class="note-cell">아네모네 + 시라노 동시 선택 시 발동 — 수동 입력(별도 스킬에서 관리하는 데이터를 이 표가 읽어와 표시만 함)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ally-box">
+      <h2>관련 아군 후보</h2>
+      <div class="ally-grid">
+        <div class="ally-col risk">
+          <h4>⚠ 상성 주의</h4>
+          <div class="risk-accordion">
+            <details>
+              <summary>알테어<span class="cnt">2건</span></summary>
+              <div class="detail-wrap">
+                <table class="risk-table">
+                  <thead>
+                    <tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항 조건</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>빙결의 창</td><td>액티브 스킬</td>
+                      <td class="effect">빙결</td><td class="target">자비에르</td>
+                      <td class="cond">상시</td>
+                    </tr>
+                    <tr>
+                      <td>서릿발의 계약</td><td>고유패시브</td>
+                      <td class="effect">침묵</td><td class="target">헬카이트</td>
+                      <td class="cond">상시</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+            <details>
+              <summary>벨제부르<span class="cnt">1건</span></summary>
+              <div class="detail-wrap">
+                <table class="risk-table">
+                  <thead>
+                    <tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항 조건</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>침묵의 주박</td><td>전용무기</td>
+                      <td class="effect">침묵</td><td class="target">헬카이트</td>
+                      <td class="cond">상시</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="ally-col ok">
+          <h4>상성 추천 (AI 분석, 참조)</h4>
+          <div class="placeholder">(업데이트 고려)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterChars(q){
+  q = q.trim();
+  document.querySelectorAll('#charList label').forEach(l => {
+    const name = l.textContent.trim();
+    l.classList.toggle('filtered-out', !!q && !name.includes(q));
+  });
+}
+</script>
+</body>
+</html>
