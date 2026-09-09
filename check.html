@@ -98,7 +98,7 @@
 
 <div class="header">
   <h1>기사단전 주의사항</h1>
-  <div class="sub">좌측에서 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다. 현재 raw_data가 있는 캐릭터만 목록에 나옵니다 — 나머지는 add_raw로 추출되는 대로 add_check을 통해 추가됩니다.</div>
+  <div class="sub">좌측에서 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다. 현재 add_check으로 gmap.gg에서 직접 조사해 반영한 캐릭터만 목록에 나옵니다.</div>
 </div>
 
 <div class="wrap">
@@ -111,31 +111,32 @@
   </div>
 
   <div class="main">
+    <div class="matrix-box">
+      <h2>고유저항 매트릭스</h2>
+      <div class="sub" style="margin-bottom:8px;">캐릭터는 항상 4명 고정이라 열로, 상태이상은 늘어날 수 있어서 행으로 배치했습니다. 상성주의에 매칭되는 아군이 있는 저항이 위로, 없는 저항이 아래로 정렬됩니다.</div>
+      <div id="matrixHost"><div class="empty-hint">좌측에서 적을 선택하세요</div></div>
+    </div>
+
     <div class="ally-box">
       <h2>⚠ 출전시 주의할 아군 <span class="h2-note">(좌측 캐릭터 목록에 있는 캐릭터만 표시됩니다)</span></h2>
       <div class="ally-col risk">
         <div id="riskHost"><div class="placeholder">적을 선택하면 표시됩니다</div></div>
       </div>
     </div>
-
-    <div class="matrix-box">
-      <h2>고유저항 매트릭스</h2>
-      <div class="sub" style="margin-bottom:8px;">캐릭터는 항상 4명 고정이라 열로, 상태이상은 늘어날 수 있어서 행으로 배치했습니다. 상성주의에 매칭되는 아군이 있는 저항이 위로, 없는 저항이 아래로 정렬됩니다.</div>
-      <div id="matrixHost"><div class="empty-hint">좌측에서 적을 선택하세요</div></div>
-    </div>
   </div>
 </div>
 
 <script>
 // ============================================================
-// CHECK_DATA — add_check이 char_raw/<이름>_raw.md를 읽어서 채우는 데이터.
+// CHECK_DATA — add_check이 gmap.gg를 직접 조사해(결과는 check_raw/
+// <이름>_raw.md에 보관) 채우는 데이터.
 // 캐릭터당 원자값 두 개만 가진다:
 //   resist  : 이 캐릭터 자신이 "적"일 때 가진 상태이상 저항/면역 목록
 //   inflict : 이 캐릭터를 "아군"으로 썼을 때 상대에게 거는 상태이상 효과 목록
 // 매칭(겹치는 부분 찾기)은 여기 저장하지 않고 아래 render() 시점에 항상
 // 그 자리에서 계산한다 — 그래야 mod_check으로 inflict 항목 하나를 지우면
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
-// 이름 문자열은 char_raw 원문의 표기를 그대로 쓰되, 동일 상태이상을
+// 이름 문자열은 gmap.gg 원문의 표기를 그대로 쓰되, 동일 상태이상을
 // 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬 제어")만 정규화했다.
 // ============================================================
 const CHECK_DATA = {
@@ -213,7 +214,10 @@ const CHECK_DATA = {
     ]
   },
   '시라노': {
-    resist: [],
+    resist: [
+      { name: '쿨타임 제어', cond: '고유패시브 "회색 망토의 기사" ★5 이상(헌신의 의지 효과 보유 중)' },
+      { name: '클래스패시브 봉쇄', cond: '클래스 "어비스블레이드" 선택 시(조건부 — 택1)' }
+    ],
     inflict: [
       { skill: '질풍마영참', category: '액티브 스킬', effect: 'TP 감소', cond: '피해 입은 적 TP 1 제거' }
     ]
@@ -279,13 +283,17 @@ const CHECK_DATA = {
     ]
   },
   '하이델룬': {
-    resist: [],
+    resist: [
+      { name: '추방', cond: '고유패시브 "시스템 이단자" 보유 중(추방 부여 시 대신 "엔트로피 고스트" 상태로 치환 — 원문에 면역/저항 단어 없이 치환 메커니즘만 있던 것을 add_check이 옮김)' }
+    ],
     inflict: [
       { skill: '터미널 프로토콜', category: '액티브 스킬', effect: '추방', cond: '적이 죽지 않았다면 1턴 부여' }
     ]
   },
   '흑태자': {
-    resist: [],
+    resist: [
+      { name: '전체 디버프 면역', cond: '아우터스킬 "궁극 그리마" 사용 시 걸려있던 디버프 전부 해제 + 다음 턴 시작 시까지 모든 디버프에 면역(개별 상태이상이 아니라 디버프 전체 대상 — 고정강조 행으로 표시)' }
+    ],
     inflict: [
       { skill: '암명연살검', category: '액티브 스킬', effect: '추방', cond: '적을 처치하지 못했을 때 1턴 부여' }
     ]
@@ -310,7 +318,7 @@ const MANUAL_NOTES = [
 // 하는 상태이상 이름 목록. CHECK_DATA의 일반 resist 항목으로 그대로
 // 저장하되, 이 배열에 이름만 등록하면 renderMatrix()가 자동으로 맨 위에
 // 고정하고 .pin-row 스타일을 입힌다.
-const PINNED_ROW_NAMES = ['대상지정불가'];
+const PINNED_ROW_NAMES = ['대상지정불가', '전체 디버프 면역'];
 
 const MAX_PICK = 4;
 let picked = [];
