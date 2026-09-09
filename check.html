@@ -503,16 +503,23 @@ function renderRisk(){
     });
     if(rows.length === 0) return;
     anyMatch = true;
-    // 이름 옆 빈 공간에 "효과 저항(대상1, 대상2)" 형태로 요약 태그를 채운다 —
-    // rows는 위에서 모든 아군에 대해 이미 제네릭하게 계산됐으므로, add_check/
-    // mod_check으로 캐릭터가 추가·수정돼도 이 요약은 코드 수정 없이 자동 반영된다.
-    const tagMap = new Map();
+    // 이름 옆 빈 공간에 "스킬명(효과저항-대상1,대상2 / 효과2저항-대상3)" 형태로
+    // 요약 태그를 채운다 — 아군의 스킬 기준으로 먼저 묶고, 그 스킬이 거는 효과별로
+    // 막히는 대상을 나열한다. rows는 위에서 모든 아군에 대해 이미 제네릭하게
+    // 계산됐으므로, add_check/mod_check으로 캐릭터가 추가·수정돼도 이 요약은
+    // 코드 수정 없이 자동 반영된다.
+    const skillMap = new Map();
     rows.forEach(r => {
-      if(!tagMap.has(r.effect)) tagMap.set(r.effect, []);
-      const targets = tagMap.get(r.effect);
+      if(!skillMap.has(r.skill)) skillMap.set(r.skill, new Map());
+      const effMap = skillMap.get(r.skill);
+      if(!effMap.has(r.effect)) effMap.set(r.effect, []);
+      const targets = effMap.get(r.effect);
       if(!targets.includes(r.target)) targets.push(r.target);
     });
-    const tags = Array.from(tagMap.entries()).map(([effect, targets]) => `${effect} 저항(${targets.join(', ')})`).join(', ');
+    const tags = Array.from(skillMap.entries()).map(([skill, effMap]) => {
+      const effParts = Array.from(effMap.entries()).map(([effect, targets]) => `${effect}저항-${targets.join(',')}`);
+      return `${skill}(${effParts.join(' / ')})`;
+    }).join(', ');
     html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항 조건</th></tr></thead><tbody>`;
     rows.forEach(r => {
       html += `<tr><td>${r.skill}</td><td>${r.category}</td><td class="effect">${r.effect}</td><td class="target">${r.target}</td><td class="cond">${r.cond}</td></tr>`;
