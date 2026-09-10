@@ -1,0 +1,2450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>벨제부르 스탯 계산기</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --panel:#ffffff; --panel2:#f7f4ed; --border:#ddd5c2;
+    --text:#3a3324; --text-dim:#8a8168; --accent:#a8791f; --accent-bg:#fdf3df;
+    --village:#3a6ea8; --village-bg:#e8f0fa;
+    --always:#3a8a5c; --always-bg:#e8f5ec;
+    --cond:#b8622a; --cond-bg:#fbeee2;
+    --skillonly:#7a3d99; --skillonly-bg:#f1e7f8;
+    --statformula:#2f6f8f;
+    --danger:#c0392b;
+  }
+  * { box-sizing: border-box; }
+  html, body{ height:100%; }
+  body{
+    background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
+    margin:0; padding:16px; line-height:1.45; font-size:13px;
+    height:100vh; overflow:hidden; display:flex; flex-direction:column;
+  }
+  /* 2026-07-23: 제목/설명(.sub)은 항상 고정, 왼쪽/오른쪽 탭이 각각 독립적으로 휠 스크롤되도록 재구성
+     — 왼쪽 탭 휠을 굴려도 오른쪽 탭 내용이 밀리지 않고, 오른쪽 탭은 스크롤바를 숨기되 휠로는 계속 움직인다. */
+  .wrap{ max-width:1180px; margin:0 auto; width:100%; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  h1{ font-size:18px; margin:0 0 4px; color:var(--accent); flex:0 0 auto; }
+  .sub{ color:var(--text-dim); font-size:12px; margin-bottom:10px; flex:0 0 auto; }
+  .maxbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .maxbar button{
+    background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:6px;
+    padding:8px 14px; font-size:12.5px; font-weight:bold; cursor:pointer;
+  }
+  .maxbar button:hover{ background:var(--accent-bg); }
+  .maxbar button.active{ background:var(--accent); color:#fff; }
+  .maxbar button.reset{ background:var(--panel2); color:var(--text-dim); border:1px solid var(--border); }
+  .maxbar button.reset:hover{ color:var(--text); }
+  .harness-note{
+    background:var(--accent); color:#fff; border-radius:6px;
+    padding:8px 10px; margin-bottom:6px; font-size:11.5px; line-height:1.5;
+  }
+  .harness-note .h-label{ font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; opacity:.9; display:block; margin-bottom:3px; }
+  .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
+  .harness-extra b{ color:var(--accent); }
+  .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  .col-left{
+    flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
+    height:100%; overflow-y:auto; padding-right:6px;
+  }
+  .col-left .card.full{ grid-column: 1 / -1; }
+  .col-right{ flex:0 0 380px; height:100%; }
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:7px;
+    padding:10px 12px; min-width:0;
+  }
+  .card h2{ font-size:12.5px; margin:0 0 8px; color:var(--accent); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .card h2 .tag{ font-size:9.5px; padding:1px 5px; border-radius:3px; background:var(--panel2); color:var(--text-dim); font-weight:normal; border:1px solid var(--border); }
+  .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:5px 0; }
+  select, input[type=number]{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:4px;
+    padding:3px 5px; font-size:12px; max-width:100%;
+  }
+  label{ font-size:12px; }
+  .opt-line, .choice-item{
+    border-radius:5px; margin:3px 0; background:var(--panel2); padding:5px 7px;
+  }
+  .choice-item.sel, .opt-line.sel{ background:var(--accent-bg); border:1px solid var(--accent); }
+  .choice-item.small{ padding:4px 6px; margin:2px 0; }
+  .multi-col{ column-count:2; column-gap:10px; }
+  .multi-col > .col-unit{ break-inside:avoid; -webkit-column-break-inside:avoid; }
+  .opt-line.disabled{ opacity:.45; }
+  .opt-top{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .opt-top .name{ font-size:12px; flex:1 1 auto; min-width:0; }
+  .opt-bottom{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:3px; font-size:11px; color:var(--text-dim); }
+  .hl{ color:var(--accent); font-weight:bold; }
+  .dim0{ color:var(--text-dim); font-weight:normal; }
+  .badge{ font-size:9px; padding:1px 5px; border-radius:3px; font-weight:bold; white-space:nowrap; }
+  .badge.village{ background:var(--village-bg); color:var(--village); }
+  .badge.always{ background:var(--always-bg); color:var(--always); }
+  .badge.cond{ background:var(--cond-bg); color:var(--cond); }
+  .badge.skillonly{ background:var(--skillonly-bg); color:var(--skillonly); }
+  /* 오른쪽 합계에 자동 합산되지 않는(스킬 발동 순간에만 적용) 수치 — 사용자가 직접 따로 고려해야 함을 시각적으로 도드라지게 표시 */
+  .opt-bottom.skillonly-row{ background:var(--skillonly-bg); border:1px dashed var(--skillonly); border-radius:4px; padding:3px 6px; margin-top:3px; }
+  .info-btn{
+    background:var(--panel); border:1px solid var(--border); color:var(--text-dim); border-radius:50%;
+    width:16px; height:16px; font-size:10px; cursor:pointer; line-height:1; padding:0; flex:0 0 auto;
+  }
+  .info-btn:hover{ color:var(--accent); border-color:var(--accent); }
+  .info-btn-static{
+    display:inline-flex; align-items:center; justify-content:center;
+    background:var(--panel); border:1px solid var(--border); color:var(--text-dim); border-radius:50%;
+    width:1.6em; height:1.6em; font-size:inherit; line-height:1; padding:0; flex:0 0 auto; cursor:default;
+  }
+  .desc-box{
+    display:none; background:var(--accent-bg); border:1px solid var(--border); border-radius:4px;
+    padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
+  }
+  .desc-box.open{ display:block; }
+  .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+  input[type=range]{ width:70px; accent-color:var(--accent); }
+  .step-btn{
+    background:var(--panel); border:1px solid var(--border); border-radius:3px; color:var(--accent);
+    font-size:10px; font-weight:bold; width:16px; height:16px; line-height:1; padding:0; cursor:pointer; flex:0 0 auto;
+  }
+  .step-btn:hover{ background:var(--accent-bg); border-color:var(--accent); }
+  .star-val{ min-width:16px; text-align:center; color:var(--accent); font-weight:bold; font-size:11px; }
+  .star-val.stage-awaken{ color:var(--danger); }
+  .note{ font-size:10px; color:var(--cond); }
+  .checklimit{ font-size:11px; color:var(--text-dim); margin-bottom:5px; }
+  .checklimit.over{ color:var(--danger); font-weight:bold; }
+  .slot-col-title{ font-weight:bold; color:var(--accent); font-size:11px; margin-bottom:3px; }
+
+  .results{
+    background:var(--panel); border:1px solid var(--border); border-radius:7px; padding:12px 14px;
+    height:100%; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent; /* 오른쪽 탭도 얇은 스크롤바로 표시(2026-07-23 재도입) */
+  }
+  .results::-webkit-scrollbar{ width:8px; }
+  .results::-webkit-scrollbar-track{ background:transparent; }
+  .results::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  .results::-webkit-scrollbar-thumb:hover{ background:var(--accent); }
+  .results h2{ font-size:13px; margin:0 0 8px; color:var(--accent); }
+  .results h3{ font-size:11px; margin:10px 0 4px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; }
+  table.result-table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:6px; }
+  table.result-table th, table.result-table td{
+    padding:3px 3px; text-align:right; border-bottom:1px solid var(--border);
+  }
+  table.result-table th:first-child, table.result-table td:first-child{ text-align:left; }
+  table.result-table th{ color:var(--text-dim); font-weight:normal; font-size:9.5px; }
+  table.result-table td.total{ color:var(--accent); font-weight:bold; }
+  table.result-table td.village{ color:var(--village); }
+  table.result-table td.always{ color:var(--always); }
+  table.result-table td.cond{ color:var(--cond); }
+  table.result-table tr.hlrow td:first-child{ color:var(--accent); font-weight:bold; }
+  .priority-box{
+    background:var(--accent-bg); border:2px solid var(--accent); border-radius:8px;
+    padding:8px 10px 4px; margin-bottom:12px;
+  }
+  .priority-box h3{ color:var(--accent); font-size:13px; text-transform:none; letter-spacing:0; margin:0 0 4px; font-weight:900; }
+  table.priority-table{ font-size:13.5px; }
+  table.priority-table th{ font-size:10.5px; }
+  table.priority-table tr.hlrow td:first-child{ font-size:14px; }
+  table.priority-table td.total{ font-size:16px; font-weight:900; }
+  .critdmg-line{ font-size:11px; color:var(--text-dim); margin:4px 0 8px; padding:6px 8px; background:var(--panel2); border-radius:4px; }
+  .critdmg-line b{ color:var(--accent); }
+  .cond-list{ font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+  .cond-list li{ margin-bottom:2px; }
+  .cond-list .clabel{ color:var(--cond); }
+  .formula-note{
+    font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
+    border-top:1px dashed var(--border);
+  }
+  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
+  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
+  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
+  .ai-eval .ai-disclaimer{
+    font-size:11px; font-weight:bold; color:var(--danger);
+    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
+    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
+  }
+  .ai-eval .tagline{
+    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
+    border-radius:5px; padding:6px 9px; margin-bottom:10px;
+  }
+  .ai-eval .eval-block{ margin-bottom:9px; }
+  .ai-eval .eval-block .label{
+    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
+    letter-spacing:.03em; margin-bottom:4px;
+  }
+  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
+  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
+  select[disabled]{ opacity:.4; }
+  .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+  .save-slot{
+    background:var(--panel2); border:1px solid var(--border); border-radius:5px;
+    padding:6px; text-align:center; min-width:0;
+  }
+  .save-slot .slot-name{ font-size:11.5px; font-weight:bold; margin-bottom:4px; word-break:break-all; color:var(--text); }
+  .save-slot .slot-empty{ font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .save-slot.active{ background:var(--accent); border-color:var(--accent); }
+  .save-slot.active .slot-name{ color:#fff; }
+  .mini-btn{
+    background:var(--panel); border:1px solid var(--border); border-radius:4px;
+    padding:3px 6px; font-size:10px; cursor:pointer; color:var(--text);
+  }
+  .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  @media (max-width: 980px){
+    /* 좁은 화면에서는 독립 스크롤 2단 대신 기존처럼 페이지 전체가 한 번에 스크롤되는 단순 구조로 되돌린다. */
+    body{ height:auto; overflow:visible; display:block; }
+    .wrap{ height:auto; display:block; }
+    h1, .sub{ flex:none; }
+    .layout{ flex-direction:column; height:auto; }
+    .col-left{ height:auto; overflow-y:visible; padding-right:0; grid-template-columns:1fr; }
+    .col-right{ width:100%; height:auto; }
+    .results{ height:auto; overflow-y:visible; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>벨제부르 스탯 계산기</h1>
+<div class="sub">모든 선택지가 항상 펼쳐져 있습니다. 항목 옆 흐린 글씨는 선택 시 합계에 더해지는 증감치(치명타확률·물리관통·마법관통은 강조색)이고, <span class="info-btn" style="display:inline-flex;align-items:center;justify-content:center;">?</span> 버튼으로 원문 설명을 볼 수 있어요.</div>
+
+<div class="layout">
+  <div class="col-left" id="left"></div>
+  <div class="col-right">
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+</div>
+<script>
+/* ================= STAT META ================= */
+// zone 값: 'village' | 'always'(인게임-상시) | 'cond'(인게임-조건부)
+const BASE_STATS = ['hp','atk','mag','def','res'];
+const OTHER_STATS = ['move','crit','critDmg','critResChance','critResDmg','phys','magPen','physRes','magRes'];
+// 피해 감소/증가 계열 — 카테고리별로 따로 합산(광역 피해감소는 광역끼리, 지속피해감소는 지속끼리 등).
+// 전체 분류를 미리 다 정해두지 않고, 캐릭터 raw_data에 실제로 등장하는 시점에 그때그때 키를 추가한다(STAT_LABEL에도 함께 추가할 것).
+const DMG_STATS = ['dmgReduction','dotDmgReduction','dmgIncrease','dotDmgIncrease','bleedDmgIncrease','extraHitDmgIncrease','counterDmgIncrease','pincerDmgIncrease','aoeDmgReduction','aoeDmgIncrease','rangedDmgIncrease','skillDmgReduction','ultimateDmgReduction','ultimateDmgIncrease','basicAtkDmgIncrease','basicAtkDmgReduction','skillDmgIncrease','fixedDmgReduction','physDmgReduction','magDmgReduction','penDmgReduction','selfSkillDmgIncrease'];
+// 회복(치유/보호막) 계열 — 캐릭터 kit은 원칙상(1장) 미추적이지만 룬은 healGive/healTake/shieldGive/shieldTake를 %로 제공해 추적 가능.
+const HEAL_STATS = ['healGive','healTake','shieldGive','shieldTake'];
+const ALL_STATS = [...BASE_STATS, ...OTHER_STATS, ...DMG_STATS, ...HEAL_STATS];
+const PRIORITY_STATS = ['crit','phys','magPen'];
+// 왼쪽 선택지 설명에서 강조 글꼴(.hl)을 적용할 스탯 — 치명/물관/마관 + 공격력/주문력.
+const HL_STATS = ['crit','phys','magPen','atk','mag'];
+// 결과(우측 탭) "★ 주요 스탯" 박스의 항목/순서를 그대로 결정(2026-07-23 재구성) — 최대 체력 → 공격력 → 주문력(기존
+// 유지) → 치명타확률 → 받는 피해감소 → 물리관통/마법관통 중 이 캐릭터의 주 데미지 타입 하나만(이자벨 리피네는 전
+// 스킬이 물리 고정 피해라 물리관통 채택) → 물리관통저항 → 마법관통저항. 다른 결과 표에서도 이 배열에 있는 스탯 행은
+// 동일하게 굵게(.hlrow) 강조된다.
+const HL_ROW_STATS = ['hp', 'atk', 'mag', 'crit', 'dmgReduction', 'phys', 'physRes', 'magRes'];
+const STAT_LABEL = {
+  hp:'최대 체력', atk:'공격력', mag:'주문력', def:'방어력', res:'저항력',
+  move:'이동력', crit:'치명타확률', critDmg:'치명타 피해량',
+  critResChance:'받는 치명타 확률 감소', critResDmg:'받는 치명타 피해량 감소',
+  phys:'물리관통', magPen:'마법관통', physRes:'물리관통저항', magRes:'마법관통저항',
+  dmgReduction:'받는 피해 감소', dotDmgReduction:'받는 지속 피해 감소',
+  dmgIncrease:'주는 피해 증가', dotDmgIncrease:'주는 지속 피해 증가', bleedDmgIncrease:'주는 출혈 피해 증가',
+  extraHitDmgIncrease:'주는 추가타 피해 증가', counterDmgIncrease:'주는 반격 피해 증가', pincerDmgIncrease:'주는 협공 피해 증가',
+  aoeDmgReduction:'받는 광역 피해 감소', aoeDmgIncrease:'주는 광역 피해 증가', rangedDmgIncrease:'주는 원거리 공격 피해 증가',
+  skillDmgReduction:'받는 스킬 피해 감소', ultimateDmgReduction:'받는 초필살기 피해 감소', ultimateDmgIncrease:'주는 초필살기 피해 증가',
+  basicAtkDmgIncrease:'주는 기본공격 피해 증가', basicAtkDmgReduction:'받는 기본공격 피해 감소', skillDmgIncrease:'주는 스킬 피해 증가',
+  fixedDmgReduction:'고정 피해 저항', physDmgReduction:'받는 물리 피해 감소', magDmgReduction:'받는 마법 피해 감소',
+  penDmgReduction:'받는 관통 피해 감소',
+  selfSkillDmgIncrease:'이 스킬 자체 피해 증가',
+  healGive:'치유량 증가', healTake:'받는 치유량 증가', shieldGive:'주는 보호막 증가', shieldTake:'받는 보호막 증가'
+};
+// 치명타 피해량은 게임 시스템상 모든 캐릭터가 공통으로 갖는 기본값 150%(치명타 시 기본공격 대비 1.5배)가 있다 — 예전엔 "기본 150%"
+// 특수 문장으로 별도 표시했으나, 이제 인게임 표기(치명타 피해량 150%)와 동일한 150을 모든 캐릭터의 치명타피해량 "마을" 버킷에
+// 전역적으로 자동 가산해(computeTotals 참고) 다른 스탯과 동일한 마을/인게임/조건부/합계 표 형태로 자연스럽게 보이도록 통합했다
+// (개별 캐릭터 데이터에는 손대지 않음, 2026-07-23 재확정 — 50이 아니라 150을 마을에 넣어야 인게임 표기와 혼선이 없음).
+const CRIT_DMG_VILLAGE_BASE = 150;
+
+/* ================= 무기 ================= */
+const WEAPONS = {
+  '다크블링거': {
+    category: '검/건 슬라이서',
+    starStats: {
+      1:{crit:{v:5,zone:'village'}, hp:{v:15,zone:'village'}, counterDmgIncrease:{v:10,zone:'always'}, atk:{v:5,zone:'always'}},
+      2:{crit:{v:6,zone:'village'}, hp:{v:16,zone:'village'}, counterDmgIncrease:{v:15,zone:'always'}, atk:{v:11.25,zone:'always'}},
+      3:{crit:{v:7,zone:'village'}, hp:{v:17,zone:'village'}, counterDmgIncrease:{v:15,zone:'always'}, atk:{v:11.25,zone:'always'}},
+      4:{crit:{v:8,zone:'village'}, hp:{v:18,zone:'village'}, counterDmgIncrease:{v:20,zone:'always'}, atk:{v:20,zone:'always'}},
+      5:{crit:{v:9,zone:'village'}, hp:{v:19,zone:'village'}, counterDmgIncrease:{v:20,zone:'always'}, atk:{v:20,zone:'always'}},
+      6:{crit:{v:10,zone:'village'}, hp:{v:20,zone:'village'}, counterDmgIncrease:{v:25,zone:'always'}, atk:{v:25,zone:'always'}}
+    },
+    desc: '전용 추가능력치(마을): 치명타 확률 +5%(★1)~+10%(★6). 최대 체력 +15%(★1)~+20%(★6).\n전용 스킬 "혼돈의 붕괴"(캐릭터 전용): 반격 피해량 +10%(★1)~+25%(★6). "반격 피해량의 50~100%만큼 공격력 증가"는 반격 피해량 수치에서 계산된 실제 증가분(+5%~+25%)으로 위 표에 반영.\n공격/반격/협공 후 적중 대상 중 무작위 1명에게 치명타 확률로 공격력의 30~60%만큼 암흑/전격 물리 고정 피해를 주고 주변(1바퀴~2칸)에 최대 2회 연쇄. ★3부터 피격 대상에게 카오스 스카(전격/암흑저항 -10%, 2턴, 최대 3중첩) 부여(적 디버프). ★2부터 무한 출력(스킬 시전 시 치명타 확률로 TP 1 획득) 보유. ★5부터 반격 사정거리 +1.\n일반 스킬 "혼돈의 부름"은 이 무기를 벨제부르 외 캐릭터가 장착했을 때 대체 적용되는 별도 효과라 벨제부르 계산에는 미반영.',
+    note: '[변경점]\n\n★2: 치명타확률 6% (+1%), 최대 체력 16% (+1%), 반격 피해량 증가 15% (+5%), 반격 피해량 기반 공격력 증가 11.25% (+6.25%). 무한 출력 신규 획득.\n\n★3: 치명타확률 7% (+1%), 최대 체력 17% (+1%). 반격 프록 피해 30%→40% 증가. 카오스 스카 신규 부여.\n\n★4: 치명타확률 8% (+1%), 최대 체력 18% (+1%), 반격 피해량 증가 20% (+5%), 반격 피해량 기반 공격력 증가 20% (+8.75%).\n\n★5: 치명타확률 9% (+1%), 최대 체력 19% (+1%). 반격 사정거리 +1 신규.\n\n★6: 치명타확률 10% (+1%), 최대 체력 20% (+1%), 반격 피해량 증가 25% (+5%), 반격 피해량 기반 공격력 증가 25% (+5%). 반격 프록 피해 40%→60% 증가.'
+  }
+};
+
+/* ================= 캐릭터 ================= */
+const CHARACTERS = {
+  '벨제부르': {
+    charOrder: 5,
+    weightClass: '헤비',
+    weaponName: '다크블링거',
+    classes: [
+      {
+        id: '드레드노트', baseCrit: 5,
+        stat: {def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, dmgReduction:{v:20,zone:'always'}},
+        statFormulaNote: {statKey:'atk', label:'클래스패시브 - 드레드노트', text:'방어력의 30%만큼 공격력 증가'},
+        desc: '방어력/저항력 +30%. 받는 피해 -20%.\n추가로 방어력이 "인접한 적 수 × 15%"만큼 증가(적 수 상한 불명, 연속 스케일링)하고 그 방어력의 30%만큼 공격력이 증가(합산안됨).\n인접 타일은 아군에게 엄폐(적의 지향성 공격에 치명타 불가·받는 피해 50% 감소) 부여 + 적에게는 통제 영역(한 턴에 통과 이동 불가)이 됨.\n※ baseCrit 5%는 실측 전 임시값입니다.'
+      },
+      {
+        id: '에레보스가드', baseCrit: 5,
+        stat: {def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, dmgReduction:{v:20,zone:'always'}},
+        stack: {
+          label:'파멸 침식(적 디버프)', shortName:'파멸침식',
+          perStack:{dotDmgIncrease:10}, maxStack:3,
+          cond:'파멸의 인도자 — 공격 시/공격받은 후 적에게 파멸 침식 부여(2턴 지속, 최대 3중첩). 부여 실패 시 대신 공격력의 75%만큼 암흑 물리 고정 피해',
+          desc:'파멸 침식 중첩당 대상이 받는 지속 피해 +10%(최대 3중첩=+30%). 행동 종료 시 중첩당 시전자 공격력의 20%만큼 암흑 물리 피해를 대상에게 추가로 가함(고정 피해). 치명타 발동 가능·받는 피해 감소 무시.'
+        },
+        statFormulaNote: {statKey:'atk', label:'클래스패시브 - 에레보스가드', text:'최대 체력의 5%만큼 공격력 증가'},
+        resist: [
+          {name:'공포'},
+          {name:'추방'}
+        ],
+        desc: '방어력/저항력 +30%. 받는 피해량 -20%.\n최대 체력의 5%만큼 공격력 증가(합산안됨).\n파멸의 인도자(해제 불가): 공격 시/공격받은 후 적에게 파멸 침식 부여(중첩 슬라이더로 반영). 공포/추방 면역.\n인접 타일은 아군에게 엄폐 부여 + 적에게는 통제 영역이 됨.\n※ baseCrit 5%는 실측 전 임시값입니다.'
+      },
+      {
+        id: '제로스위든', baseCrit: 5,
+        stat: {def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, dmgReduction:{v:20,zone:'always'}},
+        stack: {
+          label: '무한의 적응', shortName: '무한의 적응',
+          perStack: {atk:2, physRes:1, magRes:1}, maxStack: 15,
+          cond: '매 턴 적을 공격하면 중첩 유지/증가, 공격하지 않으면 감소(영구·해제 불가). 최대 15중첩 도달 시 자동으로 "영겁의 성채"로 전환.',
+          desc: '무한의 적응(해제 불가): 중첩당 공격력 +2%, 물리/마법 관통 저항 +1%(원문상 "관통 저항"이 물리/마법 구분 없이 표기되어 양쪽에 동일 적용). 15중첩 미만에서는 이 스탯 외의 다른 효과는 없습니다.',
+          atMaxLabel: '영겁의 성채',
+          atMaxNote: '15/15 중첩 도달 → 무한의 적응이 사라지고 "영겁의 성채"로 전환됩니다. 스탯 수치는 그대로 유지(공격력 +30%/관통 저항 +15%와 동일)되고, 추가로 턴 종료 시 추가 턴 획득/TP+1/보유한 해제 가능 버프 지속시간 +1(턴당 1회), 위치제어/기절 면역이 새로 적용됩니다. 이 상태에서는 무한의 적응 효과를 다시 획득할 수 없습니다.'
+        },
+        resist: [
+          {name:'위치제어', cond:'무한의 적응 15중첩 도달(영겁의 성채 전환) 시'},
+          {name:'기절', cond:'무한의 적응 15중첩 도달(영겁의 성채 전환) 시'},
+          {name:'스킬제어'}
+        ],
+        extraAction: [
+          {type:'추가턴', cond:'무한의 적응 15중첩 도달(영겁의 성채 전환) 시, 턴 종료 시(턴당 1회)'}
+        ],
+        desc: '방어력/저항력 +30%. 받는 피해량 -20%.\n무한의 적응(중첩형, 해제 불가): 15중첩 미만에서는 중첩당 공격력 +2%/관통 저항 +1%만 적용(아래 슬라이더로 반영). 15중첩(최대) 도달 시 자동으로 "영겁의 성채"로 전환되어 스탯은 그대로 유지되면서 턴 종료 시 추가 턴/TP+1/보유 버프 지속시간+1(턴당 1회), 위치제어/기절 면역이 새로 적용됩니다.\n공격 후 적에게 적용된(행동제어/스킬제어 제외) 디버프 지속시간 +1, 스킬 제어 면역(상시).\n인접 타일은 아군에게 엄폐 부여 + 적에게는 통제 영역이 됨.\n※ baseCrit 5%는 실측 전 임시값입니다.'
+      }
+    ],
+    uniquePassive: {
+      name: '그리마의 황제',
+      stages: {
+        label: '각성/초 단계', default: 6,
+        options: [
+          {name:'3각', stat:{crit:{v:20,zone:'always'}, def:{v:20,zone:'always'}, res:{v:20,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'4각', stat:{crit:{v:25,zone:'always'}, def:{v:25,zone:'always'}, res:{v:25,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'5각', stat:{crit:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'6각', stat:{crit:{v:35,zone:'always'}, def:{v:35,zone:'always'}, res:{v:35,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'2초', stat:{crit:{v:35,zone:'always'}, def:{v:35,zone:'always'}, res:{v:35,zone:'always'}, hp:{v:10,zone:'always'}, phys:{v:20,zone:'always'}, dmgReduction:{v:5,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'4초', stat:{crit:{v:35,zone:'always'}, def:{v:35,zone:'always'}, res:{v:35,zone:'always'}, hp:{v:20,zone:'always'}, phys:{v:25,zone:'always'}, dmgReduction:{v:10,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}},
+          {name:'6초', stat:{crit:{v:40,zone:'always'}, def:{v:40,zone:'always'}, res:{v:40,zone:'always'}, hp:{v:30,zone:'always'}, phys:{v:30,zone:'always'}, dmgReduction:{v:15,zone:'always'}, healTake:{v:-90,zone:'always'}, shieldTake:{v:-90,zone:'always'}, basicAtkDmgReduction:{v:30,zone:'always'}}}
+        ]
+      },
+      base: {},
+      resist: [
+        {name:'TP 감소', cond:'3각 이상'},
+        {name:'정신지배', cond:'3각 이상'},
+        {name:'클래스패시브 봉쇄', cond:'3각 이상'}
+      ],
+      baseDesc: '(6초/풀초 기준) 연성된 육체(해제 불가): 치명타 확률/방어력/저항력 +40%. 받는 치유 효과/보호막 -90%. 받는 타격 피해 -30%. TP제거/정신지배 면역, 클래스 패시브 봉쇄 불가. 잃은 체력 비율의 50%만큼 공격력/치명타 확률 증가(연속 스케일링 — 체력이 낮을수록 표시 수치보다 실제 화력이 높음).\n최대 체력 +30%.\n제노스 아츠 3(해제 불가): 물리 관통 +30%. 받는 피해 -15%. 전투 시 체력 80% 이하면 40~80% 확률로 적 공격을 빗겨내 피해 50% 경감(쿨타임 1). 건 슬라이서 장착 시 협공을 대체해 공격력의 120% 피해.\n생체 연성(최대 5중첩, 해제 불가): 체력 90% 이하 시 중첩 소모해 자가 회복(방어력 연동 고정 회복량).\n패왕의 수호령 2(해제 불가): 2칸 이내 아군에게 패왕의 호위(받는 단일 스킬 피해 -30%, 공격받으면 시전자가 대신 전투) 부여 — 아군 지정형 지원 효과라 벨제부르 자신에게는 적용되지 않아 미반영.\n영자력 개조(해제 불가, 초월): 게임 시작 시 조건에 맞는 인접 아군 1명에게 영자력 개조-제타/뮤 중 하나 부여 — 역시 아군 지원 효과라 벨제부르 자신은 받지 못해 미반영.',
+      baseNote: '[변경점]\n\n4각: 치명타확률·방어력·저항력 25% (+5%)\n\n5각: 치명타확률·방어력·저항력 30% (+5%)\n\n6각: 치명타확률·방어력·저항력 35% (+5%). 영자력 개조 신규 획득(아군 지원 효과, 미반영)\n\n2초: 최대 체력 10% 신규 획득. 제노스 아츠 1 신규 획득 — 물리 관통 20%, 받는 피해 -5%(회피 발동 체력 조건 60% 이하)\n\n4초: 최대 체력 20% (+10%). 제노스 아츠 2 — 물리 관통 25% (+5%), 받는 피해 -10% (+5%)(회피 발동 체력 조건 70% 이하)\n\n6초(풀초): 치명타확률·방어력·저항력 40% (+5%). 최대 체력 30% (+10%). 패왕의 수호령 1→2(호위 범위 인접→2칸 이내, 아군 지원이라 미반영). 제노스 아츠 3 — 물리 관통 30% (+5%), 받는 피해 -15% (+5%)(회피 발동 체력 조건 80% 이하)'
+    },
+    ultimate: {
+      name: '흑식멸광섬', stat: {},
+      stages: {
+        label: '초 단계', default: 2,
+        options: [
+          {name:'1초', stat:{}},
+          {name:'3초', stat:{}},
+          {name:'5초', stat:{}}
+        ]
+      },
+      desc: '(5초 기준) 지정 방향 7x4 범위에 공격력의 150% 피해. 적중 대상에게 위상 붕괴 3(2턴 지속: 턴 종료 시 시전자 공격력의 40%만큼 전격/암흑 물리 피해를 받고, 치명타 피격 시 위상 폭발 3 발동해 주변 1바퀴에 공격력 40% 전격/암흑 물리 피해 — 받는 피해 감소 무시) 부여. 치명타 적중 시 25% 확률로 대상 추방(1턴). 스킬 사용 후 TP 2 획득, 이 스킬 쿨타임 1 감소.',
+      note: '[변경점]\n\n3초: 위상 붕괴 1→2(턴 종료 시 피해 20%→30%, 위상 폭발 피해도 동일 증가). 나머지 동일.\n\n5초: 위상 붕괴 2→3(턴 종료 시 피해 30%→40%, 위상 폭발 피해도 동일 증가). TP 획득 1→2(+1). ※ 3~6각 개별 수치는 확인 전입니다.'
+    },
+    outerSkill: null,
+    actives: [
+      {name:'연섬', stat:{}, desc:'적에게 공격력의 130% 피해. 반격당하면 추가타 발동, 공격력의 30% 피해 추가.'},
+      {name:'무쌍관파', stat:{}, desc:'전방 1칸 이동하며 공격력의 170% 피해. 치명타 발동 시 공격력의 50%만큼 체력 회복.'},
+      {name:'가시 방벽', stat:{def:{v:50,zone:'cond',cond:'사용 시 2턴 동안 자신에게 가시 방벽 부여(해제 불가)'}, physDmgReduction:{v:10,zone:'cond',cond:'사용 시 2턴 동안 자신에게 가시 방벽 부여(해제 불가)'}},
+        extraAction: [
+          {type:'재행동', cond:'사용 시'}
+        ], desc:'2턴 동안 주위 2칸 내 아군을 호위하고, 자신은 가시 방벽 효과(방어력 +50%, 받는 물리 피해 -10%, 근접 공격을 받은 후 공격자에게 방어력의 50%만큼 물리 고정 피해 반격)와 추가 행동을 획득. 쿨타임 3턴.'},
+      {name:'공허 전개', stat:{dmgIncrease:{v:10,zone:'cond',cond:'사용 시 3턴 동안 주위 3칸 이내 적에게 공허의 권역 부여(받는 피해 증가)'}, fixedDmgReduction:{v:25,zone:'cond',cond:'사용 시 3턴 동안 자신 포함 주위 3칸 이내 아군에게 공허의 권역 부여(고정 피해 저항)'}},
+        resist: [
+          {name:'추방', cond:'3턴 지속, 3칸 이내 아군+자신'},
+          {name:'이동방해', cond:'3턴 지속, 3칸 이내 아군+자신'}
+        ],
+        extraAction: [
+          {type:'재행동', cond:'사용 시'}
+        ], desc:'주변 3칸 이내 아군 디버프 2개/적 버프 2개 해제, 적에게 무작위 혼돈 디버프(공격력·주문력 -25% / 방어력·저항력 -25% / 받는 피해 +10% / 받는 치명타 확률·피해량 증가 중 1개, 확률·대상 랜덤) 부여. 사용 후 재행동 획득. 3턴 동안 공허의 권역: 추방 면역·주위 3칸 적 암흑저항 -10%(적 디버프)/받는 피해 +10%(위 스탯 반영). 주위 3칸 아군 고정 피해 저항 +25%(위 스탯 반영, 자신 포함으로 판단)·이동방해 면역. 침묵 상태에서도 시전 가능, 쿨타임 제어·감소 무효. 쿨타임 3턴.'},
+      {name:'쇄진공파', stat:{dmgReduction:{v:20,zone:'cond',cond:'사용 시 1턴 동안 도발한 적으로부터 받는 피해만 -20%(도발 안 걸린 적 상대로는 미적용)'}}, desc:'주위 3칸 내 빈 타일로 이동해 인접 적들에게 공격력의 50% 피해, 1턴 도발 부여(행동제어). 도발한 적으로부터 받는 피해 -20%(위 스탯 반영). 쿨타임 3턴.'},
+      {name:'귀멸연살참', stat:{},
+        stack:{label:'파괴의 완력', shortName:'완력', perStack:{selfSkillDmgIncrease:15}, maxStack:5,
+          cond:'귀멸연살참 사용 시 중첩 획득(영구, 해제 불가)',
+          desc:'귀멸연살참 스킬 피해량이 중첩당 15% 증가(최대 5중첩=+75%). 이 버프는 적에게 보이지 않음.'},
+        desc:'대상과 인접 적에게 공격력의 110% 피해, 파괴의 완력 중첩 획득(아래 슬라이더로 반영). 공격 전 사념 폭발(고정 피해+사념체 소환, 파멸의 수문장 보유 시) 발동, 무한의 적응 보유 시 쿨타임 2 감소. 호위 불가. 쿨타임 3턴.'},
+      {name:'소드 브레이커', stat:{}, desc:'전방 3x5 범위 적에게 공격력의 90% 피해, 장비 파괴(공격력/주문력/방어력/저항력 -20%, 2턴)·느려짐 1(이동력 -1, 1턴, 행동제어) 부여(모두 적 디버프). 적중 대상 TP 1 제거. 쿨타임 3턴.'}
+    ],
+    artifacts: [
+      {
+        name:'필살의 의지', grade:'영웅', maxStar:4,
+        starStats:{
+          1:{crit:{v:15,zone:'cond',cond:'초필살기 사용 시'}, critDmg:{v:15,zone:'cond',cond:'초필살기 사용 시'}, aoeDmgIncrease:{v:10,zone:'cond',cond:'초필살기 사용 시'}},
+          2:{crit:{v:20,zone:'cond',cond:'초필살기 사용 시'}, critDmg:{v:20,zone:'cond',cond:'초필살기 사용 시'}, aoeDmgIncrease:{v:15,zone:'cond',cond:'초필살기 사용 시'}},
+          3:{crit:{v:25,zone:'cond',cond:'초필살기 사용 시'}, critDmg:{v:25,zone:'cond',cond:'초필살기 사용 시'}, aoeDmgIncrease:{v:20,zone:'cond',cond:'초필살기 사용 시'}},
+          4:{crit:{v:30,zone:'cond',cond:'초필살기 사용 시'}, critDmg:{v:30,zone:'cond',cond:'초필살기 사용 시'}, aoeDmgIncrease:{v:25,zone:'cond',cond:'초필살기 사용 시'}}
+        },
+        desc:'초필살기 사용 시 치명타 확률/치명타 피해량 +15%(★1)~+30%(★4). 범위 스킬 피해량 +10%(★1)~+25%(★4).'
+      },
+      {
+        name:'통찰의 수정구슬', grade:'영웅', maxStar:4,
+        starStats:{
+          1:{crit:{v:10,zone:'always'}, critResChance:{v:10,zone:'always'}, dmgIncrease:{v:10,zone:'cond',cond:'행동 제어 상태가 아닐 때 전투 시작 전 적에게 예리한 응시 1(2턴 지속) 부여'}},
+          2:{crit:{v:15,zone:'always'}, critResChance:{v:15,zone:'always'}, dmgIncrease:{v:15,zone:'cond',cond:'행동 제어 상태가 아닐 때 전투 시작 전 적에게 예리한 응시 2(2턴 지속) 부여'}},
+          3:{crit:{v:20,zone:'always'}, critResChance:{v:20,zone:'always'}, dmgIncrease:{v:20,zone:'cond',cond:'행동 제어 상태가 아닐 때 전투 시작 전 적에게 예리한 응시 3(2턴 지속) 부여'}},
+          4:{crit:{v:25,zone:'always'}, critResChance:{v:25,zone:'always'}, dmgIncrease:{v:30,zone:'cond',cond:'행동 제어 상태가 아닐 때 전투 시작 전 적에게 예리한 응시 4(2턴 지속) 부여'}}
+        },
+        desc:'치명타 확률 +10%(★1)~+25%(★4). 받는 치명타 확률 -10%(★1)~-25%(★4). 행동 제어 상태가 아니면 전투 전 적에게 예리한 응시(받는 피해 +10%~+20%는 성급 1:1 비례, ★4만 +30%로 도약) 부여, 2턴 지속.'
+      },
+      {
+        name:'보이드 코어', grade:'영웅', maxStar:4, stackable:true, maxStack:4,
+        starStats:{
+          1:{hp:{v:10,zone:'always'}, move:{v:1,zone:'always'}, critResDmg:{v:15,zone:'cond',cond:'턴 시작 시 공허 방벽 획득(치명타 공격을 받으면 해제)'}},
+          2:{hp:{v:12.5,zone:'always'}, move:{v:1,zone:'always'}, critResDmg:{v:15,zone:'cond',cond:'턴 시작 시 공허 방벽 획득(치명타 공격을 받으면 해제)'}},
+          3:{hp:{v:12.5,zone:'always'}, move:{v:1,zone:'always'}, critResDmg:{v:15,zone:'cond',cond:'턴 시작 시 공허 방벽 획득(치명타 공격을 받으면 해제)'}},
+          4:{hp:{v:15,zone:'always'}, move:{v:1,zone:'always'}, critResDmg:{v:15,zone:'cond',cond:'턴 시작 시 공허 방벽 획득(치명타 공격을 받으면 해제)'}}
+        },
+        starPerStack:{
+          1:{dmgReduction:3},
+          2:{dmgReduction:4},
+          3:{dmgReduction:4, atk:2.5},
+          4:{dmgReduction:5, atk:5}
+        },
+        cond:'지속 피해가 아닌 피해를 받으면 널 필드 중첩 획득(턴 시작 시 해제, 최대 4중첩). ★3부터: 턴 시작 시 중첩 수만큼 공허 포식 획득(턴 종료 시 해제, 공격력 증가)',
+        resist: [
+          {name:'쿨타임제어', cond:'★3 이상 장착 시'}
+        ],
+        desc:'최대 체력 +10%(★1)~+15%(★4). 이동력 +1. 턴 시작 시 공허 방벽(받는 치명타 피해 -15%, 치명타 피격 시 해제) 획득. 지속 피해가 아닌 피해를 받으면 널 필드 중첩 획득(최대 4중첩, 턴 시작 시 해제) — 중첩당 받는 피해 감소 +3%(★1)~+5%(★4). ★3부터 널 필드 중첩 수만큼 공허 포식 추가 획득(턴 종료 시 해제) — 중첩당 공격력 +2.5%(★3)~+5%(★4). ★3부터 쿨타임 제어 면역.'
+      }
+    ]
+  }
+};
+
+/* ================= 방어구 ================= */
+// 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
+// 장갑만 세트마다 다름). 출처: 3. 장비/<세트>/_set_data.json, *_data.json. 원본에 없는 부위/세트는 desc에 ⚠로 표시.
+const ARMOR_SETS = {
+  ARM01: {name:'인도자', grade:'전설',
+    set2:{hp:{v:15,zone:'village'},atk:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 공격력 +15%.',
+    set4:{phys:{v:20,zone:'always'},crit:{v:20,zone:'always'}}, set4desc:'물리 관통/치명타 확률 +20%(상시). 공격 시 치명타 발생하면 보호막 획득(치명타 확률 1%당 최대 체력 0.2%, 해제불가).',
+    pieces:{투구:{name:'인도자의 가면',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'인도자의 망토',maxStar:1}, 장갑:{name:'인도자의 보호대',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'인도자의 부츠',maxStar:1}}
+  },
+  ARM02: {name:'검은 까마귀', grade:'전설',
+    set2:{critDmg:{v:15,zone:'village'}}, set2desc:'치명타 피해량 +15%.',
+    set4:{crit:{v:20,zone:'always'}}, set4desc:'치명타 확률 +20%.',
+    pieces:{투구:{name:'검은 까마귀 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'검은 까마귀 의복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'검은 까마귀 족쇄',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'검은 까마귀 장화',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:8,5:6,6:10}}}
+  },
+  ARM03: {name:'명계의 전갈', grade:'전설',
+    set2:{hp:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%.',
+    set4:{phys:{v:20,zone:'always'}}, set4desc:'물리 관통 +20%.',
+    pieces:{투구:{name:'명계의 전갈 터번',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'명계의 전갈 의상',maxStar:1}, 장갑:{name:'명계의 전갈 토시',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'명계의 전갈 신발',maxStar:1}}
+  },
+  ARM04: {name:'전설의 괴도', grade:'전설',
+    set2:{critDmg:{v:10,zone:'village'},crit:{v:15,zone:'village'}}, set2desc:'치명타 피해량 +10%, 치명타 확률 +15%.',
+    set4:{hp:{v:10,zone:'always'},critDmg:{v:15,zone:'always'}}, set4desc:'최대 체력 +10%, 치명타 피해량 +15%(상시). 전투 중 치명타 적중 시 전투 후 "날카로운 시선"(다음 전투 공격 시 치명타 피해량 +10%, 발동 후 해제/해제불가) 획득.',
+    pieces:{투구:{name:'전설의 괴도 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'전설의 괴도 작업복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'전설의 괴도 장갑',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'전설의 괴도 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:8,5:6,6:10}}}
+  },
+  ARM05: {name:'기백의 검사', grade:'전설',
+    set2:{hp:{v:10,zone:'village'},phys:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 물리 관통 +10%.',
+    set4:{critResChance:{v:10,zone:'always'},atk:{v:15,zone:'always',cond:'공격 시(쿨1)'},phys:{v:15,zone:'always',cond:'공격 시(쿨1)'}}, set4desc:'받는 치명타 확률 -10%(상시). 공격 시 공격력/물리 관통 +15%(쿨타임 1턴).',
+    pieces:{투구:{name:'기백의 검사 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'기백의 검사 경갑옷',maxStar:1}, 장갑:{name:'기백의 검사 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'기백의 검사 부츠',maxStar:1}}
+  },
+  ARM06: {name:'시스템 이단자', grade:'전설',
+    set2:{phys:{v:15,zone:'village'},crit:{v:15,zone:'village'}}, set2desc:'물리 관통 +15%, 치명타 확률 +15%.',
+    set4:{atk:{v:30,zone:'always',cond:'적 공격 시'}}, set4desc:'적 공격 시 공격력 +30%. 턴당 1회 적에게 처치급 피해를 주면 2턴간 최대 체력 50% 보호막.',
+    pieces:{투구:{name:'시스템 이단자의 안대',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'시스템 이단자의 코트',maxStar:1}, 장갑:{name:'시스템 이단자의 의수',maxStar:6, pieceStat:'crit', pieceStars:{6:10}}, 신발:{name:'시스템 이단자의 신발',maxStar:1}}
+  },
+  ARM07: {name:'회색의 계승자', grade:'전설',
+    set2:{hp:{v:15,zone:'village'},critResDmg:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 받는 치명타 피해량 감소 +15%.',
+    set4:{atk:{v:20,zone:'always'},phys:{v:20,zone:'always'}}, set4desc:'공격력/물리 관통 +20%(상시). 조건부 "중재자의 수호" 보호막 별도 지급. 장갑(팔) 부위는 물리 관통 +10%(풀각, 사용자 확인).',
+    pieces:{투구:{name:'계승자의 목도리',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'계승자의 흑의',maxStar:1}, 장갑:{name:'계승자의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'계승자의 부츠',maxStar:1}}
+  },
+  ARM08: {name:'일기당천', grade:'전설',
+    set2:{phys:{v:20,zone:'village'}}, set2desc:'물리 관통 +20%.',
+    set4:{atk:{v:20,zone:'cond',cond:'전투 시 중첩형 버프(1스택당 10%, 3턴 지속, 최대 2중첩) — 표시값은 풀스택(2중첩) 기준'}}, set4desc:'전투 시 공격력이 3턴간 10%씩 증가(최대 2중첩) — 표시값은 풀스택(20%) 기준.',
+    pieces:{투구:{name:'일기당천의 머리띠',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'일기당천의 의복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'일기당천의 팔 보호구',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'일기당천의 목신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
+  },
+  ARM09: {name:'풍운의 밀사', grade:'전설',
+    set2:{hp:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%.',
+    set4:{atk:{v:10,zone:'always'}}, set4desc:'전투 시 공격력 +10%(상시). 전투 종료 후 체력 50% 이하면 최대 체력 10% 회복.',
+    pieces:{투구:{name:'풍운의 밀사 목도리',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'풍운의 밀사 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'풍운의 밀사 장갑',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'풍운의 밀사 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
+  },
+  ARM10: {name:'어둠의 재상', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{mag:{v:15,zone:'village'}}, set2desc:'주문력 +15%.',
+    set4:{mag:{v:10,zone:'cond',cond:'스킬 시전 시'},magPen:{v:10,zone:'cond',cond:'스킬 시전 시'}}, set4desc:'스킬 시전 시 주문력/마법 관통 +10%. 추가로 자기 시전 스킬로 적 공격 후 "철수"(턴 종료 전 추가 이동) 획득(쿨타임 3턴, 스탯 아님). 장갑(팔) 부위는 마법 관통 +10%(풀각 기준). 투구/갑옷/신발 개별 성급 데이터는 없음. 라이트 클래스 전용.',
+    pieces:{투구:{name:'어둠의 재상관',maxStar:1}, 갑옷:{name:'어둠의 재상 로브',maxStar:1}, 장갑:{name:'어둠의 재상 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'어둠의 재상 부츠',maxStar:1}}
+  },
+  ARM11: {name:'교황', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{}, set2desc:'받는 피해량 감소 +5%.',
+    set4:{}, set4desc:'스킬 사용 시 60% 확률로 해당 스킬 쿨타임 1 감소(쿨타임 3턴, 스탯 아님).',
+    pieces:{투구:{name:'교황의 예관',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'교황의 성장',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'교황의 자비',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'교황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM12: {name:'대현자', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{magPen:{v:15,zone:'village'}}, set2desc:'마법 관통 +15%.',
+    set4:{}, set4desc:'범위 스킬 사용 시 스킬 피해량 +20%.',
+    pieces:{투구:{name:'대현자의 서클릿',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'대현자의 로브',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'대현자의 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'대현자의 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM13: {name:'매혹의 영주', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{critResChance:{v:10,zone:'village'},critResDmg:{v:10,zone:'village'}}, set2desc:'받는 치명타 확률 -10%, 받는 치명타 피해량 -10%.',
+    set4:{hp:{v:15,zone:'always'},mag:{v:15,zone:'always'}}, set4desc:'최대 체력 +15%, 주문력 +15%.',
+    pieces:{투구:{name:'매혹의 영주 목걸이',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'매혹의 영주 비단옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'매혹의 영주 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'매혹의 영주 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM14: {name:'빛의 헌신', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{dmgReduction:{v:10,zone:'cond',cond:'최대 체력(HP 100%) 상태일 때'}}, set2desc:'치유 증가량의 25%만큼 주문력 증가(합산안됨). 최대 체력 상태면 받는 피해량 -10%(조건부).',
+    set2StatFormulaNote:{statKey:'mag', label:'방어구 - 빛의 헌신 2셋', text:'치유 증가량의 25%만큼 주문력 증가'},
+    set4:{healGive:{v:15,zone:'always'}}, set4desc:'치유량 증가 +15%(상시). 스킬 시전 후 25% 확률로 "집중"(행동 종료 시 1TP 회복, 스탯 아님) 획득(쿨타임 1턴).',
+    pieces:{투구:{name:'빛의 헌신 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'빛의 헌신 의복',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'빛의 헌신 팔토시',maxStar:6, pieceStat:'healGive', pieceStars:{6:10}}, 신발:{name:'빛의 헌신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM15: {name:'자애의 치유사', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{critResDmg:{v:10,zone:'village'},healGive:{v:15,zone:'village'}}, set2desc:'치유량 증가 +15%, 받는 치명타 피해량 -10%.',
+    set4:{hp:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'스킬로 아군에게 이로운 효과 부여 시(회복의 공명, 중첩무관)'},mag:{v:10,zone:'cond',cond:'스킬로 아군에게 이로운 효과 부여 시(회복의 공명, 중첩무관)'}}, set4desc:'최대 체력 +10%(상시), 침묵 면역. 스킬로 아군에게 이로운 효과 부여 시 "회복의 공명" 부여(공격력/주문력 +10%, 중첩과 무관하게 고정값, 공격/반격 후 중첩 감소).',
+    pieces:{투구:{name:'자애의 치유사 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'자애의 치유사 로브',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'자애의 치유사 토시',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'자애의 치유사 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM16: {name:'추기경', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{hp:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%.',
+    set4:{mag:{v:10,zone:'always'}}, set4desc:'주문력 +10%(상시). 스킬 사용 시 33% 확률로 "집중"(행동 종료 시 1TP 획득, 스탯 아님) 획득(턴당 1회).',
+    pieces:{투구:{name:'추기경의 사제모',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'추기경의 수단',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'추기경의 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'추기경의 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM17: {name:'혜안의 군사', grade:'전설',
+    weightClassOnly:'라이트',
+    set2:{hp:{v:10,zone:'village'},crit:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 치명타 확률 +10%.',
+    set4:{critDmg:{v:20,zone:'cond',cond:'스킬 시전 시'}}, set4desc:'스킬 시전 시 치명타 피해량 +20%.',
+    pieces:{투구:{name:'혜안의 군사 안경',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'혜안의 군사 천옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'혜안의 군사 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'혜안의 군사 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM18: {name:'강격의 군주', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{def:{v:10,zone:'village'},hp:{v:10,zone:'village'}}, set2desc:'방어력 +10%, 최대 체력 +10%.',
+    set4:{}, set4desc:'협공 피해량 +10%. 방어력의 30%만큼 공격력 증가(합산안됨).',
+    set4StatFormulaNote:{statKey:'atk', label:'방어구 - 강격의 군주 4셋', text:'방어력의 30%만큼 공격력 증가'},
+    pieces:{투구:{name:'강격의 군주 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'강격의 군주 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'강격의 군주 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'강격의 군주 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM19: {name:'금제의 무인', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{hp:{v:10,zone:'village'},critResDmg:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 받는 치명타 피해량 -10%.',
+    set4:{hp:{v:20,zone:'always'},def:{v:15,zone:'always'},res:{v:15,zone:'always'},physRes:{v:10,zone:'always'},magRes:{v:10,zone:'always'}}, set4desc:'최대 체력 +20%, 방어력/저항력 +15%, 물리/마법 관통 저항 +10%.',
+    pieces:{투구:{name:'금제의 무인 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'금제의 무인 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'금제의 무인 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'금제의 무인 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM20: {name:'단죄의 심판자', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{hp:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 반격 피해량 +15%.',
+    set4:{hp:{v:10,zone:'always'}}, set4desc:'최대 체력 +10%(상시), 반격 피해량 +10%, 받는 피해 감소 +5%. 체력 50% 이하 시 받는 피해 추가 -10%(조건부).',
+    pieces:{투구:{name:'단죄의 심판자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'단죄의 심판자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'단죄의 심판자 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'단죄의 심판자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM21: {name:'불멸의 정복자', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{phys:{v:10,zone:'village'},atk:{v:10,zone:'village'}}, set2desc:'물리 관통 +10%, 공격력 +10%.',
+    set4:{hp:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'},physRes:{v:5,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'},magRes:{v:5,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'}}, set4desc:'최대 체력 +10%(상시). 공격 전/공격받기 전 "저거넛" 획득: 공격력 +10%, 물리·마법 관통 저항 +5%(최대 2중첩, 2턴 지속, 해제불가 — 표시값은 1스택 기준).',
+    pieces:{투구:{name:'불멸의 정복자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'불멸의 정복자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'불멸의 정복자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'불멸의 정복자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM22: {name:'선혈의 사신', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{def:{v:15,zone:'village'}}, set2desc:'방어력 +15%.',
+    set4:{}, set4desc:'반격 피해량 +20%. 반격 후 다음 공격 피해량 +20%(조건부).',
+    pieces:{투구:{name:'선혈의 사신 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'선혈의 사신 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'선혈의 사신 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'선혈의 사신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM23: {name:'역전의 지휘관', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{def:{v:13,zone:'village'},res:{v:13,zone:'village'}}, set2desc:'방어력/저항력 +13%.',
+    set4:{healTake:{v:10,zone:'always'},shieldTake:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'아군 스킬 대상이 되면(2턴 지속)'}}, set4desc:'받는 치유량 증가/받는 보호막 증가 +10%(상시). 아군 스킬 대상이 되면 2턴간 공격력 +10%.',
+    pieces:{투구:{name:'역전의 지휘관 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'역전의 지휘관 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'역전의 지휘관 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'역전의 지휘관 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+  ARM24: {name:'인내의 수호자', grade:'전설',
+    weightClassOnly:'헤비',
+    set2:{hp:{v:20,zone:'village'}}, set2desc:'최대 체력 +20%.',
+    set4:{}, set4desc:'받는 피해량 감소 +5%. 피해를 받으면 2턴간 받는 피해 -5%(최대 2중첩).',
+    pieces:{투구:{name:'인내의 수호자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'인내의 수호자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'인내의 수호자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'인내의 수호자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+  },
+};
+const SLOTS = ['투구','갑옷','장갑','신발'];
+// weightClassOnly 필드가 없는 방어구는 미디엄 전용(원래 색분류가 없던 9종 기본 세트). 캐릭터가 착용 가능한 방어구만 골라내는 데 사용.
+function armorWeightClass(sname){ return ARMOR_SETS[sname] ? (ARMOR_SETS[sname].weightClassOnly || '미디엄') : null; }
+function armorSetsFor(weightClass){ return Object.keys(ARMOR_SETS).filter(sname => armorWeightClass(sname) === weightClass); }
+// 2셋/4셋 효과 미리보기 — 추적되는 스탯이 있으면 그걸 보여주고, 없으면(전부 "미추적" 플레이버 텍스트뿐이어도) desc로 대체해서
+// 모든 방어구가 2셋/4셋 효과를 반드시 갖고 있다는 사실이 선택지에서 항상 드러나도록 한다.
+function setEffectPreview(statObj, desc){ return statPreviewFull(statObj) || desc || ''; }
+
+const ACCESSORIES = {
+  ACC01: {name:'검은 깃발', grade:'전설', maxStar:6, unique:true, starStats:{1:{atk:{v:10,zone:'village'},phys:{v:10,zone:'village'},critResChance:{v:5,zone:'village'}},2:{atk:{v:11,zone:'village'},phys:{v:11,zone:'village'},critResChance:{v:6,zone:'village'}},3:{atk:{v:12,zone:'village'},phys:{v:12,zone:'village'},critResChance:{v:7,zone:'village'}},4:{atk:{v:13,zone:'village'},phys:{v:13,zone:'village'},critResChance:{v:8,zone:'village'}},5:{atk:{v:14,zone:'village'},phys:{v:14,zone:'village'},critResChance:{v:9,zone:'village'}},6:{atk:{v:15,zone:'village'},phys:{v:15,zone:'village'},critResChance:{v:10,zone:'village'}}},
+    skill:{desc:'전투 공격을 당하면 턴당 1회, 전투 후 "전투 적응"(받는 피해 -10%, 1턴 지속, 전투 후 해제) 획득(성급 무관 고정값). ★5부터: 다른 아군 플레이어가 사망하고 적보다 아군 수가 적으면 최대 체력 15%(★5)/25%(★6) 회복 + 디버프 1개(★5)/2개(★6) 해제(★6은 TP+1도, 쿨타임1, 추방 상태에서도 작동).',
+      statByStar:{
+        1:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}},
+        2:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}},
+        3:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}},
+        4:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}},
+        5:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}},
+        6:{dmgReduction:{v:10,zone:'cond',cond:'전투 공격을 당한 후 "전투 적응" 획득(1턴 지속, 전투 후 해제, 턴당 1회)'}}
+      }},
+    desc:'흑태자가 다크 아머 군을 이끌고 진군할 때 사용된 깃발. 항상 맨 앞의 최전선에서 그 위용을 드러내었다.'},
+  ACC02: {name:'고대 영웅의 반지', grade:'전설', maxStar:6, unique:false, starStats:{1:{atk:{v:10,zone:'village'},critResDmg:{v:10,zone:'village'}},2:{atk:{v:11,zone:'village'},critResDmg:{v:11,zone:'village'}},3:{atk:{v:12,zone:'village'},critResDmg:{v:12,zone:'village'}},4:{atk:{v:13,zone:'village'},critResDmg:{v:13,zone:'village'}},5:{atk:{v:14,zone:'village'},critResDmg:{v:14,zone:'village'}},6:{atk:{v:15,zone:'village'},critResDmg:{v:15,zone:'village'}}}, desc:'고대 영웅이 착용했다고 전해 내려오는 반지. 치명적인 피해로부터 회복시키는 힘을 가지고 있다고 전해진다. 일반 스킬: 턴당 1회 착용자가 치명타 피해를 받은 후 받은 피해의 25%(★1)~50%(★6)만큼 회복(스탯 아님).'},
+  ACC03: {name:'고통의 가시', grade:'전설', maxStar:1, unique:false, starStats:{1:{critResChance:{v:10,zone:'village'}}}, desc:'끔찍한 고통에 휩싸인다고 하는 가시. 어떤 치유 주문을 받아도 고통이 쉽사리 가라앉지 않는다고 한다.'},
+  ACC04: {name:'구원자의 서판', grade:'전설', maxStar:6, unique:false, tier:'상위', starStats:{1:{physRes:{v:10,zone:'village'},magRes:{v:10,zone:'village'}},2:{physRes:{v:11,zone:'village'},magRes:{v:11,zone:'village'}},3:{physRes:{v:12,zone:'village'},magRes:{v:12,zone:'village'}},4:{physRes:{v:13,zone:'village'},magRes:{v:13,zone:'village'}},5:{physRes:{v:14,zone:'village'},magRes:{v:14,zone:'village'}},6:{physRes:{v:15,zone:'village'},magRes:{v:15,zone:'village'}}}, skill:{desc:'"적을 공격하거나 공격받은 후" 전투 단련: 방어력/저항력 +10%(★1)~+20%(★6), 2턴 지속, 해제불가. (동시에 적에게 갑주 균열 부여 — 적 디버프)', statByStar:{1:{def:{v:10,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:10,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}},2:{def:{v:12,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:12,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}},3:{def:{v:14,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:14,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}},4:{def:{v:16,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:16,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}},5:{def:{v:18,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:18,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}},6:{def:{v:20,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'},res:{v:20,zone:'cond',cond:'적을 공격하거나 공격받은 후(전투 단련, 2턴, 해제불가)'}}}}, desc:'인류를 구한 자들이 남긴 서판.'},
+  ACC05: {name:'균형의 칼날 목걸이', grade:'전설', maxStar:6, unique:false, starStats:{1:{crit:{v:15,zone:'village'},critDmg:{v:-30,zone:'village'}},2:{crit:{v:18,zone:'village'},critDmg:{v:-32,zone:'village'}},3:{crit:{v:21,zone:'village'},critDmg:{v:-34,zone:'village'}},4:{crit:{v:24,zone:'village'},critDmg:{v:-36,zone:'village'}},5:{crit:{v:27,zone:'village'},critDmg:{v:-38,zone:'village'}},6:{crit:{v:30,zone:'village'},critDmg:{v:-40,zone:'village'}}}, skill:{desc:'전투 후 "공격력 증가"(3턴 지속, 최대 2중첩) 획득: 스택당 공격력 +5%(★1)~+10%(★6). 표시값은 1스택 기준(최대 2중첩, 배수 여부 미확인이라 미반영).', statByStar:{1:{atk:{v:5,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}},2:{atk:{v:6,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}},3:{atk:{v:7,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}},4:{atk:{v:8,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}},5:{atk:{v:9,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}},6:{atk:{v:10,zone:'cond',cond:'전투 후(공격력 증가, 3턴, 최대 2중첩 — 표시값은 1스택 기준)'}}}}, desc:'치명상은 입히되 죽이지는 않는다는 신조를 가진 실력가가 애용했다는 소문이 있는 목걸이.'},
+  ACC06: {name:'댄싱퀸', grade:'전설', maxStar:1, unique:false, tier:'상위', starStats:{1:{crit:{v:10,zone:'village'}}}, desc:'팬드래건 왕국에서 특별 주문된 채찍을 본떠 만든 장신구. 스킬은 적 치명타 피해량 증가(적 디버프, 무관).'},
+  ACC07: {name:'루시퍼의 깃털', grade:'전설', maxStar:6, unique:true, starStats:{1:{critDmg:{v:10,zone:'village'},crit:{v:10,zone:'village'},hp:{v:5,zone:'village'}},2:{critDmg:{v:11,zone:'village'},crit:{v:11,zone:'village'},hp:{v:6,zone:'village'}},3:{critDmg:{v:12,zone:'village'},crit:{v:12,zone:'village'},hp:{v:7,zone:'village'}},4:{critDmg:{v:13,zone:'village'},crit:{v:13,zone:'village'},hp:{v:8,zone:'village'}},5:{critDmg:{v:14,zone:'village'},crit:{v:14,zone:'village'},hp:{v:9,zone:'village'}},6:{critDmg:{v:15,zone:'village'},crit:{v:15,zone:'village'},hp:{v:10,zone:'village'}}}, skill:{desc:'"비공격 스킬 시전 시 치명타 확률과 동일한 확률로" 천사장의 축복: 공격력/주문력/방어력/저항력/물리관통저항/마법관통저항 +10%(★1)~+15%(★6), 2턴, 해제불가. (고성급에서 "집중"/"천사장의 구원" 추가 — 스탯 아님)', statByStar:{1:{atk:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:10,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}},2:{atk:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:11,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}},3:{atk:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:12,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}},4:{atk:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:13,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}},5:{atk:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:14,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}},6:{atk:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},mag:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},def:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},res:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},physRes:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'},magRes:{v:15,zone:'cond',cond:'비공격 스킬 시전 시 치명타 확률과 동일한 확률로(천사장의 축복)'}}}}, desc:'먼 과거에 존재했던 한 천사의 깃털. 천사장의 힘이 담긴 특별한 깃털이다.'},
+  ACC08: {name:'메아리의 보석', grade:'전설', maxStar:6, unique:false, starStats:{1:{},2:{},3:{},4:{},5:{},6:{}}, skill:{desc:'아군 턴 시작 시 "헌신의 메아리" 없으면 획득(해제 후 3턴(★1)~2턴(★6) 재획득 불가): 치유량 +10%(★1)~+15%(★6). 침묵 면역류 부수 효과 있음.', statByStar:{1:{healGive:{v:10,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}},2:{healGive:{v:11,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}},3:{healGive:{v:12,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}},4:{healGive:{v:13,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}},5:{healGive:{v:14,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}},6:{healGive:{v:15,zone:'cond',cond:'아군 턴 시작 시 헌신의 메아리 미보유 시 획득(해제 후 재획득 대기)'}}}}, desc:'헌신의 메아리가 담겨있다고 전해지는 보석.'},
+  ACC09: {name:'무사의 호패', grade:'전설', maxStar:6, unique:false, tier:'상위', starStats:{1:{atk:{v:5,zone:'village'},def:{v:5,zone:'village'},res:{v:5,zone:'village'}},2:{atk:{v:6,zone:'village'},def:{v:6,zone:'village'},res:{v:6,zone:'village'}},3:{atk:{v:7,zone:'village'},def:{v:7,zone:'village'},res:{v:7,zone:'village'}},4:{atk:{v:8,zone:'village'},def:{v:8,zone:'village'},res:{v:8,zone:'village'}},5:{atk:{v:9,zone:'village'},def:{v:9,zone:'village'},res:{v:9,zone:'village'}},6:{atk:{v:10,zone:'village'},def:{v:10,zone:'village'},res:{v:10,zone:'village'}}}, desc:'강호의 무인이라면 반드시 지녀야 할 패. 전투 전 적에게 "갑주 균열"(방어력/저항력 -10%(★1)~-20%(★6), 성급별) 부여 — 적 디버프라 위 스탯과 무관.'},
+  ACC10: {name:'무효화 목걸이', grade:'전설', maxStar:6, unique:false, starStats:{1:{def:{v:3,zone:'village'},res:{v:3,zone:'village'}},2:{def:{v:4,zone:'village'},res:{v:4,zone:'village'}},3:{def:{v:5,zone:'village'},res:{v:5,zone:'village'}},4:{def:{v:6,zone:'village'},res:{v:6,zone:'village'}},5:{def:{v:7,zone:'village'},res:{v:7,zone:'village'}},6:{def:{v:8,zone:'village'},res:{v:8,zone:'village'}}}, desc:'턴 종료 시 자신에게 걸린 임의의 디버프를 1개(★1~5)~2개(★6) 해제하는 목걸이(쿨타임 2턴, 스탯 아님).'},
+  ACC11: {name:'사수의 마탄', grade:'전설', maxStar:6, unique:false, starStats:{1:{},2:{},3:{},4:{},5:{},6:{}},
+    desc:'상시 능력치는 없음 — 효과는 전부 아래 "사수의 집념"(조건부)에 있습니다.',
+    skill:{desc:'"전투 공격 전 50% 확률로" 사수의 집념: 물리 관통 +20%(★1)~+25%(★6). 조건부라 항상 조건부 합계에 자동 반영.',
+      statByStar:{1:{phys:{v:20,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}},2:{phys:{v:21,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}},3:{phys:{v:22,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}},4:{phys:{v:23,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}},5:{phys:{v:24,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}},6:{phys:{v:25,zone:'cond',cond:'전투 공격 전(50% 확률, 사수의 집념)'}}}}},
+  ACC12: {name:'속죄자의 머리끈', grade:'전설', maxStar:6, unique:false, tier:'상위', starStats:{1:{},2:{},3:{},4:{},5:{},6:{}}, skill:{desc:'"결투 효과를 가지고 있는 적을 공격하여" 전투 시 치명타 피해량 +10%(★1)~+15%(★6). (★6에서 해당 적이 생존 시 "응수" 추가 획득)', statByStar:{1:{critDmg:{v:10,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}},2:{critDmg:{v:11,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}},3:{critDmg:{v:12,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}},4:{critDmg:{v:13,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}},5:{critDmg:{v:14,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}},6:{critDmg:{v:15,zone:'cond',cond:'결투 효과를 가진 적을 공격 시(전투 중)'}}}}, desc:'결투 효과를 가진 적을 공격 시 발동하는 장신구.'},
+  ACC13: {name:'수호 부적', grade:'전설', maxStar:6, unique:false, starStats:{1:{critResChance:{v:10,zone:'village'}},2:{critResChance:{v:11,zone:'village'}},3:{critResChance:{v:12,zone:'village'}},4:{critResChance:{v:13,zone:'village'}},5:{critResChance:{v:14,zone:'village'}},6:{critResChance:{v:15,zone:'village'}}}, skill:{desc:'"적에게 공격받을 시"(쿨타임 1턴) 수호의 힘: 공격력/방어력/저항력 +10%(★1)~+20%(★6), 2턴, 해제불가.', statByStar:{1:{atk:{v:10,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:10,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:10,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}},2:{atk:{v:12,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:12,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:12,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}},3:{atk:{v:14,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:14,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:14,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}},4:{atk:{v:16,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:16,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:16,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}},5:{atk:{v:18,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:18,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:18,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}},6:{atk:{v:20,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},def:{v:20,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'},res:{v:20,zone:'cond',cond:'적에게 공격받을 시(쿨1, 수호의 힘)'}}}}, desc:'어떤 충격에도 굴하지 않는 강인함이 느껴지는 장신구.'},
+  ACC14: {name:'시간 나침반', grade:'전설', maxStar:6, unique:true, starStats:{1:{atk:{v:10,zone:'village'},crit:{v:5,zone:'village'},critResChance:{v:5,zone:'village'}},2:{atk:{v:11,zone:'village'},crit:{v:6,zone:'village'},critResChance:{v:6,zone:'village'}},3:{atk:{v:12,zone:'village'},crit:{v:7,zone:'village'},critResChance:{v:7,zone:'village'}},4:{atk:{v:13,zone:'village'},crit:{v:8,zone:'village'},critResChance:{v:8,zone:'village'}},5:{atk:{v:14,zone:'village'},crit:{v:9,zone:'village'},critResChance:{v:9,zone:'village'}},6:{atk:{v:15,zone:'village'},crit:{v:10,zone:'village'},critResChance:{v:10,zone:'village'}}}, desc:'유니크. 시간의 위치를 가리키는 나침반. 원거리 공격 시 적에게 지연회로(치유방해) 부여.'},
+  ACC15: {name:'여신의 축복', grade:'전설', maxStar:6, unique:false, starStats:{1:{crit:{v:10,zone:'village'}},2:{crit:{v:11,zone:'village'}},3:{crit:{v:12,zone:'village'}},4:{crit:{v:13,zone:'village'}},5:{crit:{v:14,zone:'village'}},6:{crit:{v:15,zone:'village'}}}, desc:'성스러운 빛이 감도는 신비한 거울. 단일 스킬로 아군에게 이로운 효과 부여 시 치명타 확률과 동일한 확률로 대상을 주문력의 30%(★1)~50%(★6) 만큼 치유 — 회복%는 위 표와 무관.'},
+  ACC16: {name:'옥 노리개', grade:'전설', maxStar:1, unique:false, tier:'상위', starStats:{1:{mag:{v:5,zone:'village'},critResDmg:{v:5,zone:'village'}}}, skill:{desc:'스킬/공격 사용 후 20% 확률로 "비취의 마력" 획득(최대 3중첩): 주문력/마법관통저항 +2.5%씩. 아래는 최대 3중첩(풀스택) 기준 값.', statByStar:{1:{mag:{v:7.5,zone:'cond',cond:'스킬/공격 사용 후 20% 확률 트리거, 최대 3중첩(비취의 마력) — 표시값은 풀스택 기준'},magRes:{v:7.5,zone:'cond',cond:'스킬/공격 사용 후 20% 확률 트리거, 최대 3중첩(비취의 마력) — 표시값은 풀스택 기준'}}}}, desc:'세대를 거쳐 전해진 옥 노리개.'},
+  ACC17: {name:'용 비늘 각반', grade:'전설', maxStar:6, unique:false,
+    starStats:{
+      1:{def:{v:25,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +20%)'}, res:{v:25,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +20%)'}},
+      2:{def:{v:30,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +21%)'}, res:{v:30,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +21%)'}},
+      3:{def:{v:35,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +22%)'}, res:{v:35,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +22%)'}},
+      4:{def:{v:40,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +23%)'}, res:{v:40,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +23%)'}},
+      5:{def:{v:45,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +24%)'}, res:{v:45,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +24%)'}},
+      6:{def:{v:50,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +25%)'}, res:{v:50,zone:'cond',cond:'체력 35% 이하일 때(체력 90%이하~35%초과 구간에서는 +25%)'}}
+    },
+    desc:'체력 90%이하~35%초과 구간이면 방어력/저항력 +20%(★1)~+25%(★6), 체력 35% 이하 구간이면 +25%(★1)~+50%(★6) — 두 구간은 상호 배타적(택1)이며, 표에는 더 높은 값(체력 35% 이하 구간) 기준으로 반영했습니다. 체력 90% 초과 시엔 효과 없음.'},
+  ACC18: {name:'저주의 눈동자', grade:'전설', maxStar:1, unique:false, starStats:{1:{}}, desc:'전투 전 적에게 약화의 저주(공/주문력 감소) 부여. 위 스탯과 무관.'},
+  ACC19: {name:'지명 수배서', grade:'전설', maxStar:6, unique:false, starStats:{1:{crit:{v:5,zone:'village'}},2:{crit:{v:6,zone:'village'}},3:{crit:{v:7,zone:'village'}},4:{crit:{v:8,zone:'village'}},5:{crit:{v:9,zone:'village'}},6:{crit:{v:10,zone:'village'}}},
+    skill:{desc:'근접 전투 공격 후 치명타 시 적에게 암살예고(받는피해+5~10%, 성급별) 부여 — 자신의 주는 피해 증가로 환산 반영.',
+      statByStar:{
+        1:{dmgIncrease:{v:5,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}},
+        2:{dmgIncrease:{v:6,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}},
+        3:{dmgIncrease:{v:7,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}},
+        4:{dmgIncrease:{v:8,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}},
+        5:{dmgIncrease:{v:9,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}},
+        6:{dmgIncrease:{v:10,zone:'cond',cond:'근접 전투 공격 후 치명타 시 대상에게 "암살예고" 부여'}}
+      }},
+    desc:'근접 전투 공격 후 치명타 시 적에게 암살예고(받는피해+5~10%) 부여.'},
+  ACC20: {name:'창세전쟁의 비록', grade:'전설', maxStar:6, unique:true, starStats:{1:{phys:{v:10,zone:'village'},hp:{v:5,zone:'village'},shieldTake:{v:10,zone:'village'}},2:{phys:{v:11,zone:'village'},hp:{v:6,zone:'village'},shieldTake:{v:13,zone:'village'}},3:{phys:{v:12,zone:'village'},hp:{v:7,zone:'village'},shieldTake:{v:16,zone:'village'}},4:{phys:{v:13,zone:'village'},hp:{v:8,zone:'village'},shieldTake:{v:19,zone:'village'}},5:{phys:{v:14,zone:'village'},hp:{v:9,zone:'village'},shieldTake:{v:22,zone:'village'}},6:{phys:{v:15,zone:'village'},hp:{v:10,zone:'village'},shieldTake:{v:25,zone:'village'}}}, skill:{desc:'보호막 획득 시 영웅심: 공격력/방어력/저항력 +10%(★1)~+15%(★6), 2턴(★1)~3턴(★6), 해제불가. (★6에서 치명타 피격 시 "간이 보호막" 추가)', statByStar:{1:{atk:{v:10,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:10,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:10,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}},2:{atk:{v:11,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:11,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:11,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}},3:{atk:{v:12,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:12,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:12,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}},4:{atk:{v:13,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:13,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:13,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}},5:{atk:{v:14,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:14,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:14,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}},6:{atk:{v:15,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},def:{v:15,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'},res:{v:15,zone:'cond',cond:'보호막 획득 시(영웅심, 해제불가)'}}}}, desc:'유니크. 시라노 번스타인이 역사를 연구하기 위해 참고한 책.'},
+  ACC21: {name:'초시계', grade:'전설', maxStar:6, unique:false, starStats:{1:{atk:{v:3,zone:'village'},mag:{v:3,zone:'village'},critResChance:{v:5,zone:'village'}},2:{atk:{v:4,zone:'village'},mag:{v:4,zone:'village'},critResChance:{v:7,zone:'village'}},3:{atk:{v:5,zone:'village'},mag:{v:5,zone:'village'},critResChance:{v:9,zone:'village'}},4:{atk:{v:6,zone:'village'},mag:{v:6,zone:'village'},critResChance:{v:11,zone:'village'}},5:{atk:{v:7,zone:'village'},mag:{v:7,zone:'village'},critResChance:{v:13,zone:'village'}},6:{atk:{v:8,zone:'village'},mag:{v:8,zone:'village'},critResChance:{v:15,zone:'village'}}}, desc:'스킬 사용 후 확률로 해당 스킬의 재사용 대기시간 1턴 감소(쿨타임 2턴) — 확률: ★1~3 20% / ★4~6 30%. 확률형이라 위 스탯과 무관.'},
+  ACC22: {name:'치유 향로', grade:'전설', maxStar:6, unique:false, starStats:{1:{},2:{},3:{},4:{},5:{},6:{}}, desc:'전투 후 체력 50% 이하면 최대 체력의 10%(★1)~20%(★6) 회복(쿨타임 1턴) — 회복%는 위 표와 무관.'},
+  ACC23: {name:'톱날 화살촉', grade:'전설', maxStar:6, unique:false, starStats:{1:{},2:{},3:{},4:{},5:{},6:{}}, skill:{desc:'전투 중 상시 치명타 피해량 +10%(★1)~+20%(★6). "전투 중" 지속 효과라 상시(인게임)로 계산.', statByStar:{1:{critDmg:{v:10,zone:'always'}},2:{critDmg:{v:12,zone:'always'}},3:{critDmg:{v:14,zone:'always'}},4:{critDmg:{v:16,zone:'always'}},5:{critDmg:{v:18,zone:'always'}},6:{critDmg:{v:20,zone:'always'}}}}, desc:'화살에 매달아 쏘면 살을 파고든다고 하는 화살촉.'},
+  ACC24: {name:'파이어 크레스트', grade:'전설', maxStar:6, unique:false, starStats:{1:{crit:{v:5,zone:'village'}},2:{crit:{v:6,zone:'village'}},3:{crit:{v:7,zone:'village'}},4:{crit:{v:8,zone:'village'}},5:{crit:{v:9,zone:'village'}},6:{crit:{v:10,zone:'village'}}}, desc:'유황 동굴의 열기가 응축된 보석. 스킬 치명타 시 적에게 작열통 부여(적 디버프).'},
+  ACC25: {name:'패자의 왕관', grade:'전설', maxStar:1, unique:false, tier:'상위', starStats:{1:{atk:{v:5,zone:'village'},def:{v:5,zone:'village'},res:{v:5,zone:'village'}}}, desc:'팬드래곤 왕가의 삼신기 중 하나.'},
+  ACC26: {name:'하이퍼 봄버', grade:'전설', maxStar:1, unique:false, tier:'상위', starStats:{1:{atk:{v:5,zone:'village'},hp:{v:5,zone:'village'}}}, desc:'강력한 폭탄 모양을 본뜬 장신구(모형).'},
+  ACC27: {name:'현자의 서', grade:'전설', maxStar:6, unique:false, starStats:{1:{mag:{v:5,zone:'village'}},2:{mag:{v:6,zone:'village'}},3:{mag:{v:7,zone:'village'}},4:{mag:{v:8,zone:'village'}},5:{mag:{v:9,zone:'village'}},6:{mag:{v:10,zone:'village'}}},
+    skill:{desc:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식"(받는 피해 +3%(★1~2)/+4%(★3~4)/+5%(★5~6), 2턴 지속, 최대 2중첩 — 표는 1중첩 기준) 부여 — 자신의 주는 피해 증가로 환산 반영.',
+      statByStar:{
+        1:{dmgIncrease:{v:3,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}},
+        2:{dmgIncrease:{v:3,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}},
+        3:{dmgIncrease:{v:4,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}},
+        4:{dmgIncrease:{v:4,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}},
+        5:{dmgIncrease:{v:5,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}},
+        6:{dmgIncrease:{v:5,zone:'cond',cond:'마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식" 부여(2턴 지속, 최대 2중첩 — 1중첩 기준)'}}
+      }},
+    desc:'억겁의 시간이 흐른 고대 지식의 정수. 마법 피해를 주는 스킬 시전 후 대상에게 "진리의 잠식"(받는 피해 +3%(★1~2)/+4%(★3~4)/+5%(★5~6), 2턴 지속, 최대 2중첩) 부여.'},
+  ACC28: {name:'호크 아이', grade:'전설', maxStar:6, unique:false, starStats:{1:{crit:{v:10,zone:'village'}},2:{crit:{v:11,zone:'village'}},3:{crit:{v:12,zone:'village'}},4:{crit:{v:13,zone:'village'}},5:{crit:{v:14,zone:'village'}},6:{crit:{v:15,zone:'village'}}}, desc:'하늘에 도전한 매의 투지가 담긴 장신구. 공격 시 적이 징표/노출 징표/노출/쇠약/행동제어 효과를 받고 있다면 대상이 받는 치명타 피해량 +10%(★1)~+15%(★6) — 적 디버프라 위 스탯과 무관.'},
+  ACC29: {name:'회색기사단의 증표', grade:'전설', maxStar:1, unique:false, tier:'상위', starStats:{1:{atk:{v:5,zone:'village'},phys:{v:5,zone:'village'}}}, desc:'과거 대륙을 구한 회색기사단의 단원임을 나타내는 증표.'},
+  ACC30: {name:'강철 각반', grade:'영웅', maxStar:6, unique:false, starStats:{1:{def:{v:20,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +10%)'},res:{v:20,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +10%)'}},2:{def:{v:22,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +11%)'},res:{v:22,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +11%)'}},3:{def:{v:24,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +12%)'},res:{v:24,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +12%)'}},4:{def:{v:26,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +13%)'},res:{v:26,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +13%)'}},5:{def:{v:28,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +14%)'},res:{v:28,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +14%)'}},6:{def:{v:30,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +15%)'},res:{v:30,zone:'cond',cond:'체력 35% 이하일 때(35%초과~90%이하 구간은 +15%)'}}}, desc:'철판을 덧대 만든 각반. 체력 90% 이하~35% 초과 구간이면 방어력/저항력 +10%(★1)~+15%(★6), 체력 35% 이하 구간이면 +20%(★1)~+30%(★6) — 두 구간은 상호 배타적(택1)이며, 표에는 더 높은 값(체력 35% 이하 구간) 기준으로 반영했습니다.'},
+  ACC31: {name:'검은 주사위', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{def:{v:8,zone:'village'}}}, desc:'이름 모를 도박사의 시체에서 나왔다고 전해지는 불길한 느낌의 주사위. 방어력 +8%(상시). 적에게 공격받기 전 받는 치명타 확률에 "불운" 적용(치명타 확률을 2번 체크해서 2번 다 성공해야 치명타로 적용 — 확률 재판정 메커닉이라 이 계산기의 스탯 합계에는 포함되지 않습니다).'},
+  ACC32: {name:'균열 생성기', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, desc:'시대를 초월한 물건처럼 느껴지는 기묘한 형태의 오파츠. 근접 전투 후 적에게 피해를 입히면 "방어구 균열"(적 디버프: 방어력/저항력 -10%, 2턴 지속, 최대 2중첩) 부여 — 적 디버프(방어력/저항력 감소)라 위 스탯과 무관.'},
+  ACC33: {name:'깃털 장식', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, skill:{desc:'행동 종료 시 30% 확률로 "순풍"(이동력 +2, 1턴 지속) 획득.', statByStar:{6:{move:{v:2,zone:'cond',cond:'행동 종료 시 30% 확률로 "순풍" 획득(1턴 지속)'}}}}, desc:'깃털로 만들어진 장식으로 몸을 가볍게 만드는 주술 부적. 행동 종료 시 30% 확률로 "순풍"(이동력 +2, 1턴) 획득.'},
+  ACC34: {name:'네크로노미콘', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{mag:{v:10,zone:'village'}}}, desc:'죽음의 경계에 다녀온 사람이 썼다고 전해지는 음산한 느낌의 책. 소환수 레벨 +5, 주문력 +10%(상시). 소환수 레벨 강화는 소환수 자체 스탯이라 위 표와 무관.'},
+  ACC35: {name:'늑대 송곳니 목걸이', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, skill:{desc:'착용자가 전투 공격 전 100% 확률로 2턴 동안 "꿰뚫기"(물리 관통 +20%) 획득(쿨타임 2턴).', statByStar:{6:{phys:{v:20,zone:'cond',cond:'전투 공격 전 100% 확률로 "꿰뚫기" 획득(2턴 지속, 쿨타임 2턴)'}}}}, desc:'우두머리 늑대의 송곳니로 만들었다고 전해지는 야만족 목걸이. 착용자가 전투 공격 전 100% 확률로 2턴간 물리 관통 +20%(쿨타임 2턴).'},
+  ACC36: {name:'분열의 목걸이', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{critResChance:{v:10,zone:'village'}}}, desc:'두 사람의 사이를 멀어지게 만드는 목걸이. 받는 치명타 확률 -10%(상시). 협공을 받지 않을 확률 +50%(협공 회피 메커닉).'},
+  ACC37: {name:'상처 악화의 부적', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{atk:{v:8,zone:'village'},critResChance:{v:10,zone:'village'}}}, desc:'깊은 원한에 의해 쓰인 부정한 기운의 부적. 공격력 +8%, 받는 치명타 확률 -10%(둘 다 상시). 근접 전투 후 적에게 피해를 입히면 "치유 감소"(적 디버프: 받는 치유 -50%, 2턴, 치유방해) 부여 — 적 디버프라 위 스탯과 무관.'},
+  ACC38: {name:'선도자 메달', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{healTake:{v:10,zone:'village'},shieldTake:{v:12,zone:'village'}}}, desc:'자신만의 길을 닦아온 선도자들에게 주어지는 메달. 받는 치유량 증가 +10%, 받는 보호막 증가 +12%(둘 다 상시).'},
+  ACC39: {name:'수호의 반지', grade:'영웅', maxStar:6, unique:false, starStats:{1:{def:{v:20,zone:'cond',cond:'체력 100%일 때'}},2:{def:{v:22,zone:'cond',cond:'체력 100%일 때'}},3:{def:{v:24,zone:'cond',cond:'체력 100%일 때'}},4:{def:{v:26,zone:'cond',cond:'체력 100%일 때'}},5:{def:{v:28,zone:'cond',cond:'체력 100%일 때'}},6:{def:{v:30,zone:'cond',cond:'체력 100%일 때'}}}, desc:'수호의 힘이 깃든 반지. 체력 100%일 때 방어력 +20%(★1)~+30%(★6).'},
+  ACC40: {name:'암살자의 메달', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, skill:{desc:'근접 전투 공격 후 치명타가 발동했을 경우, 2턴 동안 대상에게 "암살 예고"(받는 피해량 +10%) 부여.', statByStar:{6:{dmgIncrease:{v:10,zone:'cond',cond:'근접 전투 공격 후 치명타 발동 시 대상에게 "암살 예고 6"(받는 피해량 +10%) 부여, 2턴 지속'}}}}, desc:'수준 높은 암살자들이 지니고 다닌다는 메달. 근접 전투 공격 후 치명타 발동 시 대상이 받는 피해량 +10%(2턴).'},
+  ACC41: {name:'얼음 결정', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, desc:'물의 기운을 받았다고 전해지는 광석. 단일 스킬로 적에게 피해를 입힐 경우 50% 확률로 "추위"(적 디버프: 이동력-1, 행동제어) 부여, 2중첩 시 "허약"(적 디버프: 공격력/주문력 -10%)으로 전환 — 전부 적 디버프라 위 스탯과 무관.'},
+  ACC42: {name:'장막의 망토', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{res:{v:7,zone:'village'}}}, skill:{desc:'피해를 받은 후 체력이 35%라면 1턴간 "보호의 장막"(받는 피해 -10%, 엄폐) 발동(쿨타임 3턴).', statByStar:{6:{dmgReduction:{v:10,zone:'cond',cond:'피해를 받은 후 체력이 35%일 때 "보호의 장막" 발동(1턴 지속, 쿨타임 3턴)'}}}}, desc:'몸을 숨길 수 있는 칠흑의 망토. 저항력 +7%(상시). 피해를 받은 후 체력 35%라면 1턴간 받는 피해 -10%+엄폐(치명타 방지, 지향성 공격 받는 피해 -50%).'},
+  ACC43: {name:'전도성 결정', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, desc:'번개의 기운을 받았다고 전해지는 광석. 범위 스킬로 적에게 피해를 입힐 경우 20% 확률로 "감전 경직"(적 디버프: 반격 불가) 부여, 2중첩 시 "기절"(적 디버프)로 전환 — 전부 적 디버프라 위 스탯과 무관.'},
+  ACC44: {name:'헌신의 성배', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}},
+    skill:{desc:'치유 스킬 시전 시 "헌신"(치유량 증가 +10%, 2턴 지속, 최대 2중첩) 획득 — 표시값은 풀스택(2중첩) 기준.',
+      statByStar:{6:{healGive:{v:20,zone:'cond',cond:'치유 스킬 시전 시 "헌신" 획득(2턴 지속, 최대 2중첩) — 표시값은 풀스택(2중첩) 기준'}}}},
+    desc:'평생을 신을 위해 몸을 바친 사람들이 모인 수도원에 모셔진 성배. 치유 스킬 시전 시 "헌신"(치유량 증가 +10%, 2턴, 최대 2중첩) 획득.'},
+  ACC45: {name:'화염 결정', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{}}, skill:{desc:'스킬로 적에게 치명타를 입힐 경우 3턴간 "그을림" 부여, 2중첩 시 "작열통"(받는 피해량 +10%, 2턴)으로 전환.', statByStar:{6:{dmgIncrease:{v:10,zone:'cond',cond:'스킬 치명타로 "그을림" 2중첩을 쌓아 "작열통" 전환 시(2턴 지속)'}}}}, desc:'불의 기운을 받았다고 전해지는 광석. 스킬로 적에게 치명타를 입힐 경우 3턴간 "그을림"(적 디버프: 받는 치유량 -35%, 이 계산기가 추적하지 않는 회복 계열이라 미반영) 부여, 2중첩 시 "작열통"(적 디버프: 받는 피해량 +10%, 2턴)으로 전환 — 받는 피해량 증가는 주는 피해 증가로 환산해 반영.'},
+  ACC46: {name:'황금 사과 머리핀', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{critResDmg:{v:15,zone:'village'}}}, desc:'황금 사과 장식이 달린 머리핀. 받는 치명타 피해량 -15%(상시). 게임 중 1회 피해를 받아 체력이 35% 이하로 내려가면 최대 체력의 20% 회복(1회성 회복).'},
+  ACC47: {name:'황금 주사위', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{res:{v:8,zone:'village'}}}, desc:'도박사들이 행운의 징표처럼 가지고 다닌다는 황금빛 주사위. 저항력 +8%(상시). 착용자의 치명타 확률에 "행운" 적용(치명타 확률을 2번 체크해서 1번만 성공해도 치명타로 적용 — 확률 재판정 메커닉이라 이 계산기의 스탯 합계에는 포함되지 않습니다).'},
+  ACC48: {name:'휴대용 숫돌', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{atk:{v:10,zone:'village'},extraHitDmgIncrease:{v:40,zone:'village'}}}, desc:'구하기 매우 힘든 값비싼 숫돌. 공격력 +10%, 추가타 피해량 +40%(둘 다 상시, 조건 없음).'},
+  ACC49: {name:'흑요석 반지', grade:'영웅', maxStar:6, fixedStar:true, unique:false, starStats:{6:{critResChance:{v:10,zone:'village'}}}, desc:'흑요석 안에 어둠의 힘이 담겨 있다고 전해지는 반지. 받는 치명타 확률 -10%(상시). 40% 확률로 침묵 효과 무시(확률 메커닉).'}
+};
+const RUNE_GRADE_ORDER = ['기본룬','상위룬','유일룬'];
+const RUNES = {
+  RUNE01: {name:'궁극', grade:'기본룬', slots:{1:[{k:'def',v:35,pct:false}],2:[{k:'def',v:25,pct:true}],3:[{k:'hp',v:272,pct:false}],4:[{k:'hp',v:5,pct:true}],5:[{k:'shieldTake',v:9,pct:true},{k:'healTake',v:9,pct:true}],6:[{k:'res',v:25,pct:true}]}, setEffect:[{k:'hp',v:2,pct:true}]},
+  RUNE02: {name:'태양', grade:'기본룬', slots:{1:[{k:'crit',v:7.5,pct:true}],2:[{k:'atk',v:5,pct:true}],3:[{k:'critResDmg',v:18,pct:true}],4:[{k:'critResChance',v:7.2,pct:true}],5:[{k:'hp',v:5,pct:true}],6:[{k:'skillDmgIncrease',v:1.8,pct:true}]}, setEffect:[{k:'critResDmg',v:7.2,pct:true}]},
+  RUNE03: {name:'바람', grade:'기본룬', slots:{1:[{k:'phys',v:15,pct:true}],2:[{k:'phys',v:7.5,pct:true}],3:[{k:'hp',v:136,pct:false}],4:[{k:'hp',v:5,pct:true}],5:[{k:'basicAtkDmgIncrease',v:6,pct:true}],6:[{k:'skillDmgIncrease',v:1.8,pct:true}]}, setEffect:[{k:'phys',v:3,pct:true}]},
+  RUNE04: {name:'자비', grade:'기본룬', slots:{1:[{k:'def',v:35,pct:false}],2:[{k:'def',v:25,pct:true}],3:[{k:'hp',v:136,pct:false}],4:[{k:'hp',v:5,pct:true}],5:[{k:'shieldGive',v:9,pct:true},{k:'healGive',v:9,pct:true}],6:[{k:'mag',v:50,pct:false}]}, setEffect:[{k:'healGive',v:1.5,pct:true},{k:'shieldGive',v:1.5,pct:true}]},
+  RUNE05: {name:'번개', grade:'기본룬', slots:{1:[{k:'magPen',v:7.5,pct:true}],2:[{k:'aoeDmgIncrease',v:4.5,pct:true}],3:[{k:'hp',v:136,pct:false}],4:[{k:'hp',v:5,pct:true}],5:[{k:'mag',v:10,pct:true}],6:[{k:'mag',v:50,pct:false}]}, setEffect:[{k:'mag',v:2,pct:true}]},
+  RUNE06: {name:'대지', grade:'기본룬', slots:{1:[{k:'def',v:70,pct:false}],2:[{k:'def',v:25,pct:true}],3:[{k:'def',v:35,pct:false}],4:[{k:'dmgReduction',v:3,pct:true}],5:[{k:'res',v:70,pct:false}],6:[{k:'res',v:25,pct:true}]}, setEffect:[{k:'def',v:5,pct:true},{k:'res',v:5,pct:true}]},
+  RUNE07: {name:'혼돈', grade:'기본룬', slots:{1:[{k:'atk',v:10,pct:true}],2:[{k:'atk',v:80,pct:false}],3:[{k:'hp',v:136,pct:false}],4:[{k:'hp',v:5,pct:true}],5:[{k:'skillDmgIncrease',v:3,pct:true}],6:[{k:'hp',v:3,pct:true}]}, setEffect:[{k:'atk',v:2,pct:true}]},
+  RUNE08: {name:'음모', grade:'기본룬', slots:{1:[{k:'crit',v:7.5,pct:true}],2:[{k:'crit',v:3.75,pct:true}],3:[{k:'def',v:25,pct:true}],4:[{k:'res',v:25,pct:true}],5:[{k:'hp',v:136,pct:false}],6:[{k:'hp',v:5,pct:true}]}, setEffect:[{k:'crit',v:1.5,pct:true}]},
+  RUNE09: {name:'달', grade:'기본룬', slots:{1:[{k:'magPen',v:15,pct:true}],2:[{k:'aoeDmgIncrease',v:4.5,pct:true}],3:[{k:'critResDmg',v:9,pct:true}],4:[{k:'critResDmg',v:9,pct:true}],5:[{k:'mag',v:3,pct:true}],6:[{k:'mag',v:30,pct:false}]}, setEffect:[{k:'magPen',v:3,pct:true}]},
+  RUNE10: {name:'구름', grade:'기본룬', slots:{1:[{k:'magPen',v:15,pct:true}],2:[{k:'aoeDmgIncrease',v:4.5,pct:true}],3:[{k:'critResChance',v:9,pct:true}],4:[{k:'critResDmg',v:14.4,pct:true}],5:[{k:'mag',v:10,pct:true}],6:[{k:'mag',v:50,pct:false}]}, setEffect:[{k:'critResDmg',v:3.6,pct:true}]},
+  RUNE11: {name:'죽음', grade:'기본룬', slots:{1:[{k:'critDmg',v:9,pct:true}],2:[{k:'critDmg',v:4.5,pct:true}],3:[{k:'def',v:25,pct:true}],4:[{k:'res',v:25,pct:true}],5:[{k:'hp',v:136,pct:false}],6:[{k:'basicAtkDmgIncrease',v:6,pct:true}]}, setEffect:[{k:'critDmg',v:1.8,pct:true}]},
+  RUNE12: {name:'전쟁', grade:'기본룬', slots:{1:[{k:'atk',v:7,pct:true},{k:'crit',v:3,pct:true}],2:[{k:'atk',v:3,pct:true},{k:'hp',v:55,pct:false}],3:[{k:'hp',v:82,pct:false},{k:'def',v:21,pct:false}],4:[{k:'hp',v:3,pct:true},{k:'res',v:14,pct:false}],5:[{k:'hp',v:82,pct:false},{k:'skillDmgIncrease',v:2.4,pct:true}],6:[{k:'hp',v:82,pct:false},{k:'basicAtkDmgIncrease',v:3.6,pct:true}]}, setEffect:[{k:'atk',v:1,pct:true},{k:'hp',v:1,pct:true}]},
+  RUNE13: {name:'지혜', grade:'기본룬', slots:{1:[{k:'crit',v:3,pct:true},{k:'magPen',v:4.5,pct:true}],2:[{k:'hp',v:55,pct:false},{k:'aoeDmgIncrease',v:2.7,pct:true}],3:[{k:'def',v:18,pct:false},{k:'res',v:18,pct:false}],4:[{k:'hp',v:3,pct:true},{k:'def',v:14,pct:false}],5:[{k:'mag',v:9,pct:true},{k:'hp',v:82,pct:false}],6:[{k:'mag',v:3,pct:true},{k:'hp',v:82,pct:false}]}, setEffect:[{k:'mag',v:1,pct:true},{k:'hp',v:1,pct:true}]},
+  RUNE14: {name:'정의', grade:'상위룬', slots:{1:[{k:'atk',v:7,pct:true},{k:'crit',v:3,pct:true}],2:[{k:'crit',v:3,pct:true},{k:'critDmg',v:3.6,pct:true}],3:[{k:'hp',v:3,pct:true}],4:[{k:'hp',v:3,pct:true},{k:'res',v:14,pct:false}],5:[{k:'hp',v:81,pct:false},{k:'skillDmgIncrease',v:2.4,pct:true}],6:[{k:'hp',v:3,pct:true},{k:'skillDmgIncrease',v:1.8,pct:true}]}, setEffect:[{k:'atk',v:1,pct:true},{k:'crit',v:0.75,pct:true}]},
+  RUNE15: {name:'절대', grade:'상위룬', slots:{1:[{k:'crit',v:4.5,pct:true},{k:'magPen',v:3.6,pct:true}],2:[{k:'crit',v:3,pct:true},{k:'magPen',v:4.5,pct:true}],3:[{k:'hp',v:3,pct:true},{k:'def',v:21,pct:false}],4:[{k:'hp',v:3,pct:true},{k:'def',v:21,pct:false}],5:[{k:'mag',v:9,pct:true},{k:'skillDmgIncrease',v:1.2,pct:true}],6:[{k:'mag',v:3,pct:true},{k:'hp',v:81,pct:false}]}, setEffect:[{k:'mag',v:1,pct:true},{k:'crit',v:0.75,pct:true}]},
+  RUNE16: {name:'바다', grade:'상위룬', slots:{1:[{k:'atk',v:7,pct:true},{k:'phys',v:6,pct:true}],2:[{k:'atk',v:4,pct:true},{k:'phys',v:3,pct:true}],3:[{k:'hp',v:81,pct:false},{k:'def',v:21,pct:false}],4:[{k:'hp',v:3,pct:true},{k:'res',v:21,pct:false}],5:[{k:'basicAtkDmgIncrease',v:6,pct:true}],6:[{k:'basicAtkDmgIncrease',v:6,pct:true}]}, setEffect:[{k:'atk',v:1,pct:true},{k:'phys',v:1.5,pct:true}]},
+  RUNE17: {name:'교만', grade:'상위룬', slots:{1:[{k:'magPen',v:12,pct:true}],2:[{k:'hp',v:81,pct:false},{k:'magPen',v:4.5,pct:true}],3:[{k:'def',v:21,pct:false},{k:'res',v:21,pct:false}],4:[{k:'hp',v:3,pct:true},{k:'def',v:21,pct:false}],5:[{k:'mag',v:8,pct:true},{k:'skillDmgIncrease',v:1.8,pct:true}],6:[{k:'mag',v:2,pct:true},{k:'hp',v:108,pct:false}]}, setEffect:[{k:'mag',v:1,pct:true},{k:'magPen',v:1.5,pct:true}]},
+  RUNE18: {name:'헌신', grade:'상위룬', slots:{1:[{k:'aoeDmgReduction',v:4.5,pct:true}],2:[{k:'hp',v:3,pct:true},{k:'def',v:42,pct:false}],3:[{k:'hp',v:5,pct:true},{k:'critResChance',v:4.5,pct:true}],4:[{k:'hp',v:108,pct:false},{k:'critResDmg',v:5.4,pct:true}],5:[{k:'healGive',v:12,pct:true}],6:[{k:'shieldGive',v:8.4,pct:true}]}, setEffect:[{k:'mag',v:2,pct:true}]},
+  RUNE19: {name:'건설', grade:'상위룬', slots:{1:[{k:'physRes',v:15,pct:true},{k:'magRes',v:15,pct:true}],2:[{k:'hp',v:3,pct:true},{k:'def',v:15,pct:true}],3:[{k:'hp',v:8,pct:true}],4:[{k:'hp',v:108,pct:false},{k:'dmgReduction',v:1.8,pct:true}],5:[{k:'dotDmgReduction',v:15,pct:true}],6:[{k:'res',v:15,pct:true}]}, setEffect:[{k:'critResDmg',v:3.6,pct:true},{k:'hp',v:1,pct:true}]},
+  RUNE20: {name:'검황', grade:'유일룬', slots:{1:[{k:'atk',v:10,pct:true},{k:'aoeDmgIncrease',v:2.7,pct:true}],2:[{k:'atk',v:50,pct:false},{k:'aoeDmgIncrease',v:4.5,pct:true}],3:[{k:'hp',v:136,pct:false},{k:'critResDmg',v:9,pct:true}],4:[{k:'hp',v:5,pct:true},{k:'critResDmg',v:9,pct:true}],5:[{k:'hp',v:136,pct:false},{k:'skillDmgIncrease',v:3,pct:true}],6:[{k:'hp',v:5,pct:true},{k:'hp',v:81,pct:false}]}, setEffect:[{k:'atk',v:2,pct:true},{k:'hp',v:1,pct:true}]},
+  RUNE21: {name:'시간', grade:'유일룬', slots:{1:[{k:'atk',v:10,pct:true},{k:'crit',v:2.25,pct:true}],2:[{k:'atk',v:80,pct:false},{k:'crit',v:2.25,pct:true}],3:[{k:'hp',v:136,pct:false},{k:'critResChance',v:4.5,pct:true}],4:[{k:'hp',v:5,pct:true},{k:'critResChance',v:4.5,pct:true}],5:[{k:'hp',v:5,pct:true},{k:'skillDmgIncrease',v:3,pct:true}],6:[{k:'hp',v:5,pct:true},{k:'res',v:35,pct:false}]}, setEffect:[{k:'atk',v:2,pct:true},{k:'critDmg',v:1,pct:true}]},
+  RUNE22: {name:'계승', grade:'유일룬', slots:{1:[{k:'atk',v:10,pct:true},{k:'phys',v:4.5,pct:true}],2:[{k:'hp',v:81,pct:false},{k:'phys',v:12,pct:true}],3:[{k:'critResDmg',v:9,pct:true},{k:'critResChance',v:4.5,pct:true}],4:[{k:'hp',v:5,pct:true},{k:'hp',v:81,pct:false}],5:[{k:'basicAtkDmgIncrease',v:6,pct:true},{k:'skillDmgIncrease',v:3,pct:true}],6:[{k:'hp',v:5,pct:true},{k:'shieldTake',v:4.5,pct:true},{k:'healTake',v:4.5,pct:true}]}, setEffect:[{k:'atk',v:2,pct:true},{k:'phys',v:1.5,pct:true}]},
+  RUNE23: {name:'빛', grade:'유일룬', slots:{1:[{k:'atk',v:10,pct:true},{k:'critDmg',v:2.7,pct:true}],2:[{k:'critDmg',v:7.2,pct:true},{k:'aoeDmgIncrease',v:2.7,pct:true}],3:[{k:'hp',v:5,pct:true},{k:'critResDmg',v:9,pct:true}],4:[{k:'hp',v:5,pct:true},{k:'critResDmg',v:9,pct:true}],5:[{k:'shieldGive',v:6,pct:true},{k:'hp',v:5,pct:true}],6:[{k:'healTake',v:4.5,pct:true},{k:'shieldTake',v:4.5,pct:true},{k:'skillDmgIncrease',v:3,pct:true}]}, setEffect:[{k:'atk',v:3,pct:true}]},
+};
+
+// 자주 쓰는 룬 세트 바로 선택 프리셋 (배열 값은 룬 코드)
+const RUNE_PRESETS = {
+  '올혼돈': ['RUNE07','RUNE07','RUNE07','RUNE07','RUNE07','RUNE07'],
+  '올바람': ['RUNE03','RUNE03','RUNE03','RUNE03','RUNE03','RUNE03'],
+  '마법기본': ['RUNE09','RUNE09','RUNE05','RUNE05','RUNE05','RUNE05'],
+  '물리기본': ['RUNE07','RUNE07','RUNE01','RUNE01','RUNE08','RUNE08'],
+  '올검황': ['RUNE20','RUNE20','RUNE20','RUNE20','RUNE20','RUNE20'],
+  '올시간': ['RUNE21','RUNE21','RUNE21','RUNE21','RUNE21','RUNE21'],
+  '올계승': ['RUNE22','RUNE22','RUNE22','RUNE22','RUNE22','RUNE22'],
+  '올빛': ['RUNE23','RUNE23','RUNE23','RUNE23','RUNE23','RUNE23'],
+};
+
+/* ================= STATE ================= */
+let state = {};
+function initState(){
+  const c = CHARACTERS[state.character || '벨제부르'];
+  state.character = state.character || '벨제부르';
+  state.classId = c.classes[0].id;
+  state.classStack = c.classes[0].stack ? c.classes[0].stack.maxStack : 0;
+  state.classStack2 = c.classes[0].stack2 ? c.classes[0].stack2.maxStack : 0;
+  state.activesChecked = {};
+  c.actives.forEach(a => state.activesChecked[a.name] = false);
+  // 액티브 자체 중첩(a.stack, 예: "파괴의 완력" — 이 스킬 자체 피해량만 올리는 스킬한정 중첩). skillStat과 동일하게
+  // bucket에는 안 들어가고, 액티브 체크 여부와 무관하게 항상 최대로 시작한다(8-1 원칙).
+  state.activeStackByName = {};
+  c.actives.forEach(a => { if(a.stack) state.activeStackByName[a.name] = a.stack.maxStack; });
+  state.artifact = '없음'; state.artifactStar = 4; state.artifactStack = 0;
+  state.weaponOn = true; state.weaponStar = 6;
+  state.weaponStack = WEAPONS[c.weaponName].stack ? resolveWeaponStackMax(WEAPONS[c.weaponName], state.weaponStar) : 0;
+  state.forgeWeaponCrit = 0; state.forgeWeaponPhys = 0; state.forgeWeaponMagPen = 0; state.forgeArmorCrit = 0;
+  state.uniquePassiveStage = c.uniquePassive.stages ? c.uniquePassive.stages.default : null;
+  state.ultimateStage = c.ultimate.stages ? c.ultimate.stages.default : null;
+  state.outerSkillStage = (c.outerSkill && c.outerSkill.stages) ? c.outerSkill.stages.default : null;
+  // 고유패시브 중첩/토글/라디오는 기본 단계 기준으로 시작(디폴트 페이지는 선택된 상태 안에서 항상 최대를 보여준다)
+  { const stCfg = c.uniquePassive.stack ? resolveStackCfg(c.uniquePassive, state.uniquePassiveStage) : null; state.uniqueStack = stCfg ? stCfg.maxStack : 0; }
+  { const rdCfg = resolveRadioCfg(c.uniquePassive, state.uniquePassiveStage); state.uniqueRadio = rdCfg ? 0 : null; }
+  state.uniqueToggle = true;
+  state.uniqueToggle2 = true; // stages.options[i].toggle2 — 같은 단계에 독립적으로 켜고 끄는 두 번째 토글이 있을 때만 사용
+  state.classToggle = true; // 클래스패시브에 toggle이 있는 경우(예: 하이델룬 루트해커) 기본적으로 켜진 상태로 시작
+  state.armor = { 투구:{set:'없음',star:6}, 갑옷:{set:'없음',star:6}, 장갑:{set:'없음',star:6}, 신발:{set:'없음',star:6} };
+  state.accessory = '없음'; state.accessoryStar = 1;
+  state.runeSlots = ['없음','없음','없음','없음','없음','없음'];
+  state.activeMaxMode = null;
+  state.maxModeLocked = false;
+  state.openDescLeft = null; state.openDescRight = null;
+}
+initState();
+// 페이지를 새로 열었을 때 이전에 자동 저장된 선택이 있으면 기본값 대신 그걸로 복원한다.
+// (아래 "초기화" 버튼은 initState()만 다시 호출하므로 이 복원 로직을 타지 않고 항상 기본값으로 돌아간다.)
+{ const auto = loadAutosave(state.character); if(auto) state = auto; }
+
+/* ================= 캐릭터별 저장 세팅 (localStorage, 캐릭터당 3슬롯) ================= */
+const SAVE_KEY = 'genesisStatCalcSaves';
+function loadAllSaves(){
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); } catch(e){ return {}; }
+}
+function saveAllSaves(all){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(all)); } catch(e){ alert('저장 실패: 브라우저 저장공간(localStorage)을 사용할 수 없습니다.'); }
+}
+function getCharSaves(charName){
+  const all = loadAllSaves();
+  const arr = (all[charName]||[]).slice(0,3);
+  while(arr.length<3) arr.push(null);
+  return arr;
+}
+function saveBuildToSlot(slotIdx){
+  const charName = state.character;
+  const arr = getCharSaves(charName);
+  const existing = arr[slotIdx];
+  const name = prompt('이 세팅의 이름을 입력하세요', existing ? existing.name : (charName+' 세팅 '+(slotIdx+1)));
+  if(name===null) return; // 취소
+  arr[slotIdx] = { name: name.trim() || ('세팅 '+(slotIdx+1)), state: JSON.parse(JSON.stringify(state)) };
+  const all = loadAllSaves();
+  all[charName] = arr;
+  saveAllSaves(all);
+  render();
+}
+function loadBuildFromSlot(slotIdx){
+  const charName = state.character;
+  const arr = getCharSaves(charName);
+  const slot = arr[slotIdx];
+  if(!slot) return;
+  state = JSON.parse(JSON.stringify(slot.state));
+  render();
+}
+function deleteBuildSlot(slotIdx){
+  const charName = state.character;
+  const arr = getCharSaves(charName);
+  if(!arr[slotIdx]) return;
+  if(!confirm(`"${arr[slotIdx].name}" 세팅을 삭제할까요?`)) return;
+  arr[slotIdx] = null;
+  const all = loadAllSaves();
+  all[charName] = arr;
+  saveAllSaves(all);
+  render();
+}
+
+/* ================= 왼쪽 탭 선택 자동 저장(창을 닫았다 다시 열어도 유지) =================
+   자체 localStorage에도 저장하지만(단독 실행 시 유일한 저장소), 로더 iframe으로 열린 경우엔 로더의
+   top-level localStorage에도 같은 상태를 relay한다 — iframe(3rd-party 컨텍스트) 자체 localStorage는
+   브라우저를 완전히 재시작하면 사라지는 경우가 있어(로더 자신의 저장은 안정적으로 남는 것과 대비),
+   로더 쪽 저장을 진짜 저장소로 취급한다(초기 복원은 아래 genesisRestoreBuildState 핸들러가 담당). */
+const AUTOSAVE_KEY = 'genesisStatCalcAutosave';
+// 로더(부모)가 이 캐릭터의 저장된 빌드를 응답해줄 때까지는, 초기 렌더(기본값 또는 이 iframe 자신의
+// localStorage에서 불러온 값)를 로더 쪽에 다시 저장하지 않는다 — 안 그러면 그 초기 렌더가 로더의
+// 진짜 저장값을 기본값으로 덮어써버리고, 뒤이은 복원 응답이 그 방금 덮어써진(잘못된) 값을 그대로
+// 돌려주는 경쟁 상태가 생겨 "브라우저를 껐다 켜면 항상 초기화"되는 원인이 된다.
+function saveAutosave(){
+  try {
+    const all = JSON.parse(localStorage.getItem(AUTOSAVE_KEY)||'{}');
+    all[state.character] = state;
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(all));
+  } catch(e){ /* 자동 저장 실패는 조용히 무시(수동 저장과 달리 매번 알릴 필요 없음) */ }
+}
+function loadAutosave(charName){
+  try {
+    const all = JSON.parse(localStorage.getItem(AUTOSAVE_KEY)||'{}');
+    return all[charName] || null;
+  } catch(e){ return null; }
+}
+// "저장된 세팅과 완전히 같은가"는 activeMaxMode/maxModeLocked(방금 MAX 버튼을 눌렀는지)와
+// openDescLeft/openDescRight("?" 팝업이 열려있는지) 같은 화면 UI 상태는 빼고, 실제 빌드 선택만 비교한다.
+function stateForCompare(s){
+  const clone = JSON.parse(JSON.stringify(s));
+  delete clone.activeMaxMode; delete clone.maxModeLocked;
+  delete clone.openDescLeft; delete clone.openDescRight;
+  return clone;
+}
+function matchesSavedSlot(slot){
+  if(!slot) return false;
+  return JSON.stringify(stateForCompare(state)) === JSON.stringify(stateForCompare(slot.state));
+}
+
+/* ================= HELPERS ================= */
+function addEntry(bucket, statKey, entry, sourceLabel, condLog){
+  if(!entry || !entry.v) return;
+  const zone = entry.zone;
+  bucket[zone][statKey] = (bucket[zone][statKey]||0) + entry.v;
+  // 마을/상시/조건부 전부 "?" 세부내역에 출처를 남긴다 — 방어구 부위 개별 능력치처럼 마을 항목도 실제로 어디서 왔는지 확인 가능해야 함.
+  if(condLog){
+    // zone이 'always'인데 cond 필드가 남아있는 경우("공격 시"류 순수 트리거라 상시로 재분류했지만 원래 트리거 맥락은 보존한 항목,
+    // 2026-07-23 규칙) — 라벨에 트리거를 괄호로 병기해 사용자가 왜 상시로 잡히는지 알 수 있게 한다.
+    const label = (zone==='always' && entry.cond) ? `${sourceLabel} (${entry.cond})` : sourceLabel;
+    condLog.push({label, stat:statKey, val:entry.v, zone, cond:entry.cond||''});
+  }
+}
+function addStatObj(bucket, statObj, sourceLabel, condLog){
+  if(!statObj) return;
+  for(const k of ALL_STATS){
+    if(statObj[k]) addEntry(bucket, k, statObj[k], sourceLabel, condLog);
+  }
+}
+function statStrObj(statObj){
+  if(!statObj) return '<span class="dim0">해당없음</span>';
+  const rest = ALL_STATS.filter(k=>!PRIORITY_STATS.includes(k));
+  const order = [...PRIORITY_STATS, ...rest];
+  let parts = [];
+  order.forEach(k=>{
+    const e = statObj[k];
+    if(e && e.v){
+      const unit = k==='move' ? '' : '%';
+      const cls = HL_STATS.includes(k) ? 'hl' : 'dim0';
+      parts.push(`<span class="${cls}">${STAT_LABEL[k]} +${e.v}${unit}</span>`);
+    }
+  });
+  return parts.length ? parts.join(', ') : '<span class="dim0">해당없음</span>';
+}
+// <option> 텍스트용 — HTML 태그 없이, 치명타/물리관통/마법관통만 우선 표시
+function statPreviewPlain(statObj){
+  if(!statObj) return '';
+  return PRIORITY_STATS.filter(k=>statObj[k]&&statObj[k].v).map(k=>`${STAT_LABEL[k]}+${statObj[k].v}%`).join(' ');
+}
+// <option> 텍스트용 — 우선순위 스탯만이 아니라 전체 스탯을 다 나열(세트효과처럼 항목 수가 적을 때 사용)
+function statPreviewFull(statObj){
+  if(!statObj) return '';
+  return ALL_STATS.filter(k=>statObj[k]&&statObj[k].v).map(k=>{
+    const unit = k==='move' ? '' : '%';
+    return `${STAT_LABEL[k]}+${statObj[k].v}${unit}`;
+  }).join(', ');
+}
+function zoneBadge(zone){
+  if(zone==='village') return '<span class="badge village">마을</span>';
+  if(zone==='always') return '<span class="badge always">인게임</span>';
+  return '<span class="badge cond">인게임·조건부</span>';
+}
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// "?" 열림 상태를 DOM classList가 아니라 state에 저장(2026-07-23) — 다른 항목의 체크박스/슬라이더 조작으로
+// render()가 다시 그려져도 이미 열려있던 "?"가 사라지지 않도록 함. 왼쪽/오른쪽 탭 각각 최대 1개까지만 열리고
+// (같은 쪽에서 새 "?"를 열면 기존 것은 자동으로 닫힘), 좌우는 서로 무관하게 독립적으로 동작한다.
+function descButton(key, text, side){
+  side = side || 'left';
+  const stKey = side==='left' ? 'openDescLeft' : 'openDescRight';
+  const isOpen = state[stKey] === key;
+  const safeKey = String(key).replace(/'/g,"\\'");
+  return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${escapeHtml(text)}</div>`};
+}
+function toggleDesc(side, key){
+  const stKey = side==='left' ? 'openDescLeft' : 'openDescRight';
+  state[stKey] = (state[stKey]===key) ? null : key;
+  render();
+}
+// 저항/면역(왼쪽 탭 캐릭터 카드 상단 요약 줄의 "?" 상세) — 현재 선택(state)과 무관하게 캐릭터 kit 전체(클래스 전부/고유패시브/
+// 오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)를 훑어 상태 저항·면역을 모은다. 클래스/액티브/아티팩트처럼
+// "택1"이라 항상 보장되지 않는 출처는 전부 조건부(cond 배열)로, 고유패시브/오의/아우터스킬/무기처럼 캐릭터에게
+// 항상 있는 출처는 고유(always 배열)로 분류한다. 각 항목엔 "왼쪽 탭 카테고리"(`category`)와, 클래스패시브/
+// 액티브/아티팩트처럼 그 카테고리 안에 여러 선택 가능한 항목이 있는 경우엔 그 구체적 이름(`group` — 클래스
+// id·액티브명·아티팩트명)도 함께 붙인다 — "?" 상세가 이 기준으로 다시 묶어서 보여주기 때문(buildResistDetail 참고).
+// 각 블록의 `resist` 필드는 `{name}`(그 항목을 선택/사용/장착하면 바로 적용, 추가 조건 없음) 또는
+// `{name, cond}`(선택/사용/장착만으로는 부족하고 cond에 적은 추가 조건까지 필요 — 액티브 스킬은 예외로
+// 지속시간·범위 등 보충 설명으로 쓰임, 아래 buildResistDetail 참고) 형태의 배열이다.
+const RESIST_CATEGORY_ORDER = ['고유패시브','오의','아우터스킬','전용무기','클래스패시브','아티팩트','액티브 스킬'];
+function collectResistItems(c){
+  const always = [];
+  const cond = [];
+  (c.classes||[]).forEach(cls => {
+    (cls.resist||[]).forEach(r => cond.push({name:r.name, category:'클래스패시브', group:cls.id, cond:r.cond||null}));
+  });
+  if(c.uniquePassive && c.uniquePassive.resist){
+    c.uniquePassive.resist.forEach(r => always.push({name:r.name, category:'고유패시브', cond:r.cond||null}));
+  }
+  if(c.ultimate && c.ultimate.resist){
+    c.ultimate.resist.forEach(r => always.push({name:r.name, category:'오의', cond:r.cond||null}));
+  }
+  if(c.outerSkill && c.outerSkill.resist){
+    c.outerSkill.resist.forEach(r => always.push({name:r.name, category:'아우터스킬', cond:r.cond||null}));
+  }
+  (c.actives||[]).forEach(a => {
+    (a.resist||[]).forEach(r => cond.push({name:r.name, category:'액티브 스킬', group:a.name, cond:r.cond||null}));
+  });
+  (c.artifacts||[]).forEach(art => {
+    (art.resist||[]).forEach(r => cond.push({name:r.name, category:'아티팩트', group:art.name, cond:r.cond||null}));
+  });
+  const wp = WEAPONS[c.weaponName];
+  if(wp && wp.resist){
+    wp.resist.forEach(r => always.push({name:r.name, category:'전용무기', cond:r.cond||null}));
+  }
+  return {always, cond};
+}
+// "?" 상세 텍스트 — "왼쪽 탭 카테고리"(RESIST_CATEGORY_ORDER 순서) 단위로 묶는다.
+// 클래스패시브/아티팩트는 카테고리 안에 선택 가능한 항목이 여럿이라 `group`(클래스/아티팩트명)으로 한 번 더
+// 나누고, 그 안에서 "상시"(cond 없음, 선택만으로 바로 적용)/"조건부"(cond 문구별로 합쳐서)를 나열한다.
+// 액티브 스킬은 "사용 시"가 이미 트리거 자체라 상시/조건부 구분이 의미 없어, `group`(액티브명) 사용 시
+// 항목을 바로 나열하고 cond가 있으면 지속시간/범위 같은 보충 설명을 괄호로 덧붙인다(조건별 병렬 표기).
+function buildResistDetail(items){
+  const byCat = {};
+  items.forEach(it => { (byCat[it.category] = byCat[it.category]||[]).push(it); });
+  const blocks = [];
+  RESIST_CATEGORY_ORDER.forEach(cat => {
+    const list = byCat[cat];
+    if(!list || !list.length) return;
+    let block = `[${cat}]`;
+    if(cat === '액티브 스킬'){
+      const byKey = {};
+      list.forEach(i => {
+        const key = i.group+'|||'+(i.cond||'');
+        (byKey[key] = byKey[key] || {group:i.group, cond:i.cond, names:[]}).names.push(i.name);
+      });
+      Object.values(byKey).forEach(g => {
+        block += `\n${g.group} 사용 시: ${g.names.join(', ')} 저항` + (g.cond ? ` (${g.cond})` : '');
+      });
+    } else if(list.some(i=>i.group)){
+      const byGroup = {};
+      list.forEach(i => { (byGroup[i.group] = byGroup[i.group]||[]).push(i); });
+      Object.entries(byGroup).forEach(([groupName, groupItems]) => {
+        block += `\n- ${groupName}`;
+        const alwaysNames = groupItems.filter(i=>!i.cond).map(i=>i.name);
+        if(alwaysNames.length) block += `\n  상시: ${alwaysNames.join(', ')}`;
+        const byCond = {};
+        groupItems.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
+        Object.entries(byCond).forEach(([condText, names]) => { block += `\n  조건부(${condText}): ${names.join(', ')}`; });
+      });
+    } else {
+      const alwaysNames = list.filter(i=>!i.cond).map(i=>i.name);
+      if(alwaysNames.length) block += `\n상시: ${alwaysNames.join(', ')}`;
+      const byCond = {};
+      list.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
+      Object.entries(byCond).forEach(([condText, names]) => { block += `\n조건부(${condText}): ${names.join(', ')}`; });
+    }
+    blocks.push(block);
+  });
+  return blocks.join('\n\n');
+}
+// 캐릭터 카드 상단(무게등급/무기 줄 바로 아래)에 넣는 압축 한 줄 요약 — 이름만 나열(그룹 내 중복 제거). "?"는 render()의 호출부에서 붙인다.
+function resistSummaryLine(){
+  const {always, cond} = collectResistItems(CHARACTERS[state.character]);
+  if(!always.length && !cond.length) return '';
+  const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
+  const parts = [];
+  if(always.length) parts.push('고유 저항 : ' + uniqNames(always));
+  if(cond.length) parts.push('조건부 저항 : ' + uniqNames(cond));
+  return parts.join(' / ');
+}
+// 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
+// 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
+// 서로 다른 게임 메커닉이라 명확히 구분해야 한다 — 추가턴(스킬 쿨타임까지 감소하는 완전한 새 턴) vs
+// 재행동(쿨타임은 그대로, 턴당 1회 제한 스킬도 그대로, 그냥 한 번 더 행동만 가능 — 인게임 "추가 행동" 툴팁
+// 표현이 여기 해당) vs 추가이동(이동만) vs 추가 공격/스킬(공격 또는 스킬 사용만 한 번 더).
+const EXTRA_ACTION_TYPES = ['추가턴','재행동','추가이동','추가 공격/스킬'];
+function collectExtraActionItems(c){
+  const items = [];
+  (c.classes||[]).forEach(cls => {
+    (cls.extraAction||[]).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
+  });
+  if(c.uniquePassive && c.uniquePassive.extraAction){
+    c.uniquePassive.extraAction.forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
+  }
+  if(c.ultimate && c.ultimate.extraAction){
+    c.ultimate.extraAction.forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
+  }
+  if(c.outerSkill && c.outerSkill.extraAction){
+    c.outerSkill.extraAction.forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
+  }
+  (c.actives||[]).forEach(a => {
+    (a.extraAction||[]).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
+  });
+  (c.artifacts||[]).forEach(art => {
+    (art.extraAction||[]).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
+  });
+  const wp = WEAPONS[c.weaponName];
+  if(wp && wp.extraAction){
+    wp.extraAction.forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
+  }
+  return items;
+}
+// "?" 상세(왼쪽 탭) — 저항의 buildResistDetail과 달리 1차 그룹은 4가지 고정 카테고리(EXTRA_ACTION_TYPES 순서), 그
+// 안에서 다시 출처(RESIST_CATEGORY_ORDER 순서)별로 나눠 조건을 나열한다.
+function buildExtraActionDetail(items){
+  const byType = {};
+  items.forEach(it => { (byType[it.type] = byType[it.type]||[]).push(it); });
+  const blocks = [];
+  EXTRA_ACTION_TYPES.forEach(type => {
+    const list = byType[type];
+    if(!list || !list.length) return;
+    let block = `[${type}]`;
+    const byCat = {};
+    list.forEach(it => { (byCat[it.category] = byCat[it.category]||[]).push(it); });
+    RESIST_CATEGORY_ORDER.forEach(cat => {
+      const catList = byCat[cat];
+      if(!catList || !catList.length) return;
+      catList.forEach(it => {
+        const src = it.group ? `${cat} - ${it.group}` : cat;
+        block += `\n- ${src}: ${it.cond || '조건 없이 상시'}`;
+      });
+    });
+    blocks.push(block);
+  });
+  return blocks.join('\n\n');
+}
+// 왼쪽 탭용 압축 요약 — resistSummaryLine과 달리 그룹(고유/조건부) 구분 없이 "사용 가능한 카테고리 이름"만
+// EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
+function extraActionSummaryLine(){
+  const items = collectExtraActionItems(CHARACTERS[state.character]);
+  const names = EXTRA_ACTION_TYPES.filter(t => items.some(i=>i.type===t));
+  if(!names.length) return '';
+  return '행동 추가 기믹 : ' + names.join(', ');
+}
+// 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
+function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
+// 2026-07-24: 고유패시브 stack이 stages(각성/초 단계)에 따라 계수/최대치가 달라지는 캐릭터(리델 하트·이자벨·
+// 알테어·프레데릭 등) 전용 — stages.options[idx].stack이 있으면 그 단계 전용 값을 쓰고, 없으면 기존처럼
+// 고정값(up.stack.perStack이 top-level에 있는 경우, 예: 철가면)으로 폴백, 그마저 없으면(단계 자체에 아직
+// 해금 안 된 스택) null(=이 단계에서는 스택 UI/효과 자체를 숨김).
+function resolveStackCfg(up, stageIdx){
+  if(!up.stack) return null;
+  if(up.stages && stageIdx!=null){
+    const opt = up.stages.options[stageIdx];
+    if(opt && opt.stack) return opt.stack;
+  }
+  return up.stack.perStack ? up.stack : null;
+}
+// 2026-07-27: 고유패시브 toggle이 stages(각성/초 단계)에 따라 존재 여부/수치가 달라지는 캐릭터(프레데릭 등)
+// 전용 — stages.options[idx].toggle이 있으면 그 단계 전용 값을 쓰고, 없으면 기존처럼 top-level up.toggle로
+// 폴백(고정 토글, 예: 다른 캐릭터), 그마저 없으면(단계 자체에 아직 해금 안 된 토글) null.
+function resolveToggleCfg(up, stageIdx){
+  if(up.stages && stageIdx!=null){
+    const opt = up.stages.options[stageIdx];
+    if(opt && opt.toggle) return opt.toggle;
+  }
+  return up.toggle || null;
+}
+// toggle과 완전히 독립적인 두 번째 체크박스가 같은 단계에 필요할 때(예: "버프 보유" + "버프 보유 중 근접공격"처럼
+// 서로 다른 조건의 별개 값). 자동 연동 없음 — 두 토글은 각자 켜고 끌 수 있다. stages.options[i].toggle2 전용,
+// top-level 고정 toggle2는 아직 쓰임이 없어 지원하지 않는다(필요해지면 toggle과 동일하게 top-level 폴백 추가).
+function resolveToggle2Cfg(up, stageIdx){
+  if(up.stages && stageIdx!=null){
+    const opt = up.stages.options[stageIdx];
+    if(opt && opt.toggle2) return opt.toggle2;
+  }
+  return null;
+}
+// 고유패시브 radio가 stages(각성/초 단계)에 따라 존재 여부/선택지가 달라지는 캐릭터(철가면 "경계역전/경계고착" 등)
+// 전용 — resolveToggleCfg와 동일한 우선순위(단계 전용 → top-level 고정값 → 없으면 null).
+function resolveRadioCfg(up, stageIdx){
+  if(up.stages && stageIdx!=null){
+    const opt = up.stages.options[stageIdx];
+    if(opt && opt.radio) return opt.radio;
+  }
+  return up.radio || null;
+}
+// 무기 레벨 stack의 중첩당 계수가 성급마다 다른 경우(예: 아수라 「검은 불꽃」, ★1 5%~★6 10%) wp.stack.perStackByStar[star]를
+// 우선 쓰고, 없으면(성급 무관 고정 계수) wp.stack.perStack으로 폴백한다.
+function resolveWeaponStackPerStat(wp, star){
+  if(!wp.stack) return null;
+  if(wp.stack.perStackByStar && wp.stack.perStackByStar[star]) return wp.stack.perStackByStar[star];
+  return wp.stack.perStack || null;
+}
+// 무기 레벨 stack의 최대 중첩치가 성급마다 다른 경우(예: 알테어 「빅토리아의 영광」, ★1~5 3중첩~★6 4중첩)
+// wp.stack.maxStackByStar[star]를 우선 쓰고, 없으면(성급 무관 고정 상한) wp.stack.maxStack으로 폴백한다.
+function resolveWeaponStackMax(wp, star){
+  if(!wp.stack) return 0;
+  if(wp.stack.maxStackByStar && wp.stack.maxStackByStar[star]!=null) return wp.stack.maxStackByStar[star];
+  return wp.stack.maxStack || 0;
+}
+// 단계를 바꿀 때 새 단계의 최대 중첩치보다 현재 중첩이 크면 잘라낸다(중첩 수 자체는 최대한 유지).
+// 클래스 전환 시 그 클래스의 stack(있다면) 최대치로 세팅 — 8-1 원칙("디폴트는 항상 선택된 상태의 최대")을 클래스 전환에도 적용.
+function onClassChange(id){
+  state.classId = id;
+  const cl = CHARACTERS[state.character].classes.find(c=>c.id===id);
+  state.classStack = (cl && cl.stack) ? cl.stack.maxStack : 0;
+  state.classStack2 = (cl && cl.stack2) ? cl.stack2.maxStack : 0;
+  render();
+}
+function clampUniqueStackToStage(){
+  const c = CHARACTERS[state.character];
+  const up = c.uniquePassive;
+  if(!up.stack) return;
+  const stageIdx = up.stages ? (state.uniquePassiveStage ?? up.stages.default) : null;
+  const cfg = resolveStackCfg(up, stageIdx);
+  const max = cfg ? cfg.maxStack : 0;
+  if(state.uniqueStack > max) state.uniqueStack = max;
+}
+// radio는 stack과 달리 "최대치 초과분만 자르는" 개념이 없다(옵션 개수가 보통 고정) — 새 단계에 radio 자체가
+// 없어지면 null로, 새로 생기거나 인덱스가 범위를 벗어나면 0으로, 그 외(옵션 개수가 그대로인 흔한 경우)엔
+// 사용자가 골라둔 인덱스를 그대로 유지한다(단계 전환마다 선택이 초기화되지 않도록).
+function clampUniqueRadioToStage(){
+  const c = CHARACTERS[state.character];
+  const up = c.uniquePassive;
+  const stageIdx = up.stages ? (state.uniquePassiveStage ?? up.stages.default) : null;
+  const cfg = resolveRadioCfg(up, stageIdx);
+  if(!cfg){ state.uniqueRadio = null; return; }
+  if(state.uniqueRadio == null || state.uniqueRadio >= cfg.options.length) state.uniqueRadio = 0;
+}
+
+/* ================= 룬 계산 HELPERS ================= */
+// 6슬롯(state.runeSlots)을 실제 스탯 목록으로 펼침: 슬롯별 개별효과 + 짝(2개)마다 중첩되는 세트효과.
+// 반환 항목: {source, k, v, pct} — pct:true면 %가산, false면 5대 기본 스탯의 플랫(순수 수치) 가산.
+function runeContributions(){
+  const list = [];
+  state.runeSlots.forEach((name, idx) => {
+    if(name==='없음' || !RUNES[name]) return;
+    const slot = idx+1;
+    (RUNES[name].slots[slot]||[]).forEach(e => {
+      list.push({source:`${slot}번 슬롯 - ${RUNES[name].name}`, k:e.k, v:e.v, pct:e.pct});
+    });
+  });
+  const counts = {};
+  state.runeSlots.forEach(name => { if(name!=='없음') counts[name]=(counts[name]||0)+1; });
+  Object.entries(counts).forEach(([name,count]) => {
+    const pairs = Math.floor(count/2);
+    if(pairs<=0) return;
+    RUNES[name].setEffect.forEach(e => {
+      list.push({source:`세트효과 - ${RUNES[name].name}(${pairs}짝)`, k:e.k, v:e.v*pairs, pct:e.pct});
+    });
+  });
+  return list;
+}
+// 계산기가 실제로 추적하는 14개 스탯 중 룬이 항상 %로만 주는 것들(=합계표에 바로 합산 가능한 것) 목록.
+// hp/atk/mag/def/res는 룬에서 플랫(순수 수치) 값도 섞여 나와 %표와 단순합산이 불가능해서 제외하고 룬 패널에 별도 표기.
+const RUNE_MERGEABLE_STATS = ['move','crit','critDmg','critResChance','critResDmg','phys','magPen','physRes','magRes'];
+function bestRuneCombo(statKey){
+  // statKey에 조금이라도 기여하는 룬(개별 슬롯값 or 세트효과)만 후보로 삼아 전수조사.
+  const candidates = ['없음'];
+  Object.keys(RUNES).forEach(name => {
+    const r = RUNES[name];
+    const touchesSlot = [1,2,3,4,5,6].some(s => (r.slots[s]||[]).some(e=>e.k===statKey && e.pct));
+    const touchesSet = r.setEffect.some(e=>e.k===statKey && e.pct);
+    if(touchesSlot || touchesSet) candidates.push(name);
+  });
+  let best = null, bestVal = -1;
+  const combo = new Array(6).fill('없음');
+  function evalCombo(){
+    let total = 0;
+    combo.forEach((name, idx) => {
+      if(name==='없음') return;
+      const slot = idx+1;
+      (RUNES[name].slots[slot]||[]).forEach(e => { if(e.k===statKey && e.pct) total += e.v; });
+    });
+    const counts = {};
+    combo.forEach(name => { if(name!=='없음') counts[name]=(counts[name]||0)+1; });
+    Object.entries(counts).forEach(([name,count]) => {
+      const pairs = Math.floor(count/2);
+      if(pairs<=0) return;
+      RUNES[name].setEffect.forEach(e => { if(e.k===statKey && e.pct) total += e.v*pairs; });
+    });
+    return total;
+  }
+  (function rec(i){
+    if(i===6){ const v=evalCombo(); if(v>bestVal){ bestVal=v; best=combo.slice(); } return; }
+    for(const name of candidates){ combo[i]=name; rec(i+1); }
+  })(0);
+  return {combo:best, val:bestVal};
+}
+// 현재 장착한 방어구(부위별 개별 능력치 + 2셋/4셋)에서 나오는 스탯만 골라 마을/상시/조건부별로 합산해 보여준다(룬 합산 결과와 동일한 패턴).
+function renderArmorSummary(){
+  const bucket = {village:{}, always:{}, cond:{}};
+  ALL_STATS.forEach(k => { bucket.village[k]=0; bucket.always[k]=0; bucket.cond[k]=0; });
+  const condLog = [];
+  const setCounts = {};
+  SLOTS.forEach(slot => { const s = state.armor[slot].set; if(s!=='없음') setCounts[s]=(setCounts[s]||0)+1; });
+  SLOTS.forEach(slot => {
+    const cur = state.armor[slot]; if(cur.set==='없음') return;
+    const pieceInfo = ARMOR_SETS[cur.set].pieces[slot];
+    if(pieceInfo.pieceStat){
+      const val = pieceInfo.pieceStars[cur.star]||0;
+      if(val) addEntry(bucket, pieceInfo.pieceStat, {v:val, zone:'village'}, pieceInfo.name, condLog);
+    }
+  });
+  Object.entries(setCounts).forEach(([sname,count]) => {
+    const s = ARMOR_SETS[sname];
+    if(count>=2) addStatObj(bucket, s.set2, s.name+' 2셋', condLog);
+    if(count>=4) addStatObj(bucket, s.set4, s.name+' 4셋', condLog);
+  });
+  const keys = ALL_STATS.filter(k => bucket.village[k] || bucket.always[k] || bucket.cond[k]);
+  if(!keys.length) return '<span class="dim0">방어구를 선택하면 여기에 합산 결과가 표시됩니다.</span>';
+  let rows = '';
+  keys.forEach(k => {
+    const v=bucket.village[k], a=bucket.always[k], cd=bucket.cond[k], tot=v+a+cd;
+    const unit = k==='move' ? '' : '%';
+    const cls = HL_STATS.includes(k) ? 'hl' : 'dim0';
+    const parts = [];
+    if(v) parts.push(`마을+${v.toFixed(1)}${unit}`);
+    if(a) parts.push(`상시+${a.toFixed(1)}${unit}`);
+    if(cd) parts.push(`조건부+${cd.toFixed(1)}${unit}`);
+    rows += `<div class="row" style="margin:2px 0;"><span class="${cls}" style="min-width:150px;display:inline-block;">${STAT_LABEL[k]}</span><span>${parts.join(' / ')} = <b>${tot.toFixed(1)}${unit}</b></span></div>`;
+  });
+  return rows;
+}
+function renderRuneSummary(){
+  const list = runeContributions();
+  if(!list.length) return '<span class="dim0">슬롯을 선택하면 여기에 합산 결과가 표시됩니다.</span>';
+  const grouped = {};
+  list.forEach(e => {
+    grouped[e.k] = grouped[e.k] || {pct:0, flat:0};
+    if(e.pct) grouped[e.k].pct += e.v; else grouped[e.k].flat += e.v;
+  });
+  const order = [...PRIORITY_STATS, ...ALL_STATS.filter(k=>!PRIORITY_STATS.includes(k))];
+  let rows = '';
+  order.forEach(k => {
+    const g = grouped[k];
+    if(!g) return;
+    const label = STAT_LABEL[k] || k;
+    const parts = [];
+    if(g.pct) parts.push(`+${g.pct.toFixed(1)}%`);
+    if(g.flat) parts.push(`+${g.flat.toFixed(0)}(고정)`);
+    const cls = HL_STATS.includes(k) ? 'hl' : 'dim0';
+    rows += `<div class="row" style="margin:2px 0;"><span class="${cls}" style="min-width:120px;display:inline-block;">${label}</span><span>${parts.join(' ')}</span></div>`;
+  });
+  return rows || '<span class="dim0">슬롯을 선택하면 여기에 합산 결과가 표시됩니다.</span>';
+}
+// 선택한 악세사리의 ★1~maxStar 전체 효과를 한눈에 나열 — 초시계처럼 성급에 따라 값이 바뀌는 추가 능력치/스킬 효과를
+// 현재 선택된 성급만이 아니라 전체 성급 기준으로 확인할 수 있게 하기 위함.
+// 2026-07-23: 성급별 전체 나열(renderAccessoryStarBreakdown)은 삭제 — 드롭다운 선택 시 바로 아래 뜨는 현재 성급 수치만으로 충분(중복 제거).
+// 대신 방어구/악세사리 통합 카드의 "합산 결과" 우측 열에서, 현재 선택한 악세사리(성급 포함)의 실제 반영 수치만 간단히 보여준다.
+function renderAccessorySummary(){
+  if(state.accessory==='없음') return '<span class="dim0">악세사리를 선택하면 여기에 합산 결과가 표시됩니다.</span>';
+  const acc = ACCESSORIES[state.accessory];
+  const bucket = {village:{}, always:{}, cond:{}};
+  ALL_STATS.forEach(k => { bucket.village[k]=0; bucket.always[k]=0; bucket.cond[k]=0; });
+  const condLog = [];
+  let stat = Object.assign({}, acc.starStats[state.accessoryStar]||acc.starStats[1]||{});
+  if(acc.extraAlways && acc.extraAlways[state.accessoryStar]){
+    for(const [k,v] of Object.entries(acc.extraAlways[state.accessoryStar])) stat[k]={v,zone:'village'};
+  }
+  addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
+  if(acc.skill){
+    const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+    addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
+  }
+  const keys = ALL_STATS.filter(k => bucket.village[k] || bucket.always[k] || bucket.cond[k]);
+  if(!keys.length) return '<span class="dim0">추적 가능한 능력치가 없습니다("?"를 참고).</span>';
+  let rows = '';
+  keys.forEach(k => {
+    const v=bucket.village[k], a=bucket.always[k], cd=bucket.cond[k], tot=v+a+cd;
+    const unit = k==='move' ? '' : '%';
+    const cls = HL_STATS.includes(k) ? 'hl' : 'dim0';
+    const parts = [];
+    if(v) parts.push(`마을+${v.toFixed(1)}${unit}`);
+    if(a) parts.push(`인게임+${a.toFixed(1)}${unit}`);
+    if(cd) parts.push(`조건부+${cd.toFixed(1)}${unit}`);
+    rows += `<div class="row" style="margin:2px 0;"><span class="${cls}" style="min-width:150px;display:inline-block;">${STAT_LABEL[k]}</span><span>${parts.join(' / ')} = <b>${tot.toFixed(1)}${unit}</b></span></div>`;
+  });
+  return rows;
+}
+// 악세사리 드롭다운 정렬 순서(2026-07-23 확정): 유일템 → 상위템 → 일반(전설) → 영웅.
+function accessorySortOrder(name){
+  const acc = ACCESSORIES[name];
+  if(acc.unique) return 0;
+  if(acc.tier==='상위') return 1;
+  if(acc.grade==='영웅') return 3;
+  return 2;
+}
+function sortedAccessoryNames(){
+  return Object.keys(ACCESSORIES).sort((a,b)=>accessorySortOrder(a)-accessorySortOrder(b));
+}
+// 악세사리 설명(desc/skill.desc)에 박혀있는 성급 범위 표기를 현재 선택된 성급의 실제 값으로 치환한다(2026-07-24 신설).
+// "?"를 열어둔 채 성급 슬라이더를 조작해도 설명 내용이 그 성급에 맞게 바뀌도록 하기 위함 — 단, 실제로
+// statByStar(또는 starStats)에 기록된 값과 정확히 일치하는(검증된) 범위만 치환하고, "미추적"으로 표시된
+// 회복량/확률/턴수 등은 성급별 정확한 값을 모르는 채로 추측해 채우지 않기 위해 원문 범위 그대로 남긴다.
+function accessoryDescForStar(text, statByStar, star, maxStar){
+  if(!text || !statByStar || !statByStar[1]) return text;
+  const cur = statByStar[star] || statByStar[1];
+  const signed = v => (v>=0?'+':'')+v;
+  // 단순 범위: "+N%(★1)~+M%(★K)"
+  text = text.replace(/(\+?)([\d.]+)%\(★1\)~\+?([\d.]+)%\(★\d+\)/g, (m, sign, n1, n2) => {
+    const key = Object.keys(statByStar[1]).find(k => {
+      const v1 = statByStar[1][k] && +statByStar[1][k].v;
+      const vMax = statByStar[maxStar] && statByStar[maxStar][k] && +statByStar[maxStar][k].v;
+      return v1===+n1 && vMax===+n2;
+    });
+    return (key && cur[key]) ? `${sign?signed(cur[key].v):cur[key].v}%` : m;
+  });
+  // 구간 버킷: "+N%(★A~B)/+M%(★C~D)/..." — 현재 성급이 속한 구간 값만 남긴다
+  text = text.replace(/\+?[\d.]+%\(★\d+~\d+\)(?:\/\+?[\d.]+%\(★\d+~\d+\))+/g, (m) => {
+    for(const p of m.split('/')){
+      const mm = p.match(/(\+?)([\d.]+)%\(★(\d+)~(\d+)\)/);
+      if(mm && star>=+mm[3] && star<=+mm[4]) return `${mm[1]}${mm[2]}%`;
+    }
+    return m;
+  });
+  return text;
+}
+// 룬 슬롯 <option> 텍스트용 — 해당 룬을 그 슬롯에 넣었을 때의 개별 효과(많아야 3개 안팎)를 전부 표시
+function runeOptionPreview(name, slot){
+  const entries = (RUNES[name] && RUNES[name].slots[slot]) || [];
+  if(!entries.length) return '';
+  return entries.map(e => {
+    const label = STAT_LABEL[e.k] || e.k;
+    return e.pct ? `${label}+${e.v}%` : `${label}+${e.v}(고정)`;
+  }).join(', ');
+}
+function onRunePreset(name){ state.runeSlots = RUNE_PRESETS[name].slice(); render(); }
+
+// equipment.js가 같은 폴더에 있으면 그 내용으로 아래 4개 객체를 덮어쓰기 위한 참조 테이블.
+// 캐릭터 자신의 CHARACTERS/WEAPONS 데이터는 여기 포함하지 않는다(equipment.js의 교체 대상이 아님).
+// const 바인딩이라도 프로퍼티 삭제 후 Object.assign으로 내용만 바꾸면 이 파일의 다른 코드가 참조하는
+// 동일 객체가 그대로 갱신된다(재할당이 아니므로 const와 무관). 파일 끝의 equipment.js 로딩 코드 참고.
+const EQUIP_DATASETS = { ARMOR_SETS, ACCESSORIES, RUNES, RUNE_PRESETS };
+
+// MAX 세팅 고정 기준(2026-07-23 무게 등급별로 세분화) — 브루트포스 최댓값이 실전에서 안 쓰이는 조합을 골라오는
+// 문제 때문에, 룬/방어구/악세사리는 무게 등급별 "자주 쓰는 상위 등급 아이템" 조합으로 고정하고 클래스/고유패시브/
+// 아티팩트/무기/액티브만 브루트포스로 최적화한다. armorSet/note를 무게 등급별로 다르게 둬야 하는 항목(crit/phys)은
+// {헤비:'...', 라이트:'...'} 형태의 오브젝트로, 무게 등급과 무관한 항목(magPen — 라이트 전용 스탯)은 기존처럼 문자열로 둔다.
+// ⚠ 실제 스탯을 브루트포스로 최댓값까지 끌어올리는 게 아니라 "자주 쓰는 상위 등급 아이템 기준"을 고정 적용하는 것이므로,
+// 화면에는 항상 그 취지의 디스클레이머(harness-extra)를 별도로 띄운다(render() 참고) — 개별 extraNotes 각주는 더 이상 쓰지 않음.
+// ⚠ 코드 vs 이름 원칙: accessory/armorSet/runeFixed는 실제 조회 키(코드)를 쓴다 — note 문구의
+// 사람이 읽는 이름은 참고용 서술일 뿐 조회에는 안 쓰인다(장비_룬_악세사리_raw_data.md 0-2장 참고).
+const FIXED_MAX_PRESET = {
+  crit: {
+    runeMode: 'unchanged',
+    accessory: 'ACC07', // 루시퍼의 깃털
+    armorSet: {헤비:'ARM21', 라이트:'ARM17', 미디엄:'ARM06'}, // 불멸의 정복자 / 혜안의 군사 / 시스템 이단자
+    note: {
+      헤비: '치명타확률 최대 세팅 기준(헤비 고정 규칙) — 방어구: 불멸의 정복자(2셋 이상 시 물리 관통/공격력 +10%, 4셋 시 최대 체력 +10%) / 악세사리: 루시퍼의 깃털(6각) / 룬: 건드리지 않음(현재 선택 유지).',
+      라이트: '치명타확률 최대 세팅 기준(라이트 고정 규칙) — 방어구: 혜안의 군사(2셋 이상 시 최대 체력/치명타확률 +10%, 4셋 시 스킬 시전 시 치명타 피해량 +20%) / 악세사리: 루시퍼의 깃털(6각) / 룬: 건드리지 않음(현재 선택 유지).',
+      미디엄: '치명타확률 최대 세팅 기준(미디엄 고정 규칙) — 방어구: 시스템 이단자 / 악세사리: 루시퍼의 깃털(6각) / 룬: 건드리지 않음(현재 선택 유지).',
+    },
+  },
+  magPen: {
+    runeMode: 'fixed',
+    runeFixed: ['RUNE09','RUNE15','RUNE09','RUNE09','RUNE15','RUNE09'], // 달/절대/달/달/절대/달
+    accessory: 'unchanged',
+    armorSet: 'ARM10', // 어둠의 재상
+    note: '마법관통 최대 세팅 기준 — 방어구: 어둠의 재상(4셋 풀착, 라이트 전용) / 룬: 2·5번 절대 + 1·3·4·6번 달 / 악세사리: 건드리지 않음(현재 선택 유지).',
+  },
+  phys: {
+    runeMode: 'preset',
+    runePresetName: '올바람', // RUNE_PRESETS 키(사람이 읽는 이름 그대로 — 코드화 대상 아님)
+    accessory: 'ACC01', // 검은 깃발
+    armorSet: {헤비:'ARM21', 라이트:'ARM10', 미디엄:'ARM07'}, // 불멸의 정복자 / 어둠의 재상 / 회색의 계승자
+    note: {
+      헤비: '물리관통 최대 세팅 기준(헤비 고정 규칙) — 방어구: 불멸의 정복자(2셋 이상 시 물리 관통 +10%, 장갑 개별 +15% 포함) / 악세사리: 검은 깃발(6각) / 룬: 올바람(1~6번 전부 바람).',
+      라이트: '물리관통 최대 세팅 기준(라이트 고정 규칙) — 방어구: 어둠의 재상(라이트 캐릭터는 보통 물리관통 소스가 거의 없어 마법관통 쪽이 자동으로 대신 선택됨) / 악세사리: 검은 깃발(6각) / 룬: 올바람(1~6번 전부 바람).',
+      미디엄: '물리관통 최대 세팅 기준(미디엄 고정 규칙) — 방어구: 회색의 계승자(4셋 풀착) / 악세사리: 검은 깃발(6각) / 룬: 올바람(1~6번 전부 바람).',
+    },
+  },
+};
+// FIXED_MAX_PRESET.armorSet/note는 무게 등급별로 값이 다를 수 있어(위 주석 참고) 문자열 또는 {헤비:..,라이트:..} 둘 다 올 수 있다 —
+// 아래 헬퍼로 통일해서 꺼내 쓴다(computeMaxSelections/render 양쪽에서 재사용).
+function resolveFixedByWeight(val, weightClass){
+  if(val == null) return null;
+  return (typeof val === 'object') ? (val[weightClass] ?? null) : val;
+}
+
+/* ================= RENDER ================= */
+// skillStat(선택): 이 스킬 발동 순간에만 적용되고 지속되지 않아 오른쪽 합계에는 합산하지 않는 수치(예: "이 공격에만 치명타 확률 +30%").
+// statObj가 비어있고 skillStat만 있으면 "해당없음" 대신 skillStat 줄만 강조 표시하고, 둘 다 있으면 두 줄로 구분해서 보여준다.
+function optLine(name, statObj, zoneForBadge, desc, note, extraClass, skillStat){
+  const d = descButton(name, desc + (note?('\n\n'+note):''));
+  const zb = zoneForBadge ? zoneBadge(zoneForBadge) : '';
+  const hasStat = statObj && Object.keys(statObj).length;
+  const hasSkillStat = skillStat && Object.keys(skillStat).length;
+  const mainLine = (hasStat || !hasSkillStat) ? `<div class="opt-bottom">${statStrObj(statObj)}</div>` : '';
+  const skillLine = hasSkillStat ? `<div class="opt-bottom skillonly-row"><span class="badge skillonly">스킬한정·합산안됨</span> ${statStrObj(skillStat)}</div>` : '';
+  return `<div class="opt-line${extraClass?' '+extraClass:''}"><div class="opt-top"><span class="name">${name}</span>${zb}${d.btn}</div>
+    ${mainLine}${skillLine}</div>${d.box}`;
+}
+
+function render(){
+  // 2026-07-24: MAX 세팅 음영/배너는 "값이 우연히 일치"가 아니라 "방금 MAX 버튼을 눌렀고 그 뒤로 아무 것도
+  // 손대지 않았음"에만 의존한다. maxSetup/maxSetupBest는 render() 호출 직전에 state.maxModeLocked=true를 세워두고,
+  // 그 외의 모든 onchange는 곧바로 render()를 부르므로 — 여기서 잠금 플래그가 없으면(=MAX 버튼이 아닌 다른 경로로
+  // 온 render) activeMaxMode를 즉시 해제한다. 그다음 플래그는 항상 소비(false로 리셋)한다.
+  if(state.activeMaxMode && !state.maxModeLocked){
+    state.activeMaxMode = null;
+  }
+  state.maxModeLocked = false;
+
+  const c = CHARACTERS[state.character];
+  let html = '';
+
+  html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
+  html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
+  { const rLine = resistSummaryLine(); if(rLine){ const {always, cond} = collectResistItems(c); const rd = descButton('leftResist', buildResistDetail(always.concat(cond))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${rLine} ${rd.btn}</div>${rd.box}`; } }
+  { const eaLine = extraActionSummaryLine(); if(eaLine){ const ed = descButton('leftExtraAction', buildExtraActionDetail(collectExtraActionItems(c))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${eaLine} ${ed.btn}</div>${ed.box}`; } }
+
+  // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
+  html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
+  html += `<div class="save-slots">`;
+  getCharSaves(state.character).forEach((slot, idx) => {
+    if(slot){
+      html += `<div class="save-slot${matchesSavedSlot(slot)?' active':''}">
+        <div class="slot-name">${escapeHtml(slot.name)}</div>
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="mini-btn" onclick="loadBuildFromSlot(${idx})">불러오기</button>
+          <button type="button" class="mini-btn" onclick="saveBuildToSlot(${idx})">덮어쓰기</button>
+          <button type="button" class="mini-btn danger" onclick="deleteBuildSlot(${idx})">삭제</button>
+        </div></div>`;
+    } else {
+      html += `<div class="save-slot">
+        <div class="slot-empty">비어있음</div>
+        <button type="button" class="mini-btn" onclick="saveBuildToSlot(${idx})">현재 세팅 저장</button>
+        </div>`;
+    }
+  });
+  html += `</div>`;
+  html += `<div class="note" style="margin-top:4px;">이 브라우저(이 기기)에만 저장됩니다(localStorage). 다른 기기·다른 브라우저로 옮기면 저장된 세팅은 보이지 않습니다. "불러오기"는 캐릭터·클래스·룬 등 현재 화면의 모든 선택을 그 시점 상태로 되돌립니다.</div>`;
+
+  // MAX 세팅 버튼 + 안내 배너 (2026-07-24: 클릭 직후에만 표시, 클릭 후 어떤 항목이든 수동으로 손대면 우연히
+  // 값이 같아져도 사라지도록 함 — activeMaxMode는 render() 최상단의 잠금 플래그 로직으로 관리된다)
+  html += `<div class="maxbar" style="margin:8px 0 4px;padding-top:8px;border-top:1px solid var(--border);">`;
+  html += `<button id="maxBtn_crit" onclick="maxSetup('crit')">⚡ 최대 치명타확률 세팅</button>`;
+  html += `<button id="maxBtn_pen" onclick="maxSetupBest('phys','magPen')">🎯 최대 관통 세팅</button>`;
+  html += `<button id="maxBtn_penRes" onclick="maxSetupBest('physRes','magRes')">🛡 최대 관통 저항 세팅</button>`;
+  html += `<button class="reset" onclick="initState(); render();">↺ 초기화</button>`;
+  html += `</div>`;
+  if(FIXED_MAX_PRESET[state.activeMaxMode]){
+    const fp = FIXED_MAX_PRESET[state.activeMaxMode];
+    const fpNote = resolveFixedByWeight(fp.note, c.weightClass);
+    const fpArmor = resolveFixedByWeight(fp.armorSet, c.weightClass);
+    html += `<div class="harness-note"><span class="h-label">🔒 고정 규칙 - 방어구 유형별 공통</span>${fpNote}</div>`;
+    if(fpArmor && armorWeightClass(fpArmor) !== c.weightClass){
+      html += `<div class="harness-extra">⚠ 이 캐릭터(${c.weightClass})는 고정 방어구 "${ARMOR_SETS[fpArmor].name}"를 착용할 수 없어(무게 등급 불일치), 방어구만 이 캐릭터가 착용 가능한 세트 중 자동 계산된 최적 조합으로 대체 적용됩니다.</div>`;
+    } else if(fpArmor){
+      html += `<div class="harness-extra">⚠ 실제 최대 수치가 아닌 자주 사용하는 상위 등급 아이템 기준이 제한적으로 적용됩니다. 위 고정 규칙 참조.</div>`;
+    }
+  } else if(state.activeMaxMode==='physRes' || state.activeMaxMode==='magRes'){
+    html += `<div class="harness-extra">조건부를 포함한 가장 높은 관통저항 세팅입니다. 적으로 만났을 때 관통저항 최대치를 가늠하기 위해 만들어 두었습니다. 상세 수치는 오른쪽 관통저항 합계 파트 <span class="info-btn-static">?</span> 를 클릭하여 확인해 주세요.</div>`;
+  }
+  html += `</div>`;
+
+  // 클래스패시브 (전부 노출)
+  html += `<div class="card"><h2>클래스패시브 <span class="tag">택1</span></h2>`;
+  c.classes.forEach(cl => {
+    const checked = state.classId===cl.id;
+    const d = descButton('class-'+cl.id, cl.desc);
+    const baseCritLine = cl.baseCrit ? `<div class="opt-bottom" style="margin-top:1px;">클래스 고유 치명타확률 +${cl.baseCrit}%</div>` : '';
+    html += `<div class="choice-item small ${checked?'sel':''}"><div class="opt-top">
+      <label class="name"><input type="radio" name="classChoice" value="${cl.id}" ${checked?'checked':''} onchange="onClassChange(this.value);"> ${cl.id}</label>${zoneBadge(Object.values(cl.stat)[0]?.zone||'always')}${d.btn}</div>
+      ${baseCritLine}<div class="opt-bottom">${statStrObj(cl.stat)}</div></div>${d.box}`;
+    if(cl.toggle && checked){
+      const td = descButton('classToggle-'+cl.id, cl.toggle.desc);
+      html += `<div class="opt-line"><div class="opt-top"><label class="name"><input type="checkbox" ${state.classToggle?'checked':''} onchange="state.classToggle=this.checked; render();"> ${cl.toggle.label}</label>${zoneBadge('cond')}${td.btn}</div>
+        <div class="opt-bottom">${statStrObj(cl.toggle.stat)}</div></div>${td.box}`;
+    }
+    if(cl.stack && checked){
+      const perObj = {}; for(const [k,v] of Object.entries(cl.stack.perStack)) perObj[k]={v, zone:'cond'};
+      const curObj = {}; for(const [k,v] of Object.entries(cl.stack.perStack)) curObj[k]={v: v*state.classStack, zone:'cond'};
+      const sd = descButton('classStack-'+cl.id, cl.stack.desc);
+      html += `<div class="opt-line"><div class="opt-top"><span class="name">${cl.stack.label}</span>${zoneBadge('cond')}
+        <span class="slider-wrap">개수<button class="step-btn" onclick="state.classStack=clampStep(state.classStack,-1,0,${cl.stack.maxStack}); render();">◀</button><input type="range" min="0" max="${cl.stack.maxStack}" value="${state.classStack}" oninput="state.classStack=+this.value; render();"><button class="step-btn" onclick="state.classStack=clampStep(state.classStack,1,0,${cl.stack.maxStack}); render();">▶</button><span class="star-val">${state.classStack}</span></span>${sd.btn}</div>
+        <div class="opt-bottom">개당 ${statStrObj(perObj)}</div>
+        <div class="opt-bottom"><b style="color:var(--accent);">현재 ${state.classStack}개 적용 →</b> ${statStrObj(curObj)}</div></div>${sd.box}`;
+    }
+    if(cl.stack2 && checked){
+      const per2Obj = {}; for(const [k,v] of Object.entries(cl.stack2.perStack)) per2Obj[k]={v, zone:'cond'};
+      const cur2Obj = {}; for(const [k,v] of Object.entries(cl.stack2.perStack)) cur2Obj[k]={v: v*state.classStack2, zone:'cond'};
+      const sd2 = descButton('classStack2-'+cl.id, cl.stack2.desc);
+      html += `<div class="opt-line"><div class="opt-top"><span class="name">${cl.stack2.label}</span>${zoneBadge('cond')}
+        <span class="slider-wrap">개수<button class="step-btn" onclick="state.classStack2=clampStep(state.classStack2,-1,0,${cl.stack2.maxStack}); render();">◀</button><input type="range" min="0" max="${cl.stack2.maxStack}" value="${state.classStack2}" oninput="state.classStack2=+this.value; render();"><button class="step-btn" onclick="state.classStack2=clampStep(state.classStack2,1,0,${cl.stack2.maxStack}); render();">▶</button><span class="star-val">${state.classStack2}</span></span>${sd2.btn}</div>
+        <div class="opt-bottom">개당 ${statStrObj(per2Obj)}</div>
+        <div class="opt-bottom"><b style="color:var(--accent);">현재 ${state.classStack2}개 적용 →</b> ${statStrObj(cur2Obj)}</div></div>${sd2.box}`;
+    }
+  });
+  html += `</div>`;
+
+  // 고유패시브 — raw_data가 단계별(예: 2초/4초/6초)로 실제 수집된 극소수 캐릭터만 stages를 갖고, 그 경우에만 성급 드롭다운처럼
+  // 단계 선택 UI를 보여준다. 없으면 기존처럼 단일 고정값 표시(하위 호환).
+  const up = c.uniquePassive;
+  html += `<div class="card"><h2>고유패시브 ${up.stages?'':'<span class="tag">고정</span>'}</h2>`;
+  if(up.stages){
+    const stageIdx = state.uniquePassiveStage ?? up.stages.default;
+    const curStage = up.stages.options[stageIdx];
+    const d = descButton('uniquePassive', up.baseDesc + (up.baseNote?('\n\n'+up.baseNote):''));
+    const stageCls = curStage.name.includes('초') ? 'stage-awaken' : '';
+    html += `<div class="opt-line"><div class="opt-top"><span class="name">${up.name}</span>${zoneBadge('always')}
+      <span class="slider-wrap">${up.stages.label}<button class="step-btn" onclick="state.uniquePassiveStage=clampStep(state.uniquePassiveStage,-1,0,${up.stages.options.length-1}); clampUniqueStackToStage(); clampUniqueRadioToStage(); render();">◀</button><input type="range" min="0" max="${up.stages.options.length-1}" value="${stageIdx}" oninput="state.uniquePassiveStage=+this.value; clampUniqueStackToStage(); clampUniqueRadioToStage(); render();"><button class="step-btn" onclick="state.uniquePassiveStage=clampStep(state.uniquePassiveStage,1,0,${up.stages.options.length-1}); clampUniqueStackToStage(); clampUniqueRadioToStage(); render();">▶</button><span class="star-val ${stageCls}">★${curStage.name}</span></span>${d.btn}</div>
+      <div class="opt-bottom">${statStrObj(curStage.stat)}</div></div>${d.box}`;
+  } else {
+    html += optLine(up.name+' (기본)', up.base, 'always', up.baseDesc, up.baseNote);
+  }
+  if(up.overflowCritToDmg){
+    html += `<div class="note" style="margin:2px 0 4px;">※ 치명타 확률 합계가 100%를 넘으면, 초과분이 자동으로 치명타 피해량에 1:1로 더해집니다. 단, 실제 발동은 대상의 받는 치명타 확률 등 인게임 전투 상황에 따라 달라지므로 오른쪽 "합계" 탭에는 반영되지 않습니다 — 왼쪽 수치를 참고해 직접 계산해 주세요.</div>`;
+  }
+  const activeStackCfg = up.stack ? resolveStackCfg(up, up.stages ? (state.uniquePassiveStage ?? up.stages.default) : null) : null;
+  if(activeStackCfg){
+    const perObj = {}; for(const [k,v] of Object.entries(activeStackCfg.perStack)) perObj[k]={v, zone:'cond'};
+    const curObj = {}; for(const [k,v] of Object.entries(activeStackCfg.perStack)) curObj[k]={v: v*state.uniqueStack, zone:'cond'};
+    const d = descButton('uniqueStack', activeStackCfg.desc || up.stack.desc);
+    html += `<div class="opt-line"><div class="opt-top"><span class="name">${activeStackCfg.label || up.stack.label}</span>${zoneBadge('cond')}
+      <span class="slider-wrap">중첩<button class="step-btn" onclick="state.uniqueStack=clampStep(state.uniqueStack,-1,0,${activeStackCfg.maxStack}); render();">◀</button><input type="range" min="0" max="${activeStackCfg.maxStack}" value="${state.uniqueStack}" oninput="state.uniqueStack=+this.value; render();"><button class="step-btn" onclick="state.uniqueStack=clampStep(state.uniqueStack,1,0,${activeStackCfg.maxStack}); render();">▶</button><span class="star-val">${state.uniqueStack}</span></span>${d.btn}</div>
+      <div class="opt-bottom">중첩당 ${statStrObj(perObj)}</div>
+      <div class="opt-bottom"><b style="color:var(--accent);">현재 ${state.uniqueStack}중첩 적용 →</b> ${statStrObj(curObj)}</div></div>${d.box}`;
+  } else if(up.stack){
+    html += `<div class="note" style="margin:2px 0 4px;">※ 현재 단계에서는 "${up.stack.shortName||up.stack.label}" 효과를 아직 보유하지 않습니다.</div>`;
+  }
+  {
+    const anyToggle = up.toggle || (up.stages && (up.stages.options.find(o=>o.toggle)||{}).toggle);
+    const activeToggleCfg = anyToggle ? resolveToggleCfg(up, up.stages ? (state.uniquePassiveStage ?? up.stages.default) : null) : null;
+    if(activeToggleCfg){
+      const d = descButton('uniqueToggle', activeToggleCfg.desc);
+      html += `<div class="opt-line"><div class="opt-top"><label class="name"><input type="checkbox" ${state.uniqueToggle?'checked':''} onchange="state.uniqueToggle=this.checked; render();"> ${activeToggleCfg.label}</label>${zoneBadge('cond')}${d.btn}</div>
+        <div class="opt-bottom">${statStrObj(activeToggleCfg.stat)}</div></div>${d.box}`;
+    } else if(anyToggle){
+      html += `<div class="note" style="margin:2px 0 4px;">※ 현재 단계에서는 "${anyToggle.shortName||anyToggle.label}" 효과를 아직 보유하지 않습니다.</div>`;
+    }
+  }
+  {
+    const anyToggle2 = up.stages && (up.stages.options.find(o=>o.toggle2)||{}).toggle2;
+    const activeToggle2Cfg = anyToggle2 ? resolveToggle2Cfg(up, state.uniquePassiveStage ?? up.stages.default) : null;
+    if(activeToggle2Cfg){
+      const d = descButton('uniqueToggle2', activeToggle2Cfg.desc);
+      html += `<div class="opt-line"><div class="opt-top"><label class="name"><input type="checkbox" ${state.uniqueToggle2?'checked':''} onchange="state.uniqueToggle2=this.checked; render();"> ${activeToggle2Cfg.label}</label>${zoneBadge('cond')}${d.btn}</div>
+        <div class="opt-bottom">${statStrObj(activeToggle2Cfg.stat)}</div></div>${d.box}`;
+    } else if(anyToggle2){
+      html += `<div class="note" style="margin:2px 0 4px;">※ 현재 단계에서는 "${anyToggle2.shortName||anyToggle2.label}" 효과를 아직 보유하지 않습니다.</div>`;
+    }
+  }
+  {
+    const anyRadio = up.radio || (up.stages && (up.stages.options.find(o=>o.radio)||{}).radio);
+    const activeRadioCfg = anyRadio ? resolveRadioCfg(up, up.stages ? (state.uniquePassiveStage ?? up.stages.default) : null) : null;
+    if(activeRadioCfg){
+      const d = descButton('uniqueRadio', activeRadioCfg.desc);
+      html += `<div class="opt-line"><div class="opt-top"><span class="name">${activeRadioCfg.label}</span>${d.btn}</div>`;
+      activeRadioCfg.options.forEach((opt,i) => {
+        html += `<div class="opt-bottom" style="margin-top:2px;"><label><input type="radio" name="uradio" ${state.uniqueRadio===i?'checked':''} onchange="state.uniqueRadio=${i}; render();"> ${opt.name}</label> ${statStrObj(opt.stat)}</div>`;
+      });
+      html += `</div>${d.box}`;
+    } else if(anyRadio){
+      html += `<div class="note" style="margin:2px 0 4px;">※ 현재 단계에서는 "${anyRadio.label}" 효과를 아직 보유하지 않습니다.</div>`;
+    }
+  }
+  html += `</div>`;
+
+  // 액티브 스킬 (2026-07-23: 오의/아우터 박스 + 액티브 박스를 하나로 통합, 이후 재차 공간 최적화)
+  // 초필살기 → 아우터스킬(있으면) → 일반 액티브를 전부 동등하게 한 흐름에 놓고, CSS 다단(column-count:2)으로
+  // 브라우저가 자동으로 좌우 균형을 맞춘다(캐릭터마다 항목 수가 달라 수동 좌우분할은 비효율적).
+  // 이름 앞의 [초필살기]/[아우터] 표기만으로 구분이 충분하다는 판단(2026-07-23) — 별도 박스/구획 없음.
+  // 아우터스킬이 없는(이너브레이크) 캐릭터는 "없음" placeholder 자체를 표시하지 않는다(대다수라 어색해서 생략).
+  html += `<div class="card full"><h2>액티브 스킬</h2>`;
+  const checkedCount = Object.values(state.activesChecked).filter(Boolean).length;
+  html += `<div class="checklimit ${checkedCount>3?'over':''}">${checkedCount}/3${checkedCount>3?' 초과!':''}</div>`;
+  html += `<div class="multi-col">`;
+  if(c.ultimate.stages){
+    const ustageIdx = state.ultimateStage ?? c.ultimate.stages.default;
+    const curUStage = c.ultimate.stages.options[ustageIdx];
+    const uStageCls = curUStage.name.includes('초') ? 'stage-awaken' : '';
+    const d = descButton('ultimate', c.ultimate.desc + (c.ultimate.note?('\n\n'+c.ultimate.note):''));
+    html += `<div class="col-unit"><div class="opt-line sel"><div class="opt-top"><span class="name">[초필살기] ${c.ultimate.name}</span>${zoneBadge('always')}
+      <span class="slider-wrap">${c.ultimate.stages.label}<button class="step-btn" onclick="state.ultimateStage=clampStep(state.ultimateStage,-1,0,${c.ultimate.stages.options.length-1}); render();">◀</button><input type="range" min="0" max="${c.ultimate.stages.options.length-1}" value="${ustageIdx}" oninput="state.ultimateStage=+this.value; render();"><button class="step-btn" onclick="state.ultimateStage=clampStep(state.ultimateStage,1,0,${c.ultimate.stages.options.length-1}); render();">▶</button><span class="star-val ${uStageCls}">★${curUStage.name}</span></span>${d.btn}</div>
+      <div class="opt-bottom">${statStrObj(curUStage.stat)}</div></div>${d.box}</div>`;
+  } else {
+    html += `<div class="col-unit">${optLine('[초필살기] '+c.ultimate.name, c.ultimate.stat, 'always', c.ultimate.desc, c.ultimate.note, 'sel')}</div>`;
+  }
+  if(c.outerSkill){
+    if(c.outerSkill.stages){
+      const ostageIdx = state.outerSkillStage ?? c.outerSkill.stages.default;
+      const curOStage = c.outerSkill.stages.options[ostageIdx];
+      const oStageCls = curOStage.name.includes('초') ? 'stage-awaken' : '';
+      const d = descButton('outerSkill', c.outerSkill.desc + (c.outerSkill.note?('\n\n'+c.outerSkill.note):''));
+      html += `<div class="col-unit"><div class="opt-line sel"><div class="opt-top"><span class="name">[아우터] ${c.outerSkill.name}</span>${zoneBadge('always')}
+      <span class="slider-wrap">${c.outerSkill.stages.label}<button class="step-btn" onclick="state.outerSkillStage=clampStep(state.outerSkillStage,-1,0,${c.outerSkill.stages.options.length-1}); render();">◀</button><input type="range" min="0" max="${c.outerSkill.stages.options.length-1}" value="${ostageIdx}" oninput="state.outerSkillStage=+this.value; render();"><button class="step-btn" onclick="state.outerSkillStage=clampStep(state.outerSkillStage,1,0,${c.outerSkill.stages.options.length-1}); render();">▶</button><span class="star-val ${oStageCls}">★${curOStage.name}</span></span>${d.btn}</div>
+      <div class="opt-bottom">${statStrObj(curOStage.stat)}</div></div>${d.box}</div>`;
+    } else {
+      html += `<div class="col-unit">${optLine('[아우터] '+c.outerSkill.name, c.outerSkill.stat, 'always', c.outerSkill.desc, c.outerSkill.note, 'sel')}</div>`;
+    }
+  }
+  c.actives.forEach(a => {
+    const zone = Object.keys(a.stat||{}).length ? 'cond' : null;
+    const d = descButton('active-'+a.name, a.desc + (a.note?('\n\n'+a.note):''));
+    const checked = !!state.activesChecked[a.name];
+    const hasStat = Object.keys(a.stat||{}).length > 0;
+    const safeName = a.name.replace(/'/g,"\\'");
+    // 액티브 자체 중첩(a.stack) — skillStat과 동일하게 스킬한정·합산안됨 배지로 표시(합쳐서 한 줄로 보여줌).
+    const stackCur = a.stack ? (state.activeStackByName[a.name]||0) : 0;
+    const stackStatObj = {};
+    if(a.stack){ for(const [k,v] of Object.entries(a.stack.perStack)) stackStatObj[k] = {v: v*stackCur, zone:'cond'}; }
+    const combinedSkillStat = Object.assign({}, a.skillStat||{}, stackStatObj);
+    const hasSkillStat = Object.keys(combinedSkillStat).length > 0;
+    const mainLine = (hasStat || !hasSkillStat) ? `<div class="opt-bottom">${statStrObj(a.stat)}${a.note?' <span class="note">· '+a.note+'</span>':''}</div>` : '';
+    const skillLine = hasSkillStat ? `<div class="opt-bottom skillonly-row"><span class="badge skillonly">스킬한정·합산안됨</span> ${statStrObj(combinedSkillStat)}</div>` : '';
+    let stackUi = '';
+    if(a.stack){
+      const sd = descButton('activeStack-'+a.name, a.stack.desc);
+      stackUi = `<div class="opt-line"><div class="opt-top"><span class="name">${a.stack.label}</span>${zoneBadge('cond')}
+        <span class="slider-wrap">중첩<button class="step-btn" onclick="state.activeStackByName['${safeName}']=clampStep(state.activeStackByName['${safeName}']||0,-1,0,${a.stack.maxStack}); render();">◀</button><input type="range" min="0" max="${a.stack.maxStack}" value="${stackCur}" oninput="state.activeStackByName['${safeName}']=+this.value; render();"><button class="step-btn" onclick="state.activeStackByName['${safeName}']=clampStep(state.activeStackByName['${safeName}']||0,1,0,${a.stack.maxStack}); render();">▶</button><span class="star-val">${stackCur}</span></span>${sd.btn}</div></div>${sd.box}`;
+    }
+    html += `<div class="col-unit"><div class="choice-item small"><div class="opt-top"><label class="name"><input type="checkbox" ${checked?'checked':''} onchange="onActiveToggle('${safeName}', this.checked)"> ${a.name}</label>${zone?zoneBadge(zone):''}${d.btn}</div>
+    ${mainLine}${skillLine}</div>${d.box}${stackUi}</div>`;
+  });
+  html += `</div>`;
+  html += `</div>`;
+
+  // 아티팩트 (전부 노출)
+  html += `<div class="card"><h2>아티팩트 <span class="tag">택1</span></h2>`;
+  {
+    const checked = state.artifact==='없음';
+    html += `<div class="choice-item small ${checked?'sel':''}"><label><input type="radio" name="artChoice" ${checked?'checked':''} onchange="onArtifactChange('없음')"> 없음</label></div>`;
+  }
+  c.artifacts.forEach(art => {
+    const checked = state.artifact===art.name;
+    const star = checked ? state.artifactStar : art.maxStar;
+    let previewObj;
+    previewObj = Object.assign({}, art.starStats ? (art.starStats[star]||{}) : {});
+    if(art.stackable){
+      const stack = checked ? state.artifactStack : art.maxStack;
+      const perStat = art.starPerStack[star] || {};
+      for(const k in perStat) previewObj[k] = {v: perStat[k]*stack, zone:'cond'};
+    }
+    const d = descButton('artifact-'+art.name, art.desc + (art.note?('\n\n'+art.note):''));
+    html += `<div class="choice-item small ${checked?'sel':''}"><div class="opt-top">
+      <label class="name"><input type="radio" name="artChoice" value="${art.name}" ${checked?'checked':''} onchange="onArtifactChange('${art.name.replace(/'/g,"\\'")}')"> ${art.name} <span class="dim0">(${art.grade})</span></label>${d.btn}</div>
+      <div class="opt-bottom">${statStrObj(previewObj)}</div>`;
+    if(checked){
+      html += `<div class="opt-bottom"><span class="slider-wrap">성급<button class="step-btn" ${art.fixedStar?'disabled':''} onclick="state.artifactStar=clampStep(state.artifactStar,-1,1,${art.maxStar}); render();">◀</button><input type="range" min="1" max="${art.maxStar}" value="${state.artifactStar}" ${art.fixedStar?'disabled':''} oninput="state.artifactStar=+this.value; render();"><button class="step-btn" ${art.fixedStar?'disabled':''} onclick="state.artifactStar=clampStep(state.artifactStar,1,1,${art.maxStar}); render();">▶</button><span class="star-val">★${state.artifactStar}</span></span>`;
+      if(art.stackable) html += `<span class="slider-wrap">중첩<button class="step-btn" onclick="state.artifactStack=clampStep(state.artifactStack,-1,0,${art.maxStack}); render();">◀</button><input type="range" min="0" max="${art.maxStack}" value="${state.artifactStack}" oninput="state.artifactStack=+this.value; render();"><button class="step-btn" onclick="state.artifactStack=clampStep(state.artifactStack,1,0,${art.maxStack}); render();">▶</button><span class="star-val">${state.artifactStack}</span></span>`;
+      html += `</div>`;
+    }
+    html += `</div>${d.box}`;
+  });
+  html += `</div>`;
+
+  // 무기
+  html += `<div class="card"><h2>무기 <span class="tag">전용</span></h2>`;
+  const wp = WEAPONS[c.weaponName];
+  html += `<div class="row"><label><input type="checkbox" ${state.weaponOn?'checked':''} onchange="state.weaponOn=this.checked; render();"> ${c.weaponName}</label>
+    <span class="slider-wrap">성급<button class="step-btn" onclick="state.weaponStar=clampStep(state.weaponStar,-1,1,6); render();">◀</button><input type="range" min="1" max="6" value="${state.weaponStar}" oninput="state.weaponStar=+this.value; render();"><button class="step-btn" onclick="state.weaponStar=clampStep(state.weaponStar,1,1,6); render();">▶</button><span class="star-val">★${state.weaponStar}</span></span></div>`;
+  const wStat = state.weaponOn ? wp.starStats[state.weaponStar] : {};
+  const wZone = Object.values(wp.starStats[1])[0].zone;
+  html += optLine(c.weaponName, wStat, state.weaponOn ? wZone : null, wp.desc, wp.note);
+  if(wp.stack){
+    const wStackMax = resolveWeaponStackMax(wp, state.weaponStar);
+    if(state.weaponStack > wStackMax) state.weaponStack = wStackMax;
+    const wStackPer = resolveWeaponStackPerStat(wp, state.weaponStar);
+    const wPerObj = {}; for(const [k,v] of Object.entries(wStackPer)) wPerObj[k]={v, zone:'cond'};
+    const wCurObj = {}; for(const [k,v] of Object.entries(wStackPer)) wCurObj[k]={v: v*state.weaponStack, zone:'cond'};
+    const wsd = descButton('weaponStack', wp.stack.desc);
+    html += `<div class="opt-line"><div class="opt-top"><span class="name">${wp.stack.label}</span>${zoneBadge('cond')}
+      <span class="slider-wrap">개수<button class="step-btn" onclick="state.weaponStack=clampStep(state.weaponStack,-1,0,${wStackMax}); render();">◀</button><input type="range" min="0" max="${wStackMax}" value="${state.weaponStack}" oninput="state.weaponStack=+this.value; render();"><button class="step-btn" onclick="state.weaponStack=clampStep(state.weaponStack,1,0,${wStackMax}); render();">▶</button><span class="star-val">${state.weaponStack}</span></span>${wsd.btn}</div>
+      <div class="opt-bottom">개당 ${statStrObj(wPerObj)}</div>
+      <div class="opt-bottom"><b style="color:var(--accent);">현재 ${state.weaponStack}개 적용 →</b> ${statStrObj(wCurObj)}</div></div>${wsd.box}`;
+  }
+  html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:bold;color:var(--accent);margin-bottom:4px;">제련 (수동 입력 · 마을 스탯으로 합산)</div>
+    <div class="note" style="margin-bottom:5px;">제련에서 획득한 치확, 물관, 마관을 수동 입력하는 칸입니다. 합계 페이지에 입력한 수치만큼 합산됩니다.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+      <div><label style="font-size:11px;color:var(--text-dim);">치명타확률%</label>
+        <input type="number" step="0.1" style="width:100%;" value="${state.forgeWeaponCrit}" onchange="state.forgeWeaponCrit=+this.value||0; render();"></div>
+      <div><label style="font-size:11px;color:var(--text-dim);">물리관통%</label>
+        <input type="number" step="0.1" style="width:100%;" value="${state.forgeWeaponPhys}" onchange="state.forgeWeaponPhys=+this.value||0; render();"></div>
+      <div><label style="font-size:11px;color:var(--text-dim);">마법관통%</label>
+        <input type="number" step="0.1" style="width:100%;" value="${state.forgeWeaponMagPen}" onchange="state.forgeWeaponMagPen=+this.value||0; render();"></div>
+    </div>
+  </div>`;
+  html += `</div>`;
+
+  // 방어구 / 악세사리 / 방어구·악세사리 합산 결과 — 3개 박스로 분리(2026-07-23 재분리 확정).
+  // 부위별 개별 수치 상세 나열은 계속 생략(드롭다운 자체의 【 】 미리보기와 중복이므로).
+  html += `<div class="card full"><h2>방어구 <span class="tag">4부위 · ${c.weightClass}</span></h2>`;
+  html += `<div class="note" style="margin-bottom:5px;">2부위=2셋, 4부위=4셋 자동 반영</div>`;
+
+  // 세트 한번에 선택 (4부위 전부 동일 세트로 일괄 세팅)
+  const slotSets = SLOTS.map(slot => state.armor[slot].set);
+  const uniformSet = (slotSets.every(s => s===slotSets[0]) && slotSets[0]!=='없음') ? slotSets[0] : null;
+  html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-bottom:3px;">세트 한번에 선택 (4부위 전체를 같은 세트로)</div>`;
+  html += `<select style="width:100%;margin-bottom:8px;" onchange="onArmorFullSet(this.value)">`;
+  html += `<option value="없음" ${uniformSet===null?'selected':''}>없음 / 혼합</option>`;
+  armorSetsFor(c.weightClass).forEach(sname => {
+    const s = ARMOR_SETS[sname];
+    const bits = [];
+    const p2 = setEffectPreview(s.set2, s.set2desc); if(p2) bits.push('2셋: '+p2);
+    const p4 = setEffectPreview(s.set4, s.set4desc); if(p4) bits.push('4셋: '+p4);
+    const label = s.name + (bits.length ? '  【'+bits.join(' / ')+'】' : '');
+    html += `<option value="${sname}" ${uniformSet===sname?'selected':''}>${label}</option>`;
+  });
+  html += `</select>`;
+
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;">`;
+  SLOTS.forEach(slot => {
+    const cur = state.armor[slot];
+    html += `<div style="margin:0;"><label style="font-size:11px;color:var(--text-dim);">${slot}</label>
+      <select style="width:100%;" onchange="onArmorSetChange('${slot}', this.value)">`;
+    html += `<option value="없음" ${cur.set==='없음'?'selected':''}>없음</option>`;
+    armorSetsFor(c.weightClass).forEach(sname => {
+      const s = ARMOR_SETS[sname]; const pieceInfo = s.pieces[slot]; if(!pieceInfo) return;
+      const bits = [];
+      if(pieceInfo.pieceStat && PRIORITY_STATS.includes(pieceInfo.pieceStat)){
+        const val = pieceInfo.pieceStars[pieceInfo.maxStar]||0;
+        if(val) bits.push(`개별 ${STAT_LABEL[pieceInfo.pieceStat]}+${val}%`);
+      }
+      const p2 = setEffectPreview(s.set2, s.set2desc); if(p2) bits.push('2셋:'+p2);
+      const p4 = setEffectPreview(s.set4, s.set4desc); if(p4) bits.push('4셋:'+p4);
+      const label = pieceInfo.name + (bits.length ? '  【'+bits.join(' / ')+'】' : '');
+      html += `<option value="${sname}" ${cur.set===sname?'selected':''}>${label}</option>`;
+    });
+    html += `</select></div>`;
+  });
+  html += `</div>`;
+  html += `<div class="note" style="margin:4px 0;">방어구는 항상 6각(최대 성급) 기준으로 계산합니다. 드롭다운의 【 】 안은 6각 기준 치명타/물리관통/마법관통 미리보기(2셋·4셋은 해당 세트를 그 수만큼 갖췄을 때 값). 5대 기본 스탯이 아닌 물리관통/치명타확률 등은 2셋·4셋 모두 조건문이 없으면 상시(인게임)로 계산했습니다.</div>`;
+  html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:bold;color:var(--accent);margin-bottom:4px;">장비 제련 (수동 입력 · 마을 스탯으로 합산)</div>
+    <div class="note" style="margin-bottom:5px;">제련에서 획득한 치확을 수동 입력하는 칸입니다. 합계 페이지에 입력한 수치만큼 합산됩니다.</div>
+    <div style="max-width:160px;"><label style="font-size:11px;color:var(--text-dim);">치명타확률%</label>
+      <input type="number" step="0.1" style="width:100%;" value="${state.forgeArmorCrit}" onchange="state.forgeArmorCrit=+this.value||0; render();"></div>
+  </div>`;
+  html += `</div>`;
+
+  // 악세사리 (별도 카드)
+  html += `<div class="card"><h2>악세사리 <span class="tag">택1(슬롯수 미확인)</span></h2>`;
+  html += `<select style="width:100%;" onchange="onAccessoryChange(this.value)"><option value="없음" ${state.accessory==='없음'?'selected':''}>없음</option>`;
+  sortedAccessoryNames().forEach(name => {
+    const acc = ACCESSORIES[name];
+    const star = acc.maxStar;
+    let stat = Object.assign({}, acc.starStats[star]||acc.starStats[1]||{});
+    if(acc.extraAlways && acc.extraAlways[star]) for(const [k,v] of Object.entries(acc.extraAlways[star])) stat[k]={v,zone:'village'};
+    const bits = [];
+    const p1 = statPreviewPlain(stat); if(p1) bits.push(p1);
+    if(acc.skill){ const skillStat = acc.skill.statByStar[star]||acc.skill.statByStar[1]; const p2 = statPreviewPlain(skillStat); if(p2) bits.push(p2+'(조건부)'); }
+    const label = acc.name + (acc.unique?'★':'') + (bits.length ? '  【'+bits.join(' / ')+'】' : '');
+    html += `<option value="${name}" ${state.accessory===name?'selected':''}>${label}</option>`;
+  });
+  html += `</select>`;
+  html += `<div class="note" style="margin:4px 0;">드롭다운의 【 】 안은 6각(또는 해당 아이템 최대 성급) 기준 치명타/물리관통/마법관통 미리보기입니다. 목록 순서: 유일템(★) → 상위템 → 일반(전설) → 영웅.</div>`;
+  if(state.accessory!=='없음'){
+    const acc = ACCESSORIES[state.accessory];
+    if(acc.maxStar>1) html += `<span class="slider-wrap">★<button class="step-btn" ${acc.fixedStar?'disabled':''} onclick="state.accessoryStar=clampStep(state.accessoryStar,-1,1,${acc.maxStar}); render();">◀</button><input type="range" min="1" max="${acc.maxStar}" value="${state.accessoryStar}" ${acc.fixedStar?'disabled':''} oninput="state.accessoryStar=+this.value; render();"><button class="step-btn" ${acc.fixedStar?'disabled':''} onclick="state.accessoryStar=clampStep(state.accessoryStar,1,1,${acc.maxStar}); render();">▶</button><span class="star-val">${state.accessoryStar}</span></span>`;
+  }
+  if(state.accessory!=='없음'){
+    const acc = ACCESSORIES[state.accessory];
+    let stat = Object.assign({}, acc.starStats[state.accessoryStar]||acc.starStats[1]||{});
+    if(acc.extraAlways && acc.extraAlways[state.accessoryStar]){
+      for(const [k,v] of Object.entries(acc.extraAlways[state.accessoryStar])) stat[k]={v,zone:'village'};
+    }
+    // 2026-07-24: 악세사리는 설명이 단순해 "?" 팝업 없이 성급에 맞는 값을 바로 보여준다(깡스탯은 이걸로 충분).
+    html += `<div class="opt-line"><div class="opt-top"><span class="name">추가능력치</span>${zoneBadge('village')}</div>
+      <div class="opt-bottom">${statStrObj(stat)}</div></div>`;
+    if(acc.skill){
+      const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+      const dtext = accessoryDescForStar(acc.skill.desc, acc.skill.statByStar, state.accessoryStar, acc.maxStar);
+      html += optLine('스킬 효과 (자동으로 조건부 합산됨)', skillStat, 'cond', dtext);
+    } else if(acc.desc && (/\(★\d/.test(acc.desc) || Object.values(stat).some(e=>e && e.zone==='cond'))){
+      // skill 블록 없이 desc 자체에 성급별로 달라지는 조건부 효과가 있는 항목(예: 수호의 반지, 용 비늘 각반) —
+      // "?" 없이 항상 보이는 설명으로 유지하되 같은 방식으로 성급에 맞게 치환.
+      const dtext = accessoryDescForStar(acc.desc, acc.starStats, state.accessoryStar, acc.maxStar);
+      html += `<div class="note" style="margin:4px 0;">${escapeHtml(dtext)}</div>`;
+    }
+  }
+  html += `</div>`;
+
+  // 방어구/악세사리 합산 결과 (별도 카드)
+  html += `<div class="card"><h2>방어구/악세사리 합산 결과</h2>`;
+  html += `<div>${renderArmorSummary()}</div><div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">${renderAccessorySummary()}</div>`;
+  html += `</div>`;
+
+  // 룬
+  html += `<div class="card full"><h2>룬 <span class="tag">슬롯 선택 · 세트효과 자동 합산</span></h2>`;
+  html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-bottom:3px;">자주 쓰는 룬 세트 바로 선택</div>`;
+  html += `<div class="maxbar" style="margin-bottom:10px;">`;
+  Object.keys(RUNE_PRESETS).forEach(name => {
+    const active = RUNE_PRESETS[name].every((r,i)=>state.runeSlots[i]===r);
+    html += `<button type="button" class="${active?'active':''}" onclick="onRunePreset('${name}')">${name}</button>`;
+  });
+  html += `</div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;">`;
+  for(let i=0;i<6;i++){
+    const slot = i+1;
+    html += `<div><label style="font-size:11px;">${slot}번 슬롯</label><select style="width:100%;" onchange="onRuneSlotChange(${i}, this.value)">`;
+    html += `<option value="없음" ${state.runeSlots[i]==='없음'?'selected':''}>없음</option>`;
+    RUNE_GRADE_ORDER.forEach(grade => {
+      html += `<optgroup label="${grade}">`;
+      Object.keys(RUNES).filter(n=>RUNES[n].grade===grade).forEach(n => {
+        const preview = runeOptionPreview(n, slot);
+        const label = RUNES[n].name + (preview ? '  【'+preview+'】' : '');
+        html += `<option value="${n}" ${state.runeSlots[i]===n?'selected':''}>${label}</option>`;
+      });
+      html += `</optgroup>`;
+    });
+    html += `</select></div>`;
+  }
+  html += `</div>`;
+  html += `<div class="note" style="margin-top:6px;">같은 종류 룬이 2개(1짝)/4개(2짝)/6개(3짝) 모이면 세트효과가 짝 수만큼 중첩됩니다. 유일룬(검황/시간/계승/빛)은 슬롯 1~6번 각각 딱 1개까지만 보유 가능한 룬입니다.</div>`;
+  html += `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);"><b>룬 효과 + 세트효과 합산 결과</b><div style="margin-top:4px;">${renderRuneSummary()}</div>`;
+  html += `<div class="note" style="margin-top:4px;">5대 기본 스탯(최대체력·공격력·주문력·방어력·저항력)의 "(고정)" 표시는 %가 아닌 순수 수치 가산이라 위쪽 %표(마을/상시/조건부 합계)와는 단순 합산하지 않고 여기 따로 표시했습니다 — 캐릭터의 실제 마을 기본 스탯에 직접 더해서 판단하세요. 그 외 물리관통·마법관통 등 %스탯은 위쪽 합계 표에 자동 반영됩니다.</div>`;
+  html += `</div>`;
+  html += `</div>`;
+
+  document.getElementById('left').innerHTML = html;
+  renderResults();
+  updateMaxBarUI();
+  saveAutosave();
+}
+// 2026-07-23: 물리관통/마법관통 버튼을 "🎯 최대 관통 세팅" 하나로, 물리관통저항/마법관통저항도 "🛡 최대 관통 저항 세팅" 하나로 합침
+// — state.activeMaxMode는 여전히 crit/phys/magPen/physRes/magRes 중 실제로 선택된 단일 키를 담고, 버튼은 그 키가 자기 그룹에 속하면 활성 표시한다.
+const MAX_BTN_GROUPS = [
+  {btnId:'maxBtn_crit', keys:['crit']},
+  {btnId:'maxBtn_pen', keys:['phys','magPen']},
+  {btnId:'maxBtn_penRes', keys:['physRes','magRes']}
+];
+function updateMaxBarUI(){
+  // 2026-07-24: 값이 우연히 같은지가 아니라 activeMaxMode(=방금 클릭하고 그 뒤로 안 건드림)만으로 판정한다.
+  MAX_BTN_GROUPS.forEach(g=>{
+    const btn = document.getElementById(g.btnId);
+    if(!btn) return;
+    btn.classList.toggle('active', g.keys.includes(state.activeMaxMode));
+  });
+}
+
+function onCharChange(name){ state.character = name; initState(); render(); }
+function onActiveToggle(name, checked){ state.activesChecked[name] = checked; render(); }
+function onArmorSetChange(slot, val){ state.armor[slot] = {set:val, star: val==='없음'?6:ARMOR_SETS[val].pieces[slot].maxStar}; render(); }
+function onArmorFullSet(sname){
+  SLOTS.forEach(slot => {
+    if(sname==='없음'){ state.armor[slot] = {set:'없음', star:6}; }
+    else { state.armor[slot] = {set:sname, star: ARMOR_SETS[sname].pieces[slot].maxStar}; }
+  });
+  render();
+}
+function onAccessoryChange(val){ state.accessory = val; state.accessoryStar = val==='없음'?1:(ACCESSORIES[val].maxStar||1); render(); }
+function onRuneSlotChange(idx, val){ state.runeSlots[idx] = val; render(); }
+function onArtifactChange(val){
+  state.artifact = val;
+  const c = CHARACTERS[state.character];
+  const art = c.artifacts.find(a=>a.name===val);
+  if(art){
+    // 성급/중첩 슬라이더는 아티팩트를 바꿔도 사용자가 맞춰둔 값을 그대로 유지한다(다만 새 아티팩트의 범위를 넘으면 그 한도로 clamp).
+    // fixedStar 아티팩트는 starStats에 고정 성급 키 하나만 존재하므로 항상 maxStar로 고정.
+    state.artifactStar = art.fixedStar ? art.maxStar : Math.max(1, Math.min(state.artifactStar||art.maxStar, art.maxStar));
+    state.artifactStack = art.stackable ? Math.max(0, Math.min(state.artifactStack||0, art.maxStack)) : 0;
+  }
+  render();
+}
+
+/* ================= MAX 세팅 (특정 스탯 최적화) ================= */
+// weightClass를 반드시 넘겨서 이 캐릭터가 착용 가능한 방어구 안에서만 최적 조합을 찾는다(무게 등급이 다른 방어구는 애초에 착용 불가).
+function bestArmorForStat(statKey, weightClass){
+  const setNames = armorSetsFor(weightClass);
+  const options = ['없음', ...setNames];
+  let best = null, bestVal = -1;
+  for(const s1 of options) for(const s2 of options) for(const s3 of options) for(const s4 of options){
+    const combo = {투구:s1,갑옷:s2,장갑:s3,신발:s4};
+    let total = 0;
+    const stars = {};
+    for(const slot of SLOTS){
+      const sname = combo[slot];
+      if(sname==='없음'){ stars[slot]=6; continue; }
+      const p = ARMOR_SETS[sname].pieces[slot];
+      stars[slot] = p.maxStar;
+      if(p.pieceStat===statKey) total += (p.pieceStars[p.maxStar]||0);
+    }
+    const counts = {};
+    for(const slot of SLOTS){ const sname=combo[slot]; if(sname!=='없음') counts[sname]=(counts[sname]||0)+1; }
+    for(const [sname,count] of Object.entries(counts)){
+      const s = ARMOR_SETS[sname];
+      if(count>=2 && s.set2[statKey]) total += s.set2[statKey].v;
+      if(count>=4 && s.set4[statKey]) total += s.set4[statKey].v;
+    }
+    if(total > bestVal){ bestVal = total; best = {combo, stars}; }
+  }
+  best.val = bestVal;
+  return best;
+}
+
+// statKey를 최대화하는 선택지를 계산한다. baseState는 건드리지 않고(순수 함수),
+// "이 스탯에 영향을 주는 항목만" 골라 바꾼 새 state 객체를 반환한다 — 무관한 선택은 baseState 그대로 유지.
+// (MAX 버튼을 눌렀을 때 실제 적용은 물론, 현재 상태가 "진짜 최대"인지 비교하는 배너 음영 판정에도 그대로 재사용된다.)
+function computeMaxSelections(statKey, baseState){
+  const c = CHARACTERS[baseState.character];
+  const s = JSON.parse(JSON.stringify(baseState));
+  const fixed = FIXED_MAX_PRESET[statKey]; // crit/phys/magPen은 룬·방어구·악세사리를 실전 조합으로 고정
+
+  // 룬
+  if(fixed && fixed.runeMode === 'fixed'){
+    s.runeSlots = fixed.runeFixed.slice();
+  } else if(fixed && fixed.runeMode === 'preset'){
+    s.runeSlots = RUNE_PRESETS[fixed.runePresetName].slice();
+  } else if(fixed && fixed.runeMode === 'unchanged'){
+    // 이 스탯엔 룬을 관여시키지 않음 — 현재 선택 그대로
+  } else if(RUNE_MERGEABLE_STATS.includes(statKey)){
+    const runeResult = bestRuneCombo(statKey);
+    if(runeResult.val > 0) s.runeSlots = runeResult.combo;
+  }
+
+  // 클래스: 기여하는 클래스가 있을 때만 교체 (치명타는 클래스 고유 치명타확률도 함께 비교)
+  // stack형 클래스패시브(예: 제로스위든 "무한의 적응")는 stat이 아니라 stack.perStack으로만 값을 주고,
+  // toggle형 클래스패시브(예: 하이델룬 "L.T.K")는 stat이 아니라 toggle.stat으로만 값을 준다 —
+  // 둘 다 각각의 최대 기여분(stack: perStack*maxStack, toggle: 켜졌을 때 값)까지 합쳐서 비교해야
+  // 그 클래스가 최적으로 선택된다.
+  let bestClass = null, bestClassVal = 0;
+  c.classes.forEach(cl=>{
+    let v=(cl.stat[statKey]&&cl.stat[statKey].v)||0;
+    if(statKey==='crit') v += (cl.baseCrit||0);
+    if(cl.stack && cl.stack.perStack[statKey]) v += cl.stack.perStack[statKey]*cl.stack.maxStack;
+    if(cl.stack2 && cl.stack2.perStack[statKey]) v += cl.stack2.perStack[statKey]*cl.stack2.maxStack;
+    if(cl.toggle && cl.toggle.stat[statKey]) v += cl.toggle.stat[statKey].v;
+    if(v>bestClassVal){bestClassVal=v; bestClass=cl;}
+  });
+  if(bestClass) s.classId = bestClass.id;
+  {
+    const finalClass = c.classes.find(cl=>cl.id===s.classId);
+    s.classStack = (finalClass && finalClass.stack) ? finalClass.stack.maxStack : 0;
+    s.classStack2 = (finalClass && finalClass.stack2) ? finalClass.stack2.maxStack : 0;
+    if(finalClass && finalClass.toggle && finalClass.toggle.stat[statKey]) s.classToggle = true;
+  }
+
+  // 고유패시브 radio(무작위 획득류, stages별로 존재 여부가 다를 수 있음 — 철가면 "경계역전/경계고착" 등)는
+  // 최종 선택된 단계가 정해진 뒤에 그 단계 기준으로 고른다(radio는 MAX 버튼 5종의 대상 스탯이 아니므로 단계
+  // 선택 자체에는 영향을 주지 않고, 정해진 단계 안에서만 이 statKey를 더 주는 옵션을 고른다).
+  function pickBestRadioForStage(stageIdx){
+    const rdCfg = resolveRadioCfg(c.uniquePassive, stageIdx);
+    if(!rdCfg) return;
+    let bestR = 0, bestRVal = -1;
+    rdCfg.options.forEach((opt,idx)=>{
+      const v = (opt.stat[statKey] && opt.stat[statKey].v) || 0;
+      if(v > bestRVal){ bestRVal = v; bestR = idx; }
+    });
+    s.uniqueRadio = bestR;
+  }
+  // 고유패시브 단계 선택(2026-07-23, 리델 하트류 극소수만 해당) — 이 스탯을 가장 많이 주는 단계를 고른다.
+  // 2026-07-24: stack의 계수/최대치가 단계마다 다른 캐릭터가 있어(예: 리델 하트 전투감각, 이자벨 강철관통),
+  // 단계의 stat 값뿐 아니라 그 단계에서 얻는 중첩 기여분까지 합쳐서 "이 스탯을 가장 많이 주는 단계"를 고른다
+  // (동률이면 더 나중/성숙한 단계를 우선 — 초필살기 단계 선택과 동일 원칙).
+  if(c.uniquePassive.stages){
+    let bestIdx = c.uniquePassive.stages.default, bestVal = -1;
+    c.uniquePassive.stages.options.forEach((opt,idx)=>{
+      const statV = (opt.stat[statKey] && opt.stat[statKey].v) || 0;
+      const stCfg = resolveStackCfg(c.uniquePassive, idx);
+      const stackContrib = (stCfg && stCfg.perStack[statKey]) ? stCfg.perStack[statKey]*stCfg.maxStack : 0;
+      const tgCfg = resolveToggleCfg(c.uniquePassive, idx);
+      const toggleContrib = (tgCfg && tgCfg.stat[statKey]) ? tgCfg.stat[statKey].v : 0;
+      const tg2Cfg = resolveToggle2Cfg(c.uniquePassive, idx);
+      const toggle2Contrib = (tg2Cfg && tg2Cfg.stat[statKey]) ? tg2Cfg.stat[statKey].v : 0;
+      const total = statV + stackContrib + toggleContrib + toggle2Contrib;
+      if(total >= bestVal){ bestVal = total; bestIdx = idx; }
+    });
+    s.uniquePassiveStage = bestIdx;
+    if(c.uniquePassive.stack){
+      const activeCfg = resolveStackCfg(c.uniquePassive, bestIdx);
+      if(activeCfg && activeCfg.perStack[statKey]) s.uniqueStack = activeCfg.maxStack;
+    }
+    const activeToggleCfg = resolveToggleCfg(c.uniquePassive, bestIdx);
+    if(activeToggleCfg && activeToggleCfg.stat[statKey]) s.uniqueToggle = true;
+    const activeToggle2Cfg = resolveToggle2Cfg(c.uniquePassive, bestIdx);
+    if(activeToggle2Cfg && activeToggle2Cfg.stat[statKey]) s.uniqueToggle2 = true;
+    pickBestRadioForStage(bestIdx);
+  } else {
+    if(c.uniquePassive.stack && c.uniquePassive.stack.perStack[statKey]){
+      s.uniqueStack = c.uniquePassive.stack.maxStack;
+    }
+    if(c.uniquePassive.toggle && c.uniquePassive.toggle.stat[statKey]){
+      s.uniqueToggle = true;
+    }
+    pickBestRadioForStage(null);
+  }
+  // 초필살기 단계 선택(2026-07-23, 리델 하트류 극소수만 해당) — 항상 최종형(가장 강한 단계)을 고른다.
+  if(c.ultimate.stages){
+    let bestIdx = c.ultimate.stages.default, bestVal = -1;
+    c.ultimate.stages.options.forEach((opt,idx)=>{
+      const v = (opt.stat[statKey] && opt.stat[statKey].v) || 0;
+      if(v >= bestVal){ bestVal = v; bestIdx = idx; }
+    });
+    s.ultimateStage = bestIdx;
+  }
+  if(c.outerSkill && c.outerSkill.stages){
+    let bestIdx = c.outerSkill.stages.default, bestVal = -1;
+    c.outerSkill.stages.options.forEach((opt,idx)=>{
+      const v = (opt.stat[statKey] && opt.stat[statKey].v) || 0;
+      if(v >= bestVal){ bestVal = v; bestIdx = idx; }
+    });
+    s.outerSkillStage = bestIdx;
+  }
+
+  // 아티팩트 — 기여하는 게 있을 때만 교체(없으면 현재 선택 유지, 강제로 "없음" 처리하지 않음)
+  let bestArt = null, bestArtVal = 0, bestArtStar=4, bestArtStack=0;
+  c.artifacts.forEach(a=>{
+    let v=0, star=a.maxStar, stack=0;
+    if(a.starStats){ const st=a.starStats[a.maxStar]||{}; v += (st[statKey]&&st[statKey].v)||0; }
+    if(a.stackable){ const per=(a.starPerStack[a.maxStar]||{})[statKey]||0; if(per){ v += per*a.maxStack; stack=a.maxStack; } }
+    if(v>bestArtVal){ bestArtVal=v; bestArt=a; bestArtStar=star; bestArtStack=stack; }
+  });
+  if(bestArt){ s.artifact=bestArt.name; s.artifactStar=bestArtStar; s.artifactStack=bestArtStack; }
+
+  // 무기: 항상 장착, 최대 성급 (해가 되지 않음 — 유일하게 항상 손대는 항목)
+  s.weaponOn = true; s.weaponStar = 6;
+  { const wpm = WEAPONS[c.weaponName]; s.weaponStack = wpm.stack ? resolveWeaponStackMax(wpm, s.weaponStar) : 0; }
+
+  // 방어구 — 고정 방어구가 이 캐릭터의 무게 등급과 맞지 않으면(착용 불가) 착용 가능한 세트 안에서 계산된 최적 조합으로 대체한다.
+  const fixedArmorName = fixed ? resolveFixedByWeight(fixed.armorSet, c.weightClass) : null;
+  if(fixedArmorName && armorWeightClass(fixedArmorName) === c.weightClass){
+    const sname = fixedArmorName;
+    SLOTS.forEach(slot=>{ s.armor[slot] = {set:sname, star: ARMOR_SETS[sname].pieces[slot].maxStar}; });
+  } else {
+    const armorResult = bestArmorForStat(statKey, c.weightClass);
+    if(armorResult.val > 0){
+      SLOTS.forEach(slot=>{
+        const sname = armorResult.combo[slot];
+        s.armor[slot] = {set:sname, star: sname==='없음'?6:armorResult.stars[slot]};
+      });
+    }
+  }
+
+  // 악세사리
+  if(fixed && fixed.accessory === 'unchanged'){
+    // 이 스탯엔 악세사리를 관여시키지 않음 — 현재 선택 그대로
+  } else if(fixed && fixed.accessory){
+    s.accessory = fixed.accessory;
+    s.accessoryStar = ACCESSORIES[fixed.accessory].maxStar;
+  } else {
+    let bestAcc=null, bestAccVal=0, bestAccStar=1;
+    Object.keys(ACCESSORIES).forEach(name=>{
+      const acc = ACCESSORIES[name];
+      const star = acc.maxStar;
+      const st = acc.starStats[star]||{};
+      let v = (st[statKey]&&st[statKey].v)||0;
+      if(acc.extraAlways && acc.extraAlways[star] && acc.extraAlways[star][statKey]) v += acc.extraAlways[star][statKey];
+      if(acc.skill){ const skillStat = acc.skill.statByStar[star]||acc.skill.statByStar[1]; if(skillStat[statKey] && skillStat[statKey].v) v += skillStat[statKey].v; }
+      if(v>bestAccVal){ bestAccVal=v; bestAcc=name; bestAccStar=star; }
+    });
+    if(bestAcc){ s.accessory=bestAcc; s.accessoryStar=bestAccStar; }
+    // 기여하는 악세사리가 없으면 현재 선택 유지(강제로 "없음" 처리하지 않음)
+  }
+
+  // 액티브 — 기여하는 것이 없으면 현재 체크 상태를 전혀 건드리지 않음.
+  // 있으면 상위 기여 액티브를 반드시 포함시키되, 3칸 예산을 넘길 때만 무관한 액티브를 해제한다.
+  const contributing = c.actives.filter(a=> a.stat && a.stat[statKey] && a.stat[statKey].v>0)
+                                 .sort((a,b)=> b.stat[statKey].v - a.stat[statKey].v);
+  if(contributing.length){
+    const required = contributing.slice(0,3).map(a=>a.name);
+    required.forEach(name => s.activesChecked[name] = true);
+    let checkedNames = c.actives.filter(a=>s.activesChecked[a.name]).map(a=>a.name);
+    while(checkedNames.length > 3){
+      const removable = checkedNames.find(n => !required.includes(n)) || checkedNames.find(n => !required.slice(0, checkedNames.length-1).includes(n));
+      if(!removable) break;
+      s.activesChecked[removable] = false;
+      checkedNames = checkedNames.filter(n=>n!==removable);
+    }
+  }
+
+  return s;
+}
+
+function maxSetup(statKey){
+  state = computeMaxSelections(statKey, state);
+  state.activeMaxMode = statKey;
+  state.maxModeLocked = true;
+  render();
+}
+
+// 2026-07-23: 두 스탯(물리관통/마법관통, 또는 물리관통저항/마법관통저항) 중 이 캐릭터에게 더 높은 값을 주는 쪽 하나만 골라 세팅한다
+// — 캐릭터는 늘 물리/마법 둘 중 하나로 갈리므로, 좌측 "최대 세팅" 메뉴에서는 항상 두 항목을 동시에 보여줄 필요가 없다는 취지.
+// (우측 결과 탭에서는 물리관통/마법관통을 계속 분리해서 보여준다 — 이 함수는 좌측 버튼 메뉴 전용.)
+function maxSetupBest(keyA, keyB){
+  const savedState = state;
+  const sA = computeMaxSelections(keyA, savedState);
+  state = sA;
+  const totA = computeTotals().bucket;
+  const valA = totA.village[keyA] + totA.always[keyA] + totA.cond[keyA];
+
+  state = savedState;
+  const sB = computeMaxSelections(keyB, savedState);
+  state = sB;
+  const totB = computeTotals().bucket;
+  const valB = totB.village[keyB] + totB.always[keyB] + totB.cond[keyB];
+
+  if(valA >= valB){ state = sA; state.activeMaxMode = keyA; }
+  else { state = sB; state.activeMaxMode = keyB; }
+  state.maxModeLocked = true;
+  render();
+}
+
+/* ================= CALC ================= */
+function computeTotals(){
+  const c = CHARACTERS[state.character];
+  const bucket = {village:{}, always:{}, cond:{}};
+  ALL_STATS.forEach(k => { bucket.village[k]=0; bucket.always[k]=0; bucket.cond[k]=0; });
+  const condLog = [];
+
+  // 치명타 피해량 기본값(2026-07-23 — 전 캐릭터 공통, 개별 캐릭터 데이터에는 넣지 않는다). CRIT_DMG_VILLAGE_BASE 선언부 주석 참고.
+  addEntry(bucket, 'critDmg', {v:CRIT_DMG_VILLAGE_BASE, zone:'village'}, '치명타 피해량 기본값(전 캐릭터 공통)', condLog);
+
+  const curClass = c.classes.find(cl=>cl.id===state.classId);
+  addStatObj(bucket, curClass.stat, '클래스패시브 - '+curClass.id, condLog);
+  if(curClass.baseCrit) addEntry(bucket, 'crit', {v:curClass.baseCrit, zone:'village'}, '클래스패시브 - '+curClass.id+' (클래스 고유 치명타확률)', condLog);
+  if(curClass.toggle && state.classToggle) addStatObj(bucket, curClass.toggle.stat, '클래스패시브 - '+curClass.id+' ('+curClass.toggle.label+')', condLog);
+  if(curClass.stack){
+    for(const [k,per] of Object.entries(curClass.stack.perStack)){
+      const total = per * (state.classStack||0);
+      if(total) addEntry(bucket, k, {v:total, zone:'cond', cond:curClass.stack.cond}, '클래스패시브 - '+curClass.id+' ('+(curClass.stack.shortName||curClass.stack.label)+', '+state.classStack+'개)', condLog);
+    }
+  }
+  if(curClass.stack2){
+    for(const [k,per] of Object.entries(curClass.stack2.perStack)){
+      const total = per * (state.classStack2||0);
+      if(total) addEntry(bucket, k, {v:total, zone:'cond', cond:curClass.stack2.cond}, '클래스패시브 - '+curClass.id+' ('+(curClass.stack2.shortName||curClass.stack2.label)+', '+state.classStack2+'개)', condLog);
+    }
+  }
+
+  if(c.uniquePassive.stages){
+    const stg = c.uniquePassive.stages.options[state.uniquePassiveStage ?? c.uniquePassive.stages.default];
+    addStatObj(bucket, stg.stat, '고유패시브 - '+c.uniquePassive.name+' ('+stg.name+')', condLog);
+  } else {
+    addStatObj(bucket, c.uniquePassive.base, '고유패시브 - '+c.uniquePassive.name+' (기본)', condLog);
+  }
+  if(c.uniquePassive.stack){
+    const st = resolveStackCfg(c.uniquePassive, c.uniquePassive.stages ? (state.uniquePassiveStage ?? c.uniquePassive.stages.default) : null);
+    if(st){
+      for(const [k,per] of Object.entries(st.perStack)){
+        const total = per * state.uniqueStack;
+        if(total) addEntry(bucket, k, {v:total, zone:'cond', cond:st.cond||c.uniquePassive.stack.cond}, '고유패시브 - '+(st.shortName||c.uniquePassive.stack.shortName||c.uniquePassive.name)+' ('+state.uniqueStack+'중첩)', condLog);
+      }
+    }
+  }
+  if(state.uniqueToggle){
+    const tg = resolveToggleCfg(c.uniquePassive, c.uniquePassive.stages ? (state.uniquePassiveStage ?? c.uniquePassive.stages.default) : null);
+    if(tg) addStatObj(bucket, tg.stat, '고유패시브 - '+(tg.shortName||c.uniquePassive.name), condLog);
+  }
+  if(state.uniqueToggle2 && c.uniquePassive.stages){
+    const tg2 = resolveToggle2Cfg(c.uniquePassive, state.uniquePassiveStage ?? c.uniquePassive.stages.default);
+    if(tg2) addStatObj(bucket, tg2.stat, '고유패시브 - '+(tg2.shortName||c.uniquePassive.name), condLog);
+  }
+  {
+    const rdCfg = resolveRadioCfg(c.uniquePassive, c.uniquePassive.stages ? (state.uniquePassiveStage ?? c.uniquePassive.stages.default) : null);
+    if(rdCfg && state.uniqueRadio!=null){
+      const opt = rdCfg.options[state.uniqueRadio];
+      addStatObj(bucket, opt.stat, '고유패시브 - '+opt.name, condLog);
+    }
+  }
+
+  if(c.ultimate.stages){
+    const stg = c.ultimate.stages.options[state.ultimateStage ?? c.ultimate.stages.default];
+    addStatObj(bucket, stg.stat, '초필살기 - '+c.ultimate.name+' ('+stg.name+')', condLog);
+  } else {
+    addStatObj(bucket, c.ultimate.stat, '초필살기 - '+c.ultimate.name, condLog);
+  }
+  if(c.outerSkill){
+    if(c.outerSkill.stages){
+      const stg = c.outerSkill.stages.options[state.outerSkillStage ?? c.outerSkill.stages.default];
+      addStatObj(bucket, stg.stat, '아우터스킬 - '+c.outerSkill.name+' ('+stg.name+')', condLog);
+    } else {
+      addStatObj(bucket, c.outerSkill.stat, '아우터스킬 - '+c.outerSkill.name, condLog);
+    }
+  }
+
+  c.actives.filter(a=>state.activesChecked[a.name]).slice(0,3).forEach(a => addStatObj(bucket, a.stat, '액티브 - '+a.name, condLog));
+
+  if(state.artifact!=='없음'){
+    const art = c.artifacts.find(a=>a.name===state.artifact);
+    if(art.starStats) addStatObj(bucket, art.starStats[state.artifactStar]||{}, '아티팩트 - '+art.name, condLog);
+    if(art.stackable){
+      const perStat = art.starPerStack[state.artifactStar]||{};
+      for(const k in perStat){
+        const total = perStat[k]*state.artifactStack;
+        if(total) addEntry(bucket, k, {v:total, zone:'cond', cond:art.cond}, '아티팩트 - '+art.name+' ('+state.artifactStack+'중첩)', condLog);
+      }
+    }
+  }
+
+  if(state.weaponOn){
+    const wp = WEAPONS[c.weaponName];
+    addStatObj(bucket, wp.starStats[state.weaponStar], '무기 - '+c.weaponName, condLog);
+    if(wp.stack){
+      const stackPer = resolveWeaponStackPerStat(wp, state.weaponStar);
+      for(const k in stackPer){
+        const total = stackPer[k]*state.weaponStack;
+        if(total) addEntry(bucket, k, {v:total, zone:'cond', cond:wp.stack.cond}, '무기 - '+c.weaponName+' ('+(wp.stack.shortName||wp.stack.label)+', '+state.weaponStack+'개)', condLog);
+      }
+    }
+  }
+  if(state.forgeWeaponCrit) addEntry(bucket, 'crit', {v:state.forgeWeaponCrit, zone:'village'}, '무기 제련 (수동입력)', condLog);
+  if(state.forgeWeaponPhys) addEntry(bucket, 'phys', {v:state.forgeWeaponPhys, zone:'village'}, '무기 제련 (수동입력)', condLog);
+  if(state.forgeWeaponMagPen) addEntry(bucket, 'magPen', {v:state.forgeWeaponMagPen, zone:'village'}, '무기 제련 (수동입력)', condLog);
+  if(state.forgeArmorCrit) addEntry(bucket, 'crit', {v:state.forgeArmorCrit, zone:'village'}, '장비 제련 (수동입력)', condLog);
+
+  const setCounts = {};
+  SLOTS.forEach(slot => { const s = state.armor[slot].set; if(s!=='없음') setCounts[s]=(setCounts[s]||0)+1; });
+  Object.entries(setCounts).forEach(([sname,count]) => {
+    const s = ARMOR_SETS[sname];
+    if(count>=2) addStatObj(bucket, s.set2, '방어구 - '+s.name+' 2셋', condLog);
+    if(count>=4) addStatObj(bucket, s.set4, '방어구 - '+s.name+' 4셋', condLog);
+  });
+  SLOTS.forEach(slot => {
+    const cur = state.armor[slot]; if(cur.set==='없음') return;
+    const pieceInfo = ARMOR_SETS[cur.set].pieces[slot];
+    if(pieceInfo.pieceStat){
+      const val = pieceInfo.pieceStars[cur.star]||0;
+      if(val) addEntry(bucket, pieceInfo.pieceStat, {v:val, zone:'village'}, pieceInfo.name, condLog);
+    }
+  });
+
+  if(state.accessory!=='없음'){
+    const acc = ACCESSORIES[state.accessory];
+    let stat = Object.assign({}, acc.starStats[state.accessoryStar]||acc.starStats[1]||{});
+    if(acc.extraAlways && acc.extraAlways[state.accessoryStar]){
+      for(const [k,v] of Object.entries(acc.extraAlways[state.accessoryStar])) stat[k]={v,zone:'village'};
+    }
+    addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
+    if(acc.skill){
+      const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+      addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
+    }
+  }
+
+  runeContributions().forEach(e => {
+    // 룬 효과는 전부 zone:'village'다(조건 없는 상시 고정치). %값(pct:true)은 ALL_STATS 소속 키(BASE/OTHER/DMG/HEAL 전부)면
+    // 오른쪽 합계에 그대로 병합된다 — 캐릭터 킷의 동일 계열 수치와 한 총합으로 합산됨(개별_정보 6장).
+    if(e.pct && ALL_STATS.includes(e.k)) addEntry(bucket, e.k, {v:e.v, zone:'village'}, '룬 - '+e.source, condLog);
+  });
+
+  // 2026-07-23: 철가면의 "치확 100% 초과분 → 치피 전환"은 실제 인게임에서 상대 치확감/버프·디버프 상황에 따라
+  // 달라지는 전투 중 계산이라, 결과 탭(마을/인게임/조건부 정적 합계)에서는 더 이상 자동 반영하지 않는다.
+  // 왼쪽 패널의 고유패시브 설명(note)에서만 이 메커닉 자체를 서술한다.
+  return {bucket, condLog};
+}
+
+// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
+// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
+function renderAIEval(){
+  return `<div class="ai-eval">
+    <h3>🤖 AI 평가</h3>
+    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
+    <div class="tagline">반격과 자가강화로 버티는 헤비 딜탱 — 클래스 선택에 따라 근접 방벽형/지속피해 디버프형/자가강화 극한형을 오가는 하이브리드</div>
+    <div class="eval-block">
+      <div class="label">강점</div>
+      <ul>
+        <li>✓ 드레드노트/에레보스가드/제로스위든 3개 클래스 모두 공통으로 방어력/저항력 +30%, 받는 피해 -20%를 깔고 시작해 어느 쪽을 골라도 기본 생존력이 탄탄하며, 그 위에 근접 인원비례 방벽(드레드노트)·지속 피해 디버프(에레보스가드)·중첩형 자가강화(제로스위든) 중 원하는 특화를 얹을 수 있습니다.</li>
+        <li>✓ 고유패시브 「그리마의 황제」(6초 기준)가 치명타 확률/방어력/저항력 +40%에 더해 받는 치유·보호막 효과 -90%, 받는 기본공격 피해 -30%까지 겹쳐 반영구적으로 두꺼운 방어층을 쌓습니다.</li>
+        <li>✓ 전용 무기 「다크블링거」가 반격 피해량 증가(★6 +25%)에 특화돼 있어, 방어적인 클래스 설계에도 불구하고 맞아줄수록 반격으로 화력을 뽑아내는 능동적 운용이 가능합니다.</li>
+        <li>✓ 액티브 「귀멸연살참」은 사용할 때마다 "파괴의 완력" 중첩(최대 5중첩, 영구, 해제 불가)이 쌓여 그 스킬 자체 피해량이 최대 +75%까지 늘어나는 구조라, 장기전으로 갈수록 이 스킬의 고정 딜소스가 계속 커집니다.</li>
+        <li>✓ 「가시 방벽」(호위+반격형 방어 버프)과 「공허 전개」(디버프 해제+아군 고정 피해 저항 부여)로 순수 탱킹을 넘어 파티 서포트 역할도 겸할 수 있습니다.</li>
+      </ul>
+    </div>
+    <div class="eval-block">
+      <div class="label">약점 / 주의점</div>
+      <ul>
+        <li>⚠ 3개 클래스 모두 baseCrit이 실측 전 임시값(5%)으로 채워져 있어, 실제 수치가 확인되면 치명타 관련 합계가 달라질 수 있습니다.</li>
+        <li>⚠ 액티브 대부분(연섬/무쌍관파/소드 브레이커 등)이 순수 물리 피해 또는 적 디버프 위주라 이 계산기가 추적하는 %스탯과 무관하고, 클래스 자체 효과(인접 적 수 비례 방어력, 체력 연동 회복 등)도 연속 스케일링이라 정적 수치로 표현되지 않아 실전 화력·생존력은 표에 보이는 것보다 상황 의존적입니다.</li>
+        <li>⚠ 제로스위든의 "무한의 적응"은 매 턴 공격해야 중첩이 유지·증가하고 공격하지 않으면 감소하는 구조라, 최대 15중첩(영겁의 성채) 상태를 실전에서 계속 유지하려면 꾸준한 공격 기회가 전제돼야 합니다.</li>
+        <li>⚠ 패왕의 수호령/영자력 개조 같은 아군 지원형 효과는 인접한 다른 아군에게만 적용되고 벨제부르 자신에게는 걸리지 않아, 팀 구성에 따라 이 캐릭터가 얻는 실질 이득이 달라집니다.</li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+function renderResults(){
+  const c = CHARACTERS[state.character];
+  const curClass = c.classes.find(cl=>cl.id===state.classId);
+  const {bucket, condLog} = computeTotals();
+  const legendBtn = descButton('legend', '마을: 전투 시작 전부터 조건 없이 적용되는 고정 능력치\n인게임: 완전히 조건 없이 발동되는 효과\n조건부: 발동에 특정 조건이 필요한 효과\n\n[예외] 아래 공격 관련 스탯은 "공격 시" 조건만 충족되면(다른 추가 조건 없이) 인게임으로 분류합니다 — 치명타확률, 치명타 피해량, 공격력, 주문력, 물리관통, 마법관통, 각종 주는 피해량', 'right');
+  let html = `<h2>합계 ${legendBtn.btn}</h2>${legendBtn.box}`;
+  // 이 캐릭터의 카테고리 목록 — "지금 선택한 옵션에 값이 있는지"가 아니라 "이 캐릭터가 어떤 선택을 하든
+  // 나올 수 있는 카테고리인지"로 판정한다(클래스/아티팩트/액티브 등 선택을 바꿔도 행이 사라졌다 나타났다 하지 않도록).
+  // 캐릭터 kit 자체(JSON 스캔)에 없더라도 현재 장착한 방어구/악세사리에서 실제로 값이 잡히면 그것도 포함시킨다
+  // (예: 프레데릭 자신은 피해감소 계열이 있지만, 캐릭터 kit에 전혀 없는 캐릭터가 검은 깃발 같은 악세사리를 장착한 경우도 놓치지 않기 위함).
+  const charJson = JSON.stringify(c);
+  const dmgKeysUsed = DMG_STATS.filter(k => charJson.includes('"'+k+'"') || bucket.village[k] || bucket.always[k] || bucket.cond[k]);
+  const healKeysUsed = HEAL_STATS.filter(k => charJson.includes('"'+k+'"') || bucket.village[k] || bucket.always[k] || bucket.cond[k]);
+
+  function condDetailButton(statKey, section){
+    const entries = condLog.filter(c => c.stat===statKey);
+    const key = 'cond-'+section+'-'+statKey;
+    const isOpen = state.openDescRight === key;
+    const unit = statKey==='move' ? '' : '%';
+    const villageEntries = entries.filter(e => e.zone==='village');
+    const alwaysEntries = entries.filter(e => e.zone==='always');
+    const condEntries = entries.filter(e => e.zone==='cond');
+    const parts = [];
+    if(villageEntries.length){
+      parts.push('[마을]\n' + villageEntries.map(e => `${e.label}: +${e.val}${unit}`).join('\n'));
+    }
+    if(alwaysEntries.length){
+      parts.push('[인게임]\n' + alwaysEntries.map(e => `${e.label}: +${e.val}${unit}`).join('\n'));
+    }
+    // 스킬 한정(합산 안 됨) 소스 — actives[].skillStat은 bucket/condLog에 없으므로 여기서 별도로 수집한다.
+    // 오른쪽 합계에 새지 않는 값이라는 걸 놓치지 않도록, [조건부] 파트 안에 보라색 굵은 글씨 태그를 붙여 구분해서 보여준다.
+    const skillOnlyEntries = [];
+    c.actives.forEach(a => {
+      if(a.skillStat && a.skillStat[statKey] && a.skillStat[statKey].v){
+        skillOnlyEntries.push({label:'액티브 - '+a.name, val:a.skillStat[statKey].v, cond:`"${a.name}" 사용 시`});
+      }
+      if(a.stack && a.stack.perStack[statKey]){
+        const cur = state.activeStackByName[a.name] || 0;
+        const val = a.stack.perStack[statKey] * cur;
+        if(val){
+          skillOnlyEntries.push({label:'액티브 - '+a.name+' ('+(a.stack.shortName||a.stack.label)+', '+cur+'개)', val, cond:`"${a.name}" 사용 시`});
+        }
+      }
+    });
+    // 참고용 서술(합산 불가) — 고유패시브 stages.options[i].refNote(또는 uniquePassive.refNote)에 이 statKey를
+    // 겨냥한 참고 정보가 있으면 여기 노출한다. 값을 스탯으로 환산할 수 없거나(예: "적의 받는 피해 감소를 무시"처럼
+    // 피해 증가와는 성격이 다른 효과) 애매해서 합산 대상으로 넣지 않기로 한 항목을 사용자가 놓치지 않게 하기 위함
+    // (철가면 "빛의 인도자" 최초 적용 예 — "받는 피해 감소 무시"를 dmgIncrease 합산엔 넣지 않되 "?"에서는 보이게 함).
+    const refNoteEntries = [];
+    {
+      const upStageIdx = c.uniquePassive.stages ? (state.uniquePassiveStage ?? c.uniquePassive.stages.default) : null;
+      const upOpt = (c.uniquePassive.stages && upStageIdx!=null) ? c.uniquePassive.stages.options[upStageIdx] : null;
+      const rn = (upOpt && upOpt.refNote) || c.uniquePassive.refNote;
+      if(rn && rn.statKey===statKey) refNoteEntries.push(rn);
+    }
+    // 스탯 공식 기반(다른 스탯의 %로 계산되는 동적 값) 효과 — 어떤 스탯인지는 명확하지만 실시간 스탯 변동을 반영한
+    // 정적 계산이 불가능해 합산에서 제외된 항목. classes[].statFormulaNote / uniquePassive(.stages[i]).statFormulaNote /
+    // ARMOR_SETS[].set2StatFormulaNote·set4StatFormulaNote에 채워두면 여기서 자동으로 노출된다.
+    const statFormulaEntries = [];
+    {
+      if(curClass.statFormulaNote && curClass.statFormulaNote.statKey===statKey) statFormulaEntries.push(curClass.statFormulaNote);
+      const upStageIdx2 = c.uniquePassive.stages ? (state.uniquePassiveStage ?? c.uniquePassive.stages.default) : null;
+      const upOpt2 = (c.uniquePassive.stages && upStageIdx2!=null) ? c.uniquePassive.stages.options[upStageIdx2] : null;
+      const sfn = (upOpt2 && upOpt2.statFormulaNote) || c.uniquePassive.statFormulaNote;
+      if(sfn && sfn.statKey===statKey) statFormulaEntries.push(sfn);
+      const setCounts = {};
+      SLOTS.forEach(slot => { const s = state.armor[slot].set; if(s!=='없음') setCounts[s]=(setCounts[s]||0)+1; });
+      Object.entries(setCounts).forEach(([sname,count]) => {
+        const s = ARMOR_SETS[sname];
+        if(count>=2 && s.set2StatFormulaNote && s.set2StatFormulaNote.statKey===statKey) statFormulaEntries.push(s.set2StatFormulaNote);
+        if(count>=4 && s.set4StatFormulaNote && s.set4StatFormulaNote.statKey===statKey) statFormulaEntries.push(s.set4StatFormulaNote);
+      });
+    }
+    if(condEntries.length || skillOnlyEntries.length || refNoteEntries.length || statFormulaEntries.length){
+      let condBlock = '[조건부]';
+      if(condEntries.length) condBlock += '\n' + condEntries.map(e => `${e.label}: +${e.val}${unit}\n   → 조건: ${e.cond||'(조건 정보 없음)'}`).join('\n\n');
+      if(skillOnlyEntries.length) condBlock += (condEntries.length?'\n\n':'\n') + skillOnlyEntries.map(e => `__SKILLONLY_TAG__ ${e.label}: +${e.val}${unit}\n   → 조건: ${e.cond}`).join('\n\n');
+      if(refNoteEntries.length) condBlock += (condEntries.length||skillOnlyEntries.length?'\n\n':'\n') + refNoteEntries.map(e => `__REFNOTE_TAG__ ${e.label}: ${e.text}`).join('\n\n');
+      if(statFormulaEntries.length) condBlock += (condEntries.length||skillOnlyEntries.length||refNoteEntries.length?'\n\n':'\n') + statFormulaEntries.map(e => `__STATFORMULA_TAG__ ${e.label}: ${e.text}`).join('\n\n');
+      parts.push(condBlock);
+    }
+    if(BASE_STATS.includes(statKey)){
+      const flatRune = runeContributions().filter(e => e.k===statKey && !e.pct);
+      if(flatRune.length){
+        parts.push('[룬 고정 수치 — %표에는 합산되지 않음, 마을 기본 스탯에 직접 더해서 판단]\n' + flatRune.map(e => `${e.source}: +${e.v}`).join('\n'));
+      }
+    }
+    const text = parts.length ? parts.join('\n\n') : '현재 이 스탯에 마을/상시/조건부로 반영된 항목이 없습니다.';
+    // __SKILLONLY_TAG__는 escapeHtml 이후에 실제 강조 태그로 치환한다(다른 동적 텍스트는 그대로 이스케이프해 안전하게 유지).
+    const safeText = escapeHtml(text)
+      .replace(/__SKILLONLY_TAG__/g, '<b style="color:var(--skillonly);">(스킬한정·합산안됨)</b>')
+      .replace(/__REFNOTE_TAG__/g, '<b style="color:var(--text-dim);">(참고용·합산안됨)</b>')
+      .replace(/__STATFORMULA_TAG__/g, '<b style="color:var(--statformula);">(스탯기반·합산안됨)</b>');
+    return {btn:`<button class="info-btn" onclick="toggleDesc('right','${key}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${safeText}</div>`};
+  }
+
+  function tableFor(keys, title, priority, noTotal){
+    const tblCls = priority ? 'result-table priority-table' : 'result-table';
+    const totalTh = noTotal ? '' : '<th>합계</th>';
+    let h = `<h3>${title}</h3><table class="${tblCls}"><thead><tr><th>스탯</th><th>마을</th><th>인게임</th><th>조건부</th>${totalTh}<th></th></tr></thead><tbody>`;
+    let boxes = '';
+    keys.forEach(k => {
+      const v=bucket.village[k], a=bucket.always[k], cd=bucket.cond[k], tot=v+a+cd;
+      const unit = k==='move' ? '' : '%';
+      const rowCls = HL_ROW_STATS.includes(k) ? 'hlrow' : '';
+      const cb = condDetailButton(k, priority ? 'priority' : 'full');
+      const totalTd = noTotal ? '' : `<td class="total">${tot.toFixed(1)}${unit}</td>`;
+      h += `<tr class="${rowCls}"><td>${STAT_LABEL[k]}</td><td class="village">${v.toFixed(1)}${unit}</td><td class="always">${a.toFixed(1)}${unit}</td><td class="cond">${cd.toFixed(1)}${unit}</td>${totalTd}<td>${cb.btn}</td></tr>`;
+      boxes += cb.box;
+    });
+    h += `</tbody></table>` + boxes;
+    return priority ? `<div class="priority-box">${h}</div>` : h;
+  }
+
+  // 2026-07-23 재조정: 박스화는 "주요 스탯"(HL_ROW_STATS 7개) 하나에만 적용하고, 그 아래 전체 목록은
+  // 최초 버전대로 박스 없이 나열(주요 스탯은 아래 목록에도 중복 표기됨 — 의도된 것).
+  html += tableFor(HL_ROW_STATS, '★ 주요 스탯', true);
+
+  html += tableFor([...BASE_STATS,'move'], '기본 스탯', false, true);
+
+  html += tableFor(['crit','critDmg','critResChance','critResDmg'], '치명타', false);
+
+  html += tableFor(['phys','magPen','physRes','magRes'], '관통', false);
+
+  if(dmgKeysUsed.length){
+    html += tableFor(dmgKeysUsed, '피해 감소 / 피해 증가 (계열별 합산)', false);
+  }
+
+  if(healKeysUsed.length){
+    html += tableFor(healKeysUsed, '회복 (치유 · 보호막)', false);
+  }
+
+  html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
+
+  html += renderAIEval();
+
+  document.getElementById('results').innerHTML = html;
+}
+
+render();
+
+// equipment.js가 이 파일과 같은 폴더에 있으면 그 내용을 우선 적용하고, 없으면(또는 로드 실패)
+// 위에 내장된 폴백 사본을 그대로 쓴다. equipment.js는 window.EQUIPMENT_OVERRIDE에 코드 키(ARM01/
+// ACC01/RUNE01...) 스키마로 데이터를 담아 노출한다(장비_룬_악세사리_raw_data.md 0-1/0-2장 참고) —
+// 이 폴백 사본도 반드시 같은 코드 키 스키마여야 한다(다르면 폴백/외부 적용 시 state에 저장되는 값의
+// 형태가 달라져 저장된 빌드 선택이 깨진다).
+(function(){
+  const s = document.createElement('script');
+  s.src = 'equipment.js';
+  s.onload = () => {
+    const ov = window.EQUIPMENT_OVERRIDE;
+    if(!ov) return;
+    Object.keys(EQUIP_DATASETS).forEach(key => {
+      const fresh = ov[key];
+      if(!fresh) return;
+      const target = EQUIP_DATASETS[key];
+      Object.keys(target).forEach(k => delete target[k]);
+      Object.assign(target, fresh);
+    });
+    if(ov.SLOTS){ SLOTS.length = 0; SLOTS.push(...ov.SLOTS); }
+    if(ov.RUNE_GRADE_ORDER){ RUNE_GRADE_ORDER.length = 0; RUNE_GRADE_ORDER.push(...ov.RUNE_GRADE_ORDER); }
+    render();
+  };
+  s.onerror = () => { /* equipment.js 없음 — 내장 폴백 그대로 사용 */ };
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
