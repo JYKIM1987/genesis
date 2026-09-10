@@ -9,6 +9,7 @@
     --text:#1a1a1a; --text-dim:#888888; --accent:#1a1a1a; --accent-bg:#eeeeee;
     --warn:#b5482f; --warn-bg:#fbeae5; --ok:#3f7d4a; --ok-bg:#eaf5ec; --ally:#2f5fa8;
     --title:#c0392b;
+    --char-name:#c8580a;
     /* 목업 A(틴트 패널) 채택 — 큰 박스마다 저채도 색조로 은은하게 구분 */
     --sidebar-tint:#fafafa;
     --ally-tint:#fff4f3; --ally-border:#e7b9b4;
@@ -62,6 +63,7 @@
      실제 컬럼 수를 항상 4개로 맞춰서(미선택 칸도 빈 컬럼으로 렌더링) 비율이
      선택 인원에 따라 재분배되지 않게 한다. */
   #matrixHost table{ table-layout:fixed; background:var(--panel); }
+  #matrixHost thead th:not(:first-child):not(.unpicked){ color:var(--char-name); font-weight:800; }
   #matrixHost th.unpicked{ color:var(--border); font-weight:normal; }
   #matrixHost td.unpicked{ color:var(--border); }
   td.yes{ background:var(--warn-bg); color:var(--warn); font-weight:bold; }
