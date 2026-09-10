@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>기사단전 주의사항</title>
+<style>
+  :root{
+    --bg:#eef0f2; --panel:#ffffff; --panel2:#f5f5f5; --border:#dddddd;
+    --text:#1a1a1a; --text-dim:#888888; --accent:#1a1a1a; --accent-bg:#eeeeee;
+    --warn:#b5482f; --warn-bg:#fbeae5; --ok:#3f7d4a; --ok-bg:#eaf5ec; --ally:#2f5fa8;
+    --title:#c0392b;
+    --char-name:#c8580a;
+    /* 목업 A(틴트 패널) 채택 — 큰 박스마다 저채도 색조로 은은하게 구분 */
+    --sidebar-tint:#fafafa;
+    --ally-tint:#fff4f3; --ally-border:#e7b9b4;
+    --matrix-tint:#f6f7f9; --matrix-border:#dfe1e6;
+  }
+  * { box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
+    margin:0; padding:16px; line-height:1.45; font-size:13px;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; display:flex; gap:16px; align-items:flex-start; }
+  h1{ font-size:18px; margin:0 0 4px; color:var(--accent); }
+  .sub{ color:var(--text-dim); font-size:12px; margin-bottom:4px; }
+  .header{ max-width:1180px; margin:0 auto 12px; }
+
+  /* 사이드바는 뷰포트 높이에 맞춰 늘어나고(body 상하 패딩 16px씩 제외),
+     그 안에서 char-list만 남는 공간을 다 채운 뒤 넘칠 때만 스크롤된다 —
+     칸수가 넉넉해도 무조건 400px에서 스크롤이 생기던 예전 동작 수정. */
+  .sidebar{
+    flex:0 0 200px; background:var(--sidebar-tint); border:1px solid var(--border); border-radius:8px; padding:10px;
+    position:sticky; top:16px; box-shadow:0 1px 3px rgba(0,0,0,.05);
+    display:flex; flex-direction:column; max-height:calc(100vh - 32px);
+  }
+  .sidebar h4{ margin:0 0 8px; font-size:12.5px; color:var(--text-dim); }
+  .picker-title{ margin:0 0 2px; font-size:19px; font-weight:900; color:var(--title); line-height:1.2; }
+  .picker-count{ margin:0 0 10px; font-size:12px; color:var(--text-dim); }
+  .picker-count b{ color:var(--accent); font-size:14px; }
+  .sidebar input[type=text]{
+    width:100%; box-sizing:border-box; background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:6px 8px; font-size:12.5px; margin-bottom:8px;
+  }
+  .char-list{ flex:1 1 auto; min-height:0; overflow-y:auto; }
+  .sidebar label{ display:flex; align-items:center; gap:6px; padding:5px 4px; border-radius:5px; font-size:12.5px; cursor:pointer; }
+  .sidebar label:hover{ background:var(--panel2); }
+  .sidebar label.picked{ background:var(--accent-bg); color:var(--accent); font-weight:bold; }
+  .sidebar label.filtered-out{ display:none; }
+  .sidebar label.disabled{ opacity:.35; cursor:default; }
+  .sidebar .count{ margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-dim); text-align:center; }
+
+  .main{ flex:1 1 auto; min-width:0; }
+
+  .matrix-box{ background:var(--matrix-tint); border:1px solid var(--matrix-border); border-radius:8px; padding:12px; margin-bottom:14px; overflow-x:auto; }
+  .matrix-box h2{ font-size:15px; margin:0 0 10px; color:var(--accent); }
+  table{ border-collapse:collapse; width:100%; font-size:12px; }
+  th, td{ border:1px solid var(--border); padding:6px 8px; text-align:center; vertical-align:top; word-break:break-word; }
+  th{ background:var(--panel2); color:var(--text-dim); font-weight:bold; }
+  td.name{ text-align:left; font-weight:bold; }
+  /* 캐릭터 칸은 선택 인원(1~4명)이나 내용 길이와 무관하게 항상 4등분 고정폭 —
+     <colgroup>의 % 지정이라 calc() 혼합단위보다 fixed 테이블에서 안정적으로 먹힘.
+     실제 컬럼 수를 항상 4개로 맞춰서(미선택 칸도 빈 컬럼으로 렌더링) 비율이
+     선택 인원에 따라 재분배되지 않게 한다. */
+  #matrixHost table{ table-layout:fixed; background:var(--panel); }
+  #matrixHost thead th:not(:first-child):not(.unpicked){ color:var(--char-name); font-weight:800; }
+  #matrixHost th.unpicked{ color:var(--border); font-weight:normal; }
+  #matrixHost td.unpicked{ color:var(--border); }
+  td.yes{ background:var(--warn-bg); color:var(--warn); font-weight:bold; }
+  td.no{ color:var(--border); }
+  .cond-note{ display:block; font-weight:normal; font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .note-cell{ text-align:left; color:var(--text-dim); font-size:11.5px; max-width:220px; }
+  .empty-hint{ color:var(--text-dim); font-size:12.5px; padding:20px; text-align:center; }
+
+  /* 출전시 주의사항 박스 — PINNED_ROW_NAMES(강조저항)와 custom 항목을
+     매칭 없이 그대로 보여준다. 예전에 매트릭스 안 pin-row가 쓰던 보라색
+     팔레트(#5a4a9c/#e3d9f7)를 그대로 옮겨왔다. */
+  .notice-box{ background:#f4f1fb; border:1.5px solid #cabbe9; border-radius:10px; padding:16px; margin-bottom:16px; }
+  .notice-box[hidden]{ display:none; }
+  .notice-box h2{ font-size:20px; margin:0 0 12px; color:#5a4a9c; font-weight:900; }
+  .notice-item{ background:#e3d9f7; color:#5a4a9c; border-radius:6px; padding:8px 10px; margin-bottom:6px; font-size:12.5px; font-weight:bold; }
+  .notice-item:last-child{ margin-bottom:0; }
+  .notice-item .char{ margin-right:4px; }
+  .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
+
+  .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
+  .ally-box h2 .h2-note{ font-size:12px; font-weight:normal; color:var(--text-dim); }
+  .ally-col{ border:1px solid var(--border); border-radius:6px; padding:10px; }
+  .ally-col.risk{ background:transparent; border:none; padding:0; }
+  .ally-col h4{ margin:0 0 8px; font-size:12.5px; }
+  .ally-col.risk h4{ color:var(--warn); }
+  .placeholder{ color:var(--text-dim); font-size:12px; font-style:italic; }
+
+  table.risk-table{ background:var(--panel); }
+  table.risk-table th, table.risk-table td{ text-align:left; font-size:11.5px; padding:5px 6px; }
+  table.risk-table td.effect{ color:var(--warn); font-weight:bold; text-align:center; }
+  table.risk-table td.target{ font-weight:bold; text-align:center; color:#d32f2f; font-size:12.5px; }
+  table.risk-table td.resist{ font-weight:bold; text-align:center; color:var(--ally); font-size:12.5px; }
+  table.risk-table td.cond{ color:var(--text-dim); font-size:11px; }
+
+  .risk-accordion details{ background:var(--panel); border:1px solid var(--ally-border); border-radius:6px; margin-bottom:6px; overflow:hidden; }
+  .risk-accordion summary{ list-style:none; cursor:pointer; padding:7px 10px; display:flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:bold; color:var(--ally); }
+  .risk-accordion summary::-webkit-details-marker{ display:none; }
+  .risk-accordion summary::before{ content:'▶'; font-size:9px; color:var(--ally); transition:transform .1s; }
+  .risk-accordion details[open] summary::before{ content:'▼'; }
+  .risk-accordion summary .tags{ flex:1 1 auto; min-width:0; margin-left:8px; font-size:11px; font-weight:normal; color:var(--text); white-space:normal; }
+  .risk-accordion summary .cnt{ margin-left:auto; padding-left:8px; font-size:10.5px; font-weight:normal; color:var(--text-dim); flex:0 0 auto; }
+  .risk-accordion .detail-wrap{ border-top:1px solid var(--border); padding:6px 10px 8px; }
+  .risk-accordion table{ margin-top:2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>기사단전 주의사항</h1>
+  <div class="sub">좌측에서 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
+</div>
+
+<div class="wrap">
+  <div class="sidebar">
+    <h3 class="picker-title">방덱 4인 선택</h3>
+    <div class="picker-count">선택 <b><span id="pickCount">0</span>/4</b></div>
+    <input type="text" id="charSearch" placeholder="캐릭터 검색" oninput="filterChars(this.value)">
+    <div class="char-list" id="charList"></div>
+    <div class="count">최대 4명까지 선택 가능</div>
+  </div>
+
+  <div class="main">
+    <div class="notice-box" id="noticeBox" hidden>
+      <h2>🔔 출전시 주의사항</h2>
+      <div id="noticeHost"></div>
+    </div>
+
+    <div class="ally-box">
+      <h2>⚠ 출전시 주의할 아군 <span class="h2-note">(제피르 이후 캐릭터만 표시됩니다)</span></h2>
+      <div class="ally-col risk">
+        <div id="riskHost"><div class="placeholder">적을 선택하면 표시됩니다</div></div>
+      </div>
+    </div>
+
+    <div class="matrix-box">
+      <h2>고유저항 매트릭스</h2>
+      <div id="matrixHost"><div class="empty-hint">좌측에서 적을 선택하세요</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CHECK_DATA — add_check이 gmap.gg를 직접 조사해(결과는 check_raw/
+// <이름>_raw.md에 보관) 채우는 데이터.
+// 캐릭터당 원자값은 기본 두 개 + 선택적 custom 한 개:
+//   resist  : 이 캐릭터 자신이 "적"일 때 가진 상태이상 저항/면역 목록
+//   inflict : 이 캐릭터를 "아군"으로 썼을 때 상대에게 거는 상태이상 효과 목록
+//   custom  : (선택, add_custom 전용) { name, cond } 목록 — 매칭 없이 이
+//             캐릭터가 픽되기만 하면 상단 "출전시 주의사항" 박스에 그대로
+//             표시되는 자유 메모(예: 베라모드 "혼절"). add_check/mod_check은
+//             이 필드를 건드리지 않는다.
+// 매칭(겹치는 부분 찾기)은 여기 저장하지 않고 아래 render() 시점에 항상
+// 그 자리에서 계산한다 — 그래야 mod_check으로 inflict 항목 하나를 지우면
+// 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
+// 이름 문자열은 gmap.gg 원문의 표기를 그대로 쓰되, 동일 상태이상을
+// 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬 제어")만 정규화했다.
+// inflict 항목은 선택적으로 tag(그 효과가 속한 게임 시스템 상위 태그,
+// 예: effect:'침묵', tag:'스킬 제어')를 가질 수 있다 — 매칭은 resist.name이
+// inf.effect와 같을 때뿐 아니라 inf.tag와 같을 때도 성립한다(add_check
+// SKILL.md 5-3장 참고). tag는 gmap.gg에 명시적으로 붙은 뱃지가 있을 때만
+// 채우고, 근거 없이 추측으로 채우지 않는다.
+// ============================================================
+const CHECK_DATA = {
+  '헬카이트': {
+    resist: [
+      { name: '치유 방해', cond: null },
+      { name: '침묵', cond: null },
+      { name: '스킬 제어', cond: null }
+    ],
+    inflict: [
+      { skill: '임팩트 러쉬', category: '액티브 스킬', effect: '기절', cond: '밀쳐낸 적이 벽/다른 유닛과 충돌 시, 1턴' },
+      { skill: '헬카이트 브레스', category: '액티브 스킬', effect: '기절', cond: '주위 1칸 내 적 확정 부여(80% 방무 화염마법피해로 대체), 3칸 내는 20% 확률, 1턴(만료 시 "작렬의 고통" 전환)' },
+      { skill: '초열파천무', category: '오의', effect: '기절', cond: '50% 확률, 1턴(만료 시 "작렬의 고통" 전환)' }
+    ]
+  },
+  '자비에르': {
+    resist: [
+      { name: '스킬 제어', cond: '클래스 "글래셜 오라클" 선택 시(조건부 — 택1 클래스)' }
+    ],
+    inflict: [
+      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("한기의 족쇄", 2턴, 이동력 -1, 최대 2중첩)' },
+      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동 불가', cond: '적중 시 부여("한기의 결박", 1턴)' },
+      { skill: '글래셜 브레스', category: '오의', effect: '기절', cond: '시전 대상 100% 확정, 범위 내 다른 대상 30~35% 확률, 1턴("얼음 감옥")' }
+    ]
+  },
+  '제피르': {
+    resist: [
+      { name: '행동 제어', cond: '아티팩트 "정화의 반지" 선택 + 버프 유지 중일 때만(상시 면역 아님)' },
+      { name: '스킬 제어', cond: '위와 동일' }
+    ],
+    inflict: [
+      { skill: '용언', category: '고유패시브', effect: '침묵', cond: '캐릭터 턴 종료 시 주위 2칸 내 적 존재 시(쿨타임 2, 매턴 25% 확률로 해제 시도)' },
+      { skill: '용언', category: '고유패시브', effect: '스킬 제어', cond: '위와 동일' },
+      { skill: '신앙의 말뚝', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여, 3턴 지속' },
+      { skill: '창천의 굴레', category: '클래스 패시브(아주르소버린)', effect: '이동력 제어', cond: '적 공격 시 부여, 2턴 지속(해제 시 "창천의 지배"로 전환)' },
+      { skill: '드래곤 브레스', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여("느려짐"), 1턴 지속' }
+    ]
+  },
+  '감마': {
+    resist: [],
+    inflict: [
+      { skill: '사두금라편', category: '액티브 스킬', effect: '치유 반전', cond: '공격 시 부여, 2턴, 해제 불가' },
+      { skill: '바이올렛 앤썸', category: '오의', effect: '출혈', cond: '적중 시 부여, 2턴, 해제 불가' },
+      { skill: '바이올렛 앤썸', category: '오의', effect: '치유 반전', cond: '적중 시 확률 부여(1초 30%/3초 70%/5초 80%), 2턴' },
+      { skill: '로열 익스큐션', category: '액티브 스킬', effect: '공포', cond: '적중 시 부여, 1턴' },
+      { skill: '위압의 고통', category: '클래스 패시브(브라이어퀸)', effect: '쇠약', cond: '적 공격 후 대상이 대형몬스터 아니고 주위 2칸 내면 최대 50% 확률, 1턴' },
+      { skill: '애착 인형', category: '아티팩트', effect: '클래스패시브 봉쇄', cond: '적이 없다면 턴 종료 시 가장 가까운 적 1명에게 부여, 해제 불가' }
+    ]
+  },
+  '세타': {
+    resist: [],
+    inflict: [
+      { skill: '모듈러 런쳐(감전 유탄)', category: '액티브 스킬', effect: '쇼크', cond: '적중 시 최대 중첩 부여, 2턴, 최대 3중첩' },
+      { skill: '모듈러 런쳐(가스 유탄)', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("느려짐"), 1턴' },
+      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '실명', cond: '적중 시 부여, 2턴' },
+      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("느려짐"), 1턴' },
+      { skill: '아토믹 봄버', category: '오의', effect: '기절', cond: '5초에서만 확정 부여, 1턴' }
+    ]
+  },
+  // ↓ char_html에서 역추출한 9명(2026-09-09) — gmap.gg 재스크래핑 대신
+  // 이미 검증된 char_html의 desc를 그대로 읽어 resist/inflict 원자값만 정리함
+  '철가면': {
+    resist: [
+      { name: '기절', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '공포', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '클래스패시브 봉쇄', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '부정 오라 무시', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '추가 이동 봉쇄 무시', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '추가 행동 봉쇄 무시', cond: '클래스 "킹" 선택 시(조건부 — 택1 클래스)' },
+      { name: '추방', cond: '고유패시브, 3각 이상' },
+      { name: '정신지배', cond: '고유패시브, 3각 이상' }
+    ],
+    inflict: [
+      { skill: '타임 하이재킹', category: '액티브 스킬', effect: 'TP 획득 불가', cond: '철가면 본인 사용 시 대상에게 부여, 해제 불가' }
+    ]
+  },
+  '시라노': {
+    resist: [
+      { name: '쿨타임 제어', cond: '고유패시브 "회색 망토의 기사" ★5 이상(헌신의 의지 효과 보유 중)' },
+      { name: '클래스패시브 봉쇄', cond: '클래스 "어비스블레이드" 선택 시(조건부 — 택1)' }
+    ],
+    inflict: [
+      { skill: '질풍마영참', category: '액티브 스킬', effect: 'TP 감소', cond: '피해 입은 적 TP 1 제거' }
+    ]
+  },
+  '아네모네': {
+    resist: [
+      { name: 'TP 감소', cond: '전용무기 ★3 이상, "진홍빛 낙원" 오라 보유 중(행동 종료 시 이번 턴 공격 안 했을 때)' },
+      { name: '이동 방해', cond: null },
+      { name: '대상지정불가(고유패시브)', cond: '제피르팰컨 캐릭터(시라노, 리델하트 등)도 함께 적용' },
+      { name: '쿨타임 제어', cond: '액티브 "아이언 맨데이트" 효과 보유 중' },
+      { name: '반격 무효화', cond: '아티팩트 "보호의 날개" 선택 시' }
+    ],
+    inflict: []
+  },
+  '알테어': {
+    resist: [
+      { name: '스킬 제어', cond: '아티팩트 "마도의 결정" ★1 이상 선택 시' },
+      { name: '쿨타임 제어', cond: '아티팩트 "마도의 결정" ★3 이상 선택 시(위와 동일)' }
+    ],
+    inflict: []
+  },
+  '자드': {
+    resist: [
+      { name: '스킬제어', cond: '전용무기, "고고한 에투알" 획득 시' },
+      { name: '기절', cond: '액티브 "명왕성" 사용 후 "호신투기" 보유 중(2턴)' },
+      { name: '쇠약', cond: '액티브 "명왕성" 사용 후 "호신투기" 보유 중(2턴)' },
+      { name: '기절', cond: '고유패시브 "아브라소" 토글 보유 중(2초부터, 인접 아군과 상호 부여)' }
+    ],
+    inflict: [
+      { skill: '메테오 스트라이크', category: '오의', effect: '이동력 제어', cond: '"멍해짐" 부여, 2턴(이동력 -2, 추가 이동/행동 획득 불가, 호위 불가)' }
+    ]
+  },
+  '벨제부르': {
+    resist: [
+      { name: '공포', cond: '클래스 "에레보스가드" 선택 시(조건부)' },
+      { name: '추방', cond: '클래스 "에레보스가드" 선택 시(조건부)' },
+      { name: '위치제어', cond: '클래스 "제로스위든" 선택 시, 무한의 적응 15중첩 도달(영겁의 성채 전환) 시' },
+      { name: '기절', cond: '클래스 "제로스위든" 선택 시, 무한의 적응 15중첩 도달(영겁의 성채 전환) 시' },
+      { name: '스킬제어', cond: '클래스 "제로스위든" 선택 시(조건부)' },
+      { name: 'TP 감소', cond: '고유패시브, 3각 이상' },
+      { name: '정신지배', cond: '고유패시브, 3각 이상' },
+      { name: '클래스패시브 봉쇄', cond: '고유패시브, 3각 이상' },
+      { name: '추방', cond: '액티브 "공허 전개" 사용 시 3칸 이내 아군+자신, 3턴' },
+      { name: '이동방해', cond: '액티브 "공허 전개" 사용 시 3칸 이내 아군+자신, 3턴' },
+      { name: '쿨타임제어', cond: '아티팩트 "보이드 코어" ★3 이상 장착 시' }
+    ],
+    inflict: [
+      { skill: '쇄진공파', category: '액티브 스킬', effect: '도발', cond: '1턴 부여(행동제어)' },
+      { skill: '소드 브레이커', category: '액티브 스킬', effect: '이동력 제어', cond: '"느려짐 1" 부여(이동력 -1), 1턴' },
+      { skill: '흑식멸광섬', category: '오의', effect: '추방', cond: '치명타 적중 시 25% 확률, 1턴' }
+    ]
+  },
+  '프레데릭': {
+    resist: [
+      { name: '클래스패시브 봉쇄', cond: '클래스 "베르딕트나이트" 선택 시(조건부)' },
+      { name: 'TP 감소', cond: '고유패시브 6초, 영민의 유산 3중첩(최대) 시' },
+      { name: '기절', cond: '고유패시브 6초, 영민의 유산 3중첩(최대) 시' },
+      { name: '이동방해', cond: '액티브 "충월참" 사용 시, 2턴' },
+      { name: '스킬제어', cond: '아티팩트 "루멘 코어" ★4 이상 장착 시' }
+    ],
+    inflict: [
+      { skill: '이극쌍연무', category: '오의', effect: '무력 봉쇄', cond: '적중 시 부여, 1턴(공격 불가·반격 불가)' }
+    ]
+  },
+  '하이델룬': {
+    resist: [
+      { name: '추방', cond: '고유패시브 "시스템 이단자" 보유 중(추방 부여 시 대신 "엔트로피 고스트" 상태로 치환)' }
+    ],
+    inflict: [
+      { skill: '터미널 프로토콜', category: '액티브 스킬', effect: '추방', cond: '적이 죽지 않았다면 1턴 부여' }
+    ]
+  },
+  '흑태자': {
+    resist: [
+      { name: '전체 디버프 면역', cond: '아우터스킬 "궁극 그리마" 사용 시 걸려있던 디버프 전부 해제 + 다음 턴 시작 시까지 모든 디버프에 면역(개별 상태이상이 아니라 디버프 전체 대상)' }
+    ],
+    inflict: [
+      { skill: '암명연살검', category: '액티브 스킬', effect: '추방', cond: '적을 처치하지 못했을 때 1턴 부여' }
+    ],
+    custom: [
+      { name: '전의상실', cond: '데스로드 클래스시 범위스킬 사용 후 2칸이내 재행동 불가' }
+    ]
+  },
+  // ↓ add_custom 전용 — resist/inflict 조사(add_check) 없이 custom 메모만
+  // 위해 만든 최소 골격. gmap.gg 전체 조사 대상 아님.
+  '베라모드': {
+    resist: [],
+    inflict: [],
+    custom: [
+      { name: '혼절', cond: '4칸이내 물리력/마법력 간섭 버프 확인 후 스킬 사용 주의' }
+    ]
+  }
+};
+
+// ============================================================
+// MANUAL_NOTES — mod_check 전용 데이터. 어느 한 캐릭터의 resist/inflict로
+// 표현이 안 되는 "조합형" 규칙(예: 특정 캐릭터 2명 이상이 동시에 선택
+// 됐을 때만 발동하는 효과)을 담는다. add_check은 이 배열을 절대 건드리지
+// 않는다 — 오직 mod_check(사용자가 직접 알려준 사실)만 추가/삭제한다.
+// characters에 적힌 이름이 전부 선택된 4명 안에 있으면 매트릭스에
+// 저항 행과 완전히 동일한 모양으로 표시된다(수동 항목이라고 따로
+// 다르게 꾸미지 않음 — 확정 원칙).
+//   { characters: ['이름1','이름2'], name: '행 이름(상태이상 이름과 동일한 자리)', cond: '조건 설명' }
+// ============================================================
+const MANUAL_NOTES = [
+];
+
+// PINNED_ROW_NAMES — mod_check이 지정한, 다른 저항과 성격이 달라(예:
+// "전캐릭 대상" 하드카운터) 매칭 여부와 무관하게 항상 강조해야 하는
+// 상태이상 이름 목록. CHECK_DATA의 일반 resist 항목으로 그대로 저장하되,
+// 이 배열에 이름만 등록하면 renderNotice()가 고유저항 매트릭스가 아니라
+// 상단 "출전시 주의사항" 박스에 골라내서 보여준다(매트릭스에는 안 뜸).
+const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버프 면역'];
+
+const MAX_PICK = 4;
+let picked = [];
+
+const charListEl = document.getElementById('charList');
+function buildCharList(){
+  charListEl.innerHTML = '';
+  Object.keys(CHECK_DATA).forEach(name => {
+    const label = document.createElement('label');
+    label.dataset.name = name;
+    label.innerHTML = `<input type="checkbox"> ${name}`;
+    label.querySelector('input').addEventListener('change', () => toggle(name));
+    label.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT'){ e.preventDefault(); toggle(name); } });
+    charListEl.appendChild(label);
+  });
+}
+function toggle(name){
+  const idx = picked.indexOf(name);
+  if(idx >= 0){
+    picked.splice(idx, 1);
+  } else {
+    if(picked.length >= MAX_PICK) return;
+    picked.push(name);
+  }
+  syncPickerUI();
+  render();
+}
+function syncPickerUI(){
+  document.getElementById('pickCount').textContent = picked.length;
+  charListEl.querySelectorAll('label').forEach(l => {
+    const name = l.dataset.name;
+    const isPicked = picked.includes(name);
+    l.classList.toggle('picked', isPicked);
+    l.classList.toggle('disabled', !isPicked && picked.length >= MAX_PICK);
+    l.querySelector('input').checked = isPicked;
+  });
+}
+function filterChars(q){
+  q = q.trim();
+  charListEl.querySelectorAll('label').forEach(l => {
+    const name = l.dataset.name;
+    l.classList.toggle('filtered-out', !!q && !name.includes(q));
+  });
+}
+
+function render(){
+  renderNotice();
+  renderMatrix();
+  renderRisk();
+}
+
+// 출전시 주의사항 — 매칭 없이 그냥 "이 캐릭터가 픽됐다"는 사실만으로
+// 떠야 하는 항목 두 종류를 모은다:
+//   1. PINNED_ROW_NAMES에 등록된 resist 항목(강조저항, entryActive 통과 시)
+//   2. custom 배열 항목(add_custom이 채움, 조건 없이 항상 표시)
+// 아무것도 없으면 박스 자체를 숨긴다(hidden 속성).
+function renderNotice(){
+  const box = document.getElementById('noticeBox');
+  const host = document.getElementById('noticeHost');
+  const items = [];
+  picked.forEach(name => {
+    const data = CHECK_DATA[name];
+    if(!data) return;
+    (data.resist || []).forEach(r => {
+      if(PINNED_ROW_NAMES.includes(r.name) && entryActive(r)){
+        items.push({ char: name, label: r.name, cond: r.cond });
+      }
+    });
+    (data.custom || []).forEach(c => {
+      items.push({ char: name, label: c.name, cond: c.cond });
+    });
+  });
+  if(items.length === 0){
+    box.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  box.hidden = false;
+  host.innerHTML = items.map(it =>
+    `<div class="notice-item"><span class="char">[${it.char}]</span>${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
+  ).join('');
+}
+
+// resist 항목에 requires(다른 캐릭터가 같이 선택돼야 발효되는 조건)가
+// 있으면 그 캐릭터들이 전부 현재 picked 안에 있을 때만 활성으로 본다.
+// requires가 없으면 항상 활성(기존 동작 그대로).
+function entryActive(entry){
+  return !entry.requires || entry.requires.every(c => picked.includes(c));
+}
+
+// enemy 캐릭터가 지금 픽된 상태에서 실제로 name 상태이상 저항을 갖는지 판정.
+// 1순위: 본인의 resist 배열에 직접 있는 항목(entryActive 통과 시).
+// 2순위: 다른 픽된 캐릭터의 resist 항목에 grantsTo(다른 캐릭터에게 저항을
+// 전이하는 고유패시브 등)가 있고 그 대상이 enemy면, 그 전이 조건(cond)으로
+// 판정한다(예: 아네모네 고유패시브가 같은 팰컨 소속인 시라노에게도 전이).
+// grantsTo가 없으면 기존 동작과 완전히 동일 — 다른 모든 캐릭터엔 영향 없음.
+function resolveResist(enemy, name){
+  const own = CHECK_DATA[enemy].resist.find(r => r.name === name);
+  if(own && entryActive(own)) return own;
+  for(const other of picked){
+    if(other === enemy) continue;
+    const granter = CHECK_DATA[other].resist.find(r => r.name === name && r.grantsTo && entryActive(r));
+    if(!granter) continue;
+    const grant = granter.grantsTo.find(g => g.name === enemy);
+    if(grant) return { name, cond: grant.cond };
+  }
+  return null;
+}
+
+// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정. 1순위로 구체적
+// 효과 이름(inf.effect, 예: "침묵")으로 resolveResist를 시도하고, 못
+// 찾으면(그리고 inf.tag가 effect와 다르면) 상위 태그(inf.tag, 예:
+// "스킬 제어")로 재시도한다 — add_check 5-3장 태그 매칭 규칙.
+// 반환값의 matchedName은 실제로 매칭에 쓰인 이름(effect 또는 tag) —
+// "주의할 아군" 표의 "저항" 열 표시에 쓰인다(효과 열 자체는 항상
+// inf.effect 그대로 유지).
+function resolveResistForInflict(enemy, inf){
+  let entry = resolveResist(enemy, inf.effect);
+  if(entry) return { entry, matchedName: inf.effect };
+  if(inf.tag && inf.tag !== inf.effect){
+    entry = resolveResist(enemy, inf.tag);
+    if(entry) return { entry, matchedName: inf.tag };
+  }
+  return null;
+}
+
+function renderMatrix(){
+  const host = document.getElementById('matrixHost');
+  if(picked.length === 0){
+    host.innerHTML = '<div class="empty-hint">좌측에서 적을 선택하세요</div>';
+    return;
+  }
+  // 선택된 적들의 저항 항목을 "상태이상 이름" 기준으로만 모은다(중복 제거) —
+  // 캐릭터마다 조건(cond) 문구는 달라도 같은 이름이면 같은 행으로 합치고,
+  // 각 캐릭터별 조건은 그 캐릭터 셀 안에만 개별 표시한다.
+  const rowNames = new Set();
+  picked.forEach(enemy => {
+    CHECK_DATA[enemy].resist.forEach(r => rowNames.add(r.name));
+  });
+
+  // 각 행에 대해 어떤 아군의 inflict가 매칭되는지 확인 — 정렬 기준용. 아군 후보는
+  // 전체 캐릭터 목록이다(적으로 픽됐다고 아군 후보에서 빠지지 않음 — renderRisk와
+  // 동일한 원칙, 위 allyCandidates 주석 참고).
+  const hasMatch = (effectName) => Object.keys(CHECK_DATA).some(ally =>
+    CHECK_DATA[ally].inflict.some(inf => inf.effect === effectName || inf.tag === effectName)
+  );
+
+  // PINNED_ROW_NAMES는 이 매트릭스가 아니라 상단 "출전시 주의사항" 박스에서
+  // renderNotice()가 표시한다 — 여기서는 일반 저항 행에서 제외만 한다.
+  const rowArr = Array.from(rowNames).filter(n => !PINNED_ROW_NAMES.includes(n));
+  rowArr.sort((a, b) => {
+    const am = hasMatch(a) ? 0 : 1;
+    const bm = hasMatch(b) ? 0 : 1;
+    if(am !== bm) return am - bm;
+    return a.localeCompare(b, 'ko');
+  });
+
+  // 선택된 4명이 MANUAL_NOTES의 characters를 전부 포함하면(mod_check이 등록한
+  // 조합형 규칙) 그 규칙도 행으로 추가한다 — 다른 행과 완전히 같은 모양으로
+  // 표시하고(수동이라고 다르게 꾸미지 않음), 항상 맨 위에 둔다.
+  const manualRows = MANUAL_NOTES.filter(note => note.characters.every(c => picked.includes(c)));
+
+  // 캐릭터 칸은 선택 인원(1~4명)과 무관하게 항상 4칸을 그린다(빈 칸은
+  // "미선택"으로 표시) — 그래야 <col> 폭 비율이 실제 컬럼 수와 항상 일치해서
+  // 4등분이 흐트러지지 않는다.
+  const slots = [0, 1, 2, 3].map(i => picked[i] || null);
+
+  let html = '<table><colgroup><col style="width:12%">';
+  for(let i = 0; i < 4; i++){ html += '<col style="width:22%">'; }
+  html += '</colgroup><thead><tr><th>상태이상</th>';
+  slots.forEach(name => { html += name ? `<th>${name}</th>` : `<th class="unpicked">미선택</th>`; });
+  html += '</tr></thead><tbody>';
+
+  if(rowArr.length === 0 && manualRows.length === 0){
+    html += `<tr><td colspan="5" class="note-cell" style="text-align:center;">선택된 적 중 확인된 고유저항이 없습니다</td></tr>`;
+  } else {
+    manualRows.forEach(note => {
+      html += `<tr><td class="name">${note.name}</td>`;
+      slots.forEach(enemy => {
+        if(!enemy){ html += `<td class="no unpicked">·</td>`; return; }
+        if(note.characters.includes(enemy)){
+          html += `<td class="yes">해당${note.cond ? `<span class="cond-note">${note.cond}</span>` : ''}</td>`;
+        } else {
+          html += `<td class="no">—</td>`;
+        }
+      });
+      html += '</tr>';
+    });
+    rowArr.forEach(name => {
+      html += `<tr><td class="name">${name}</td>`;
+      slots.forEach(enemy => {
+        if(!enemy){ html += `<td class="no unpicked">·</td>`; return; }
+        const entry = resolveResist(enemy, name);
+        if(entry){
+          html += `<td class="yes">면역${entry.cond ? `<span class="cond-note">${entry.cond}</span>` : ''}</td>`;
+        } else {
+          html += `<td class="no">—</td>`;
+        }
+      });
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  host.innerHTML = html;
+}
+
+function renderRisk(){
+  const host = document.getElementById('riskHost');
+  if(picked.length === 0){
+    host.innerHTML = '<div class="placeholder">적을 선택하면 표시됩니다</div>';
+    return;
+  }
+  // 아군 후보는 전체 캐릭터 목록이다 — 적 팀과 내 팀은 서로 다른 사람의 로스터라
+  // 같은 캐릭터가 적으로 픽됐다고 해서 내가 그 캐릭터를 아군으로 못 쓰는 게 아니다.
+  // 그래서 picked(적 4인)로 후보를 걸러내지 않는다(이전엔 걸러내서, 적으로 고른
+  // 캐릭터는 아군 후보에서 아예 사라지는 버그가 있었다).
+  const allyCandidates = Object.keys(CHECK_DATA);
+  let anyMatch = false;
+  let html = '<div class="risk-accordion">';
+
+  allyCandidates.forEach(ally => {
+    const rows = [];
+    CHECK_DATA[ally].inflict.forEach(inf => {
+      picked.forEach(enemy => {
+        const match = resolveResistForInflict(enemy, inf);
+        if(match){
+          // 방어자 저항이 효과 이름 그대로 매칭됐으면(예: 침묵→침묵)
+          // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬 제어)
+          // "OO저항" 형태로 구분해서 보여준다.
+          const resistLabel = match.matchedName === inf.effect ? match.matchedName : `${match.matchedName}저항`;
+          rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, resist: resistLabel, cond: match.entry.cond || inf.cond });
+        }
+      });
+    });
+    if(rows.length === 0) return;
+    anyMatch = true;
+    // 이름 옆 빈 공간에 "스킬명(효과저항-대상1,대상2 / 효과2저항-대상3)" 형태로
+    // 요약 태그를 채운다 — 아군의 스킬 기준으로 먼저 묶고, 그 스킬이 거는 효과별로
+    // 막히는 대상을 나열한다. rows는 위에서 모든 아군에 대해 이미 제네릭하게
+    // 계산됐으므로, add_check/mod_check으로 캐릭터가 추가·수정돼도 이 요약은
+    // 코드 수정 없이 자동 반영된다.
+    const skillMap = new Map();
+    rows.forEach(r => {
+      if(!skillMap.has(r.skill)) skillMap.set(r.skill, new Map());
+      const effMap = skillMap.get(r.skill);
+      if(!effMap.has(r.effect)) effMap.set(r.effect, []);
+      const targets = effMap.get(r.effect);
+      if(!targets.includes(r.target)) targets.push(r.target);
+    });
+    const tags = Array.from(skillMap.entries()).map(([skill, effMap]) => {
+      const effParts = Array.from(effMap.entries()).map(([effect, targets]) => `${effect}저항-${targets.join(',')}`);
+      return `${skill}(${effParts.join(' / ')})`;
+    }).join(', ');
+    html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항</th><th>저항 조건</th></tr></thead><tbody>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r.skill}</td><td>${r.category}</td><td class="effect">${r.effect}</td><td class="target">${r.target}</td><td class="resist">${r.resist}</td><td class="cond">${r.cond}</td></tr>`;
+    });
+    html += '</tbody></table></div></details>';
+  });
+  html += '</div>';
+
+  host.innerHTML = anyMatch ? html : '<div class="placeholder">현재 데이터로는 막히는 아군 효과가 없습니다</div>';
+}
+
+buildCharList();
+render();
+</script>
+
+</body>
+</html>
