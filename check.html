@@ -80,6 +80,7 @@
   table.risk-table th, table.risk-table td{ text-align:left; font-size:11.5px; padding:5px 6px; }
   table.risk-table td.effect{ color:var(--warn); font-weight:bold; text-align:center; }
   table.risk-table td.target{ font-weight:bold; text-align:center; color:#d32f2f; font-size:12.5px; }
+  table.risk-table td.resist{ font-weight:bold; text-align:center; color:var(--ally); font-size:12.5px; }
   table.risk-table td.cond{ color:var(--text-dim); font-size:11px; }
 
   .risk-accordion details{ background:var(--panel); border:1px solid var(--ally-border); border-radius:6px; margin-bottom:6px; overflow:hidden; }
@@ -138,6 +139,11 @@
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
 // 이름 문자열은 gmap.gg 원문의 표기를 그대로 쓰되, 동일 상태이상을
 // 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬 제어")만 정규화했다.
+// inflict 항목은 선택적으로 tag(그 효과가 속한 게임 시스템 상위 태그,
+// 예: effect:'침묵', tag:'스킬 제어')를 가질 수 있다 — 매칭은 resist.name이
+// inf.effect와 같을 때뿐 아니라 inf.tag와 같을 때도 성립한다(add_check
+// SKILL.md 5-3장 참고). tag는 gmap.gg에 명시적으로 붙은 뱃지가 있을 때만
+// 채우고, 근거 없이 추측으로 채우지 않는다.
 // ============================================================
 const CHECK_DATA = {
   '헬카이트': {
@@ -395,6 +401,23 @@ function resolveResist(enemy, name){
   return null;
 }
 
+// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정. 1순위로 구체적
+// 효과 이름(inf.effect, 예: "침묵")으로 resolveResist를 시도하고, 못
+// 찾으면(그리고 inf.tag가 effect와 다르면) 상위 태그(inf.tag, 예:
+// "스킬 제어")로 재시도한다 — add_check 5-3장 태그 매칭 규칙.
+// 반환값의 matchedName은 실제로 매칭에 쓰인 이름(effect 또는 tag) —
+// "주의할 아군" 표의 "저항" 열 표시에 쓰인다(효과 열 자체는 항상
+// inf.effect 그대로 유지).
+function resolveResistForInflict(enemy, inf){
+  let entry = resolveResist(enemy, inf.effect);
+  if(entry) return { entry, matchedName: inf.effect };
+  if(inf.tag && inf.tag !== inf.effect){
+    entry = resolveResist(enemy, inf.tag);
+    if(entry) return { entry, matchedName: inf.tag };
+  }
+  return null;
+}
+
 function renderMatrix(){
   const host = document.getElementById('matrixHost');
   if(picked.length === 0){
@@ -413,7 +436,7 @@ function renderMatrix(){
   // 전체 캐릭터 목록이다(적으로 픽됐다고 아군 후보에서 빠지지 않음 — renderRisk와
   // 동일한 원칙, 위 allyCandidates 주석 참고).
   const hasMatch = (effectName) => Object.keys(CHECK_DATA).some(ally =>
-    CHECK_DATA[ally].inflict.some(inf => inf.effect === effectName)
+    CHECK_DATA[ally].inflict.some(inf => inf.effect === effectName || inf.tag === effectName)
   );
 
   // PINNED_ROW_NAMES: 다른 저항과 차원이 다른("전캐릭 대상" 같은) 하드카운터
@@ -508,9 +531,13 @@ function renderRisk(){
     const rows = [];
     CHECK_DATA[ally].inflict.forEach(inf => {
       picked.forEach(enemy => {
-        const blocked = resolveResist(enemy, inf.effect);
-        if(blocked){
-          rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, cond: blocked.cond || inf.cond });
+        const match = resolveResistForInflict(enemy, inf);
+        if(match){
+          // 방어자 저항이 효과 이름 그대로 매칭됐으면(예: 침묵→침묵)
+          // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬 제어)
+          // "OO저항" 형태로 구분해서 보여준다.
+          const resistLabel = match.matchedName === inf.effect ? match.matchedName : `${match.matchedName}저항`;
+          rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, resist: resistLabel, cond: match.entry.cond || inf.cond });
         }
       });
     });
@@ -533,9 +560,9 @@ function renderRisk(){
       const effParts = Array.from(effMap.entries()).map(([effect, targets]) => `${effect}저항-${targets.join(',')}`);
       return `${skill}(${effParts.join(' / ')})`;
     }).join(', ');
-    html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항 조건</th></tr></thead><tbody>`;
+    html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항</th><th>저항 조건</th></tr></thead><tbody>`;
     rows.forEach(r => {
-      html += `<tr><td>${r.skill}</td><td>${r.category}</td><td class="effect">${r.effect}</td><td class="target">${r.target}</td><td class="cond">${r.cond}</td></tr>`;
+      html += `<tr><td>${r.skill}</td><td>${r.category}</td><td class="effect">${r.effect}</td><td class="target">${r.target}</td><td class="resist">${r.resist}</td><td class="cond">${r.cond}</td></tr>`;
     });
     html += '</tbody></table></div></details>';
   });
