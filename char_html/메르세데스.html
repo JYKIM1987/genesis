@@ -82,10 +82,10 @@
   /* 오른쪽 합계에 자동 합산되지 않는(스킬 발동 순간에만 적용) 수치 — 사용자가 직접 따로 고려해야 함을 시각적으로 도드라지게 표시 */
   .opt-bottom.skillonly-row{ background:var(--skillonly-bg); border:1px dashed var(--skillonly); border-radius:4px; padding:3px 6px; margin-top:3px; }
   .info-btn{
-    background:var(--accent); border:1px solid var(--accent); color:#fff; border-radius:50%;
+    background:var(--panel); border:2px solid var(--accent); color:var(--accent); border-radius:50%;
     width:16px; height:16px; font-size:10px; font-weight:bold; cursor:pointer; line-height:1; padding:0; flex:0 0 auto;
   }
-  .info-btn:hover{ opacity:0.8; }
+  .info-btn:hover{ background:var(--accent-bg); }
   .info-btn-static{
     display:inline-flex; align-items:center; justify-content:center;
     background:var(--panel); border:1px solid var(--border); color:var(--text-dim); border-radius:50%;
