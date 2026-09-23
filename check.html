@@ -162,9 +162,9 @@
 // 그 자리에서 계산한다 — 그래야 mod_check으로 inflict 항목 하나를 지우면
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
 // 이름 문자열은 gmap.gg 원문의 표기를 그대로 쓰되, 동일 상태이상을
-// 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬 제어")만 정규화했다.
+// 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬제어")만 정규화했다.
 // inflict 항목은 선택적으로 tag(그 효과가 속한 게임 시스템 상위 태그,
-// 예: effect:'침묵', tag:'스킬 제어')를 가질 수 있다 — 매칭은 resist.name이
+// 예: effect:'침묵', tag:'스킬제어')를 가질 수 있다 — 매칭은 resist.name이
 // inf.effect와 같을 때뿐 아니라 inf.tag와 같을 때도 성립한다(add_check
 // SKILL.md 5-3장 참고). tag는 gmap.gg에 명시적으로 붙은 뱃지가 있을 때만
 // 채우고, 근거 없이 추측으로 채우지 않는다.
@@ -174,7 +174,7 @@ const CHECK_DATA = {
     resist: [
       { name: '치유 방해', cond: null },
       { name: '침묵', cond: null },
-      { name: '스킬 제어', cond: null }
+      { name: '스킬제어', cond: null }
     ],
     inflict: [
       { skill: '임팩트 러쉬', category: '액티브 스킬', effect: '기절', cond: '밀쳐낸 적이 벽/다른 유닛과 충돌 시, 1턴' },
@@ -184,7 +184,7 @@ const CHECK_DATA = {
   },
   '자비에르': {
     resist: [
-      { name: '스킬 제어', cond: '클래스 "글래셜 오라클" 선택 시(조건부 — 택1 클래스)' }
+      { name: '스킬제어', cond: '클래스 "글래셜 오라클" 선택 시(조건부 — 택1 클래스)' }
     ],
     inflict: [
       { skill: '아이스 노바', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("한기의 족쇄", 2턴, 이동력 -1, 최대 2중첩)' },
@@ -195,11 +195,11 @@ const CHECK_DATA = {
   '제피르': {
     resist: [
       { name: '행동 제어', cond: '아티팩트 "정화의 반지" 선택 + 버프 유지 중일 때만(상시 면역 아님)' },
-      { name: '스킬 제어', cond: '위와 동일' }
+      { name: '스킬제어', cond: '위와 동일' }
     ],
     inflict: [
       { skill: '용언', category: '고유패시브', effect: '침묵', cond: '캐릭터 턴 종료 시 주위 2칸 내 적 존재 시(쿨타임 2, 매턴 25% 확률로 해제 시도)' },
-      { skill: '용언', category: '고유패시브', effect: '스킬 제어', cond: '위와 동일' },
+      { skill: '용언', category: '고유패시브', effect: '스킬제어', cond: '위와 동일' },
       { skill: '신앙의 말뚝', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여, 3턴 지속' },
       { skill: '창천의 굴레', category: '클래스 패시브(아주르소버린)', effect: '이동력 제어', cond: '적 공격 시 부여, 2턴 지속(해제 시 "창천의 지배"로 전환)' },
       { skill: '드래곤 브레스', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여("느려짐"), 1턴 지속' }
@@ -245,7 +245,7 @@ const CHECK_DATA = {
   },
   '시라노': {
     resist: [
-      { name: '쿨타임 제어', cond: '고유패시브 "회색 망토의 기사" ★5 이상(헌신의 의지 효과 보유 중)' },
+      { name: '쿨타임제어', cond: '고유패시브 "회색 망토의 기사" ★5 이상(헌신의 의지 효과 보유 중)' },
       { name: '클래스패시브 봉쇄', cond: '클래스 "어비스블레이드" 선택 시(조건부 — 택1)' }
     ],
     inflict: [
@@ -255,17 +255,17 @@ const CHECK_DATA = {
   '아네모네': {
     resist: [
       { name: 'TP 감소', cond: '전용무기 ★3 이상, "진홍빛 낙원" 오라 보유 중(행동 종료 시 이번 턴 공격 안 했을 때)' },
-      { name: '이동 방해', cond: null },
+      { name: '이동방해', cond: null },
       { name: '대상지정불가(고유패시브)', cond: '제피르팰컨 캐릭터(시라노, 리델하트 등)도 함께 적용' },
-      { name: '쿨타임 제어', cond: '액티브 "아이언 맨데이트" 효과 보유 중' },
+      { name: '쿨타임제어', cond: '액티브 "아이언 맨데이트" 효과 보유 중' },
       { name: '반격 무효화', cond: '아티팩트 "보호의 날개" 선택 시' }
     ],
     inflict: []
   },
   '알테어': {
     resist: [
-      { name: '스킬 제어', cond: '아티팩트 "마도의 결정" ★1 이상 선택 시' },
-      { name: '쿨타임 제어', cond: '아티팩트 "마도의 결정" ★3 이상 선택 시(위와 동일)' }
+      { name: '스킬제어', cond: '아티팩트 "마도의 결정" ★1 이상 선택 시' },
+      { name: '쿨타임제어', cond: '아티팩트 "마도의 결정" ★3 이상 선택 시(위와 동일)' }
     ],
     inflict: []
   },
@@ -490,7 +490,7 @@ function resolveResist(enemy, name){
 // inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정. 1순위로 구체적
 // 효과 이름(inf.effect, 예: "침묵")으로 resolveResist를 시도하고, 못
 // 찾으면(그리고 inf.tag가 effect와 다르면) 상위 태그(inf.tag, 예:
-// "스킬 제어")로 재시도한다 — add_check 5-3장 태그 매칭 규칙.
+// "스킬제어")로 재시도한다 — add_check 5-3장 태그 매칭 규칙.
 // 반환값의 matchedName은 실제로 매칭에 쓰인 이름(effect 또는 tag) —
 // "주의할 아군" 표의 "저항" 열 표시에 쓰인다(효과 열 자체는 항상
 // inf.effect 그대로 유지).
@@ -605,7 +605,7 @@ function renderRisk(){
         const match = resolveResistForInflict(enemy, inf);
         if(match){
           // 방어자 저항이 효과 이름 그대로 매칭됐으면(예: 침묵→침묵)
-          // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬 제어)
+          // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬제어)
           // "OO저항" 형태로 구분해서 보여준다.
           const resistLabel = match.matchedName === inf.effect ? match.matchedName : `${match.matchedName}저항`;
           rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, resist: resistLabel, cond: match.entry.cond || inf.cond });
