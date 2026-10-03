@@ -269,9 +269,9 @@ const CHECK_DATA = {
       { name: '스킬제어', cond: null }
     ],
     inflict: [
-      { skill: '임팩트 러쉬', category: '액티브 스킬', effect: '기절', cond: '밀쳐낸 적이 벽/다른 유닛과 충돌 시, 1턴' },
-      { skill: '헬카이트 브레스', category: '액티브 스킬', effect: '행동 제어', cond: '"파이렉시아" 부여 — 주위 1칸 내 적 확정 부여(80% 방무 화염마법피해로 대체), 3칸 내는 20% 확률, 1턴(만료 시 "작렬의 고통" 전환)' },
-      { skill: '초열파천무', category: '오의', effect: '행동 제어', cond: '"파이렉시아" 부여 — 50% 확률, 1턴(만료 시 "작렬의 고통" 전환)' }
+      { skill: '임팩트 러쉬', category: '액티브 스킬', effect: '기절', tags: ['기절', '행동제어'], cond: '밀쳐낸 적이 벽/다른 유닛과 충돌 시, 1턴' },
+      { skill: '헬카이트 브레스', category: '액티브 스킬', effect: '행동 제어', tags: ['행동제어'], cond: '"파이렉시아" 부여 — 주위 1칸 내 적 확정 부여(80% 방무 화염마법피해로 대체), 3칸 내는 20% 확률, 1턴(만료 시 "작렬의 고통" 전환)' },
+      { skill: '초열파천무', category: '오의', effect: '행동 제어', tags: ['행동제어'], cond: '"파이렉시아" 부여 — 50% 확률, 1턴(만료 시 "작렬의 고통" 전환)' }
     ]
   },
   '자비에르': {
@@ -279,9 +279,9 @@ const CHECK_DATA = {
       { name: '스킬제어', cond: '클래스 "글래셜 오라클" 선택 시(조건부 — 택1 클래스)' }
     ],
     inflict: [
-      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("한기의 족쇄", 2턴, 이동력 -1, 최대 2중첩)' },
-      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동 불가', cond: '적중 시 부여("한기의 결박", 1턴)' },
-      { skill: '글래셜 브레스', category: '오의', effect: '행동 제어', cond: '"얼음 감옥" 부여 — 시전 대상 100% 확정, 범위 내 다른 대상 30~35% 확률, 1턴(행동 불가)' }
+      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '적중 시 부여("한기의 족쇄", 2턴, 이동력 -1, 최대 2중첩)' },
+      { skill: '아이스 노바', category: '액티브 스킬', effect: '이동 불가', tags: ['행동제어', '이동력제어', '이동불가'], cond: '적중 시 부여("한기의 결박", 1턴)' },
+      { skill: '글래셜 브레스', category: '오의', effect: '행동 제어', tags: ['행동제어'], cond: '"얼음 감옥" 부여 — 시전 대상 100% 확정, 범위 내 다른 대상 30~35% 확률, 1턴(행동 불가)' }
     ]
   },
   '제피르': {
@@ -290,32 +290,32 @@ const CHECK_DATA = {
       { name: '스킬제어', cond: '위와 동일' }
     ],
     inflict: [
-      { skill: '용언', category: '고유패시브', effect: '침묵', cond: '캐릭터 턴 종료 시 주위 2칸 내 적 존재 시(쿨타임 2, 매턴 25% 확률로 해제 시도)' },
-      { skill: '용언', category: '고유패시브', effect: '스킬제어', cond: '위와 동일' },
-      { skill: '신앙의 말뚝', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여, 3턴 지속' },
-      { skill: '창천의 굴레', category: '클래스 패시브(아주르소버린)', effect: '이동력 제어', cond: '적 공격 시 부여, 2턴 지속(해제 시 "창천의 지배"로 전환)' },
-      { skill: '드래곤 브레스', category: '액티브 스킬', effect: '이동력 제어', cond: '공격 시 부여("느려짐"), 1턴 지속' }
+      { skill: '용언', category: '고유패시브', effect: '침묵', tags: ['스킬제어', '침묵'], cond: '캐릭터 턴 종료 시 주위 2칸 내 적 존재 시(쿨타임 2, 매턴 25% 확률로 해제 시도)' },
+      { skill: '용언', category: '고유패시브', effect: '스킬제어', tags: ['스킬제어', '침묵'], cond: '위와 동일' },
+      { skill: '신앙의 말뚝', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어', '지속 피해'], cond: '공격 시 부여, 3턴 지속' },
+      { skill: '창천의 굴레', category: '클래스 패시브(아주르소버린)', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '적 공격 시 부여, 2턴 지속(해제 시 "창천의 지배"로 전환)' },
+      { skill: '드래곤 브레스', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '공격 시 부여("느려짐"), 1턴 지속' }
     ]
   },
   '감마': {
     resist: [],
     inflict: [
-      { skill: '사두금라편', category: '액티브 스킬', effect: '치유 반전', cond: '공격 시 부여, 2턴, 해제 불가' },
-      { skill: '바이올렛 앤썸', category: '오의', effect: '출혈', cond: '적중 시 부여, 2턴, 해제 불가' },
-      { skill: '바이올렛 앤썸', category: '오의', effect: '치유 반전', cond: '적중 시 확률 부여(1초 30%/3초 70%/5초 80%), 2턴' },
-      { skill: '로열 익스큐션', category: '액티브 스킬', effect: '공포', cond: '적중 시 부여, 1턴' },
-      { skill: '위압의 고통', category: '클래스 패시브(브라이어퀸)', effect: '쇠약', cond: '적 공격 후 대상이 대형몬스터 아니고 주위 2칸 내면 최대 50% 확률, 1턴' },
-      { skill: '애착 인형', category: '아티팩트', effect: '클래스패시브 봉쇄', cond: '적이 없다면 턴 종료 시 가장 가까운 적 1명에게 부여, 해제 불가' }
+      { skill: '사두금라편', category: '액티브 스킬', effect: '치유 반전', tags: ['치유방해'], cond: '공격 시 부여, 2턴, 해제 불가' },
+      { skill: '바이올렛 앤썸', category: '오의', effect: '출혈', tags: ['지속 피해', '출혈'], cond: '적중 시 부여, 2턴, 해제 불가' },
+      { skill: '바이올렛 앤썸', category: '오의', effect: '치유 반전', tags: ['치유방해'], cond: '적중 시 확률 부여(1초 30%/3초 70%/5초 80%), 2턴' },
+      { skill: '로열 익스큐션', category: '액티브 스킬', effect: '공포', tags: ['행동제어', '공포'], cond: '적중 시 부여, 1턴' },
+      { skill: '위압의 고통', category: '클래스 패시브(브라이어퀸)', effect: '쇠약', tags: ['쇠약', '출혈'], cond: '적 공격 후 대상이 대형몬스터 아니고 주위 2칸 내면 최대 50% 확률, 1턴' },
+      { skill: '애착 인형', category: '아티팩트', effect: '클래스패시브 봉쇄', tags: [], cond: '적이 없다면 턴 종료 시 가장 가까운 적 1명에게 부여, 해제 불가' }
     ]
   },
   '세타': {
     resist: [],
     inflict: [
-      { skill: '모듈러 런쳐(감전 유탄)', category: '액티브 스킬', effect: '쇼크', cond: '적중 시 최대 중첩 부여, 2턴, 최대 3중첩' },
-      { skill: '모듈러 런쳐(가스 유탄)', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("느려짐"), 1턴' },
-      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '실명', cond: '적중 시 부여, 2턴' },
-      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '이동력 제어', cond: '적중 시 부여("느려짐"), 1턴' },
-      { skill: '아토믹 봄버', category: '오의', effect: '기절', cond: '5초에서만 확정 부여, 1턴' }
+      { skill: '모듈러 런쳐(감전 유탄)', category: '액티브 스킬', effect: '쇼크', tags: ['쇼크'], cond: '적중 시 최대 중첩 부여, 2턴, 최대 3중첩' },
+      { skill: '모듈러 런쳐(가스 유탄)', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '적중 시 부여("느려짐"), 1턴' },
+      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '실명', tags: ['행동제어'], cond: '적중 시 부여, 2턴' },
+      { skill: '모듈러 런쳐(섬광 유탄)', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '적중 시 부여("느려짐"), 1턴' },
+      { skill: '아토믹 봄버', category: '오의', effect: '기절', tags: ['기절', '행동제어'], cond: '5초에서만 확정 부여, 1턴' }
     ]
   },
   // ↓ char_html에서 역추출한 9명(2026-09-09) — gmap.gg 재스크래핑 대신
@@ -332,7 +332,7 @@ const CHECK_DATA = {
       { name: '정신지배', cond: '고유패시브, 3각 이상' }
     ],
     inflict: [
-      { skill: '타임 하이재킹', category: '액티브 스킬', effect: 'TP 획득 불가', cond: '철가면 본인 사용 시 대상에게 부여, 해제 불가' }
+      { skill: '타임 하이재킹', category: '액티브 스킬', effect: 'TP 획득 불가', tags: [], cond: '철가면 본인 사용 시 대상에게 부여, 해제 불가' }
     ]
   },
   '시라노': {
@@ -341,7 +341,7 @@ const CHECK_DATA = {
       { name: '클래스패시브 봉쇄', cond: '클래스 "어비스블레이드" 선택 시(조건부 — 택1)' }
     ],
     inflict: [
-      { skill: '질풍마영참', category: '액티브 스킬', effect: 'TP 감소', cond: '피해 입은 적 TP 1 제거' }
+      { skill: '질풍마영참', category: '액티브 스킬', effect: 'TP 감소', tags: [], cond: '피해 입은 적 TP 1 제거' }
     ]
   },
   '아네모네': {
@@ -369,7 +369,7 @@ const CHECK_DATA = {
       { name: '기절', cond: '고유패시브 "아브라소" 토글 보유 중(2초부터, 인접 아군과 상호 부여)' }
     ],
     inflict: [
-      { skill: '메테오 스트라이크', category: '오의', effect: '이동력 제어', cond: '"멍해짐" 부여, 2턴(이동력 -2, 추가 이동/행동 획득 불가, 호위 불가)' }
+      { skill: '메테오 스트라이크', category: '오의', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '"멍해짐" 부여, 2턴(이동력 -2, 추가 이동/행동 획득 불가, 호위 불가)' }
     ]
   },
   '벨제부르': {
@@ -387,9 +387,9 @@ const CHECK_DATA = {
       { name: '쿨타임제어', cond: '아티팩트 "보이드 코어" ★3 이상 장착 시' }
     ],
     inflict: [
-      { skill: '쇄진공파', category: '액티브 스킬', effect: '도발', cond: '1턴 부여(행동제어)' },
-      { skill: '소드 브레이커', category: '액티브 스킬', effect: '이동력 제어', cond: '"느려짐 1" 부여(이동력 -1), 1턴' },
-      { skill: '흑식멸광섬', category: '오의', effect: '추방', cond: '치명타 적중 시 25% 확률, 1턴' }
+      { skill: '쇄진공파', category: '액티브 스킬', effect: '도발', tags: ['행동제어'], cond: '1턴 부여(행동제어)' },
+      { skill: '소드 브레이커', category: '액티브 스킬', effect: '이동력 제어', tags: ['행동제어', '이동력제어'], cond: '"느려짐 1" 부여(이동력 -1), 1턴' },
+      { skill: '흑식멸광섬', category: '오의', effect: '추방', tags: ['행동제어', '추방'], cond: '치명타 적중 시 25% 확률, 1턴' }
     ]
   },
   '프레데릭': {
@@ -401,7 +401,7 @@ const CHECK_DATA = {
       { name: '스킬제어', cond: '아티팩트 "루멘 코어" ★4 이상 장착 시' }
     ],
     inflict: [
-      { skill: '이극쌍연무', category: '오의', effect: '무력 봉쇄', cond: '적중 시 부여, 1턴(공격 불가·반격 불가)' }
+      { skill: '이극쌍연무', category: '오의', effect: '무력 봉쇄', tags: ['행동제어'], cond: '적중 시 부여, 1턴(공격 불가·반격 불가)' }
     ]
   },
   '하이델룬': {
@@ -409,7 +409,7 @@ const CHECK_DATA = {
       { name: '추방', cond: '고유패시브 "시스템 이단자" 보유 중(추방 부여 시 대신 "엔트로피 고스트" 상태로 치환)' }
     ],
     inflict: [
-      { skill: '터미널 프로토콜', category: '액티브 스킬', effect: '추방', cond: '적이 죽지 않았다면 1턴 부여' }
+      { skill: '터미널 프로토콜', category: '액티브 스킬', effect: '추방', tags: ['행동제어', '추방'], cond: '적이 죽지 않았다면 1턴 부여' }
     ]
   },
   '흑태자': {
@@ -417,7 +417,7 @@ const CHECK_DATA = {
       { name: '전체 디버프 면역', cond: '아우터스킬 "궁극 그리마" 사용 시 걸려있던 디버프 전부 해제 + 다음 턴 시작 시까지 모든 디버프에 면역(개별 상태이상이 아니라 디버프 전체 대상)' }
     ],
     inflict: [
-      { skill: '암명연살검', category: '액티브 스킬', effect: '추방', cond: '적을 처치하지 못했을 때 1턴 부여' }
+      { skill: '암명연살검', category: '액티브 스킬', effect: '추방', tags: ['행동제어', '추방'], cond: '적을 처치하지 못했을 때 1턴 부여' }
     ],
     custom: [
       { name: '전의상실', cond: '데스로드 클래스시 범위스킬 사용 후 2칸이내 재행동 불가' }
@@ -445,8 +445,8 @@ const CHECK_DATA = {
       { name: '쇠약', cond: '아티팩트 "추억의 이중주" 선택 시(조건부 — 택1), "격정의 선율" 오라 중(적 공격 후~캐릭터 턴 종료) — 주위 3칸 내 아군 포함' }
     ],
     inflict: [
-      { skill: '검은 베일의 여인', category: '고유패시브', effect: '이동력 제어', cond: '죽음에 이르는 피해를 받고 살아남은 적에게 "유예의 대가" 부여, 3턴, 해제 불가(이동력 -1, 발현 4부터 -2)' },
-      { skill: '검은 베일의 여인', category: '고유패시브', effect: '반격 불가', cond: '위와 동일("유예의 대가")' }
+      { skill: '검은 베일의 여인', category: '고유패시브', effect: '이동력 제어', tags: [], cond: '죽음에 이르는 피해를 받고 살아남은 적에게 "유예의 대가" 부여, 3턴, 해제 불가(이동력 -1, 발현 4부터 -2)' },
+      { skill: '검은 베일의 여인', category: '고유패시브', effect: '반격 불가', tags: [], cond: '위와 동일("유예의 대가")' }
     ]
   }
 };
@@ -577,12 +577,17 @@ function entryActive(entry){
 // 전이하는 고유패시브 등)가 있고 그 대상이 enemy면, 그 전이 조건(cond)으로
 // 판정한다(예: 아네모네 고유패시브가 같은 팰컨 소속인 시라노에게도 전이).
 // grantsTo가 없으면 기존 동작과 완전히 동일 — 다른 모든 캐릭터엔 영향 없음.
+// 이름 비교는 띄어쓰기를 무시한다 — gmap.gg 태그 칩은 '행동제어'처럼 붙여
+// 쓰고 저항 이름은 '행동 제어'처럼 띄어 쓴 경우가 있기 때문.
+function sameName(a, b){
+  return String(a).replace(/\s+/g, '') === String(b).replace(/\s+/g, '');
+}
 function resolveResist(enemy, name){
-  const own = CHECK_DATA[enemy].resist.find(r => r.name === name);
+  const own = CHECK_DATA[enemy].resist.find(r => sameName(r.name, name));
   if(own && entryActive(own)) return own;
   for(const other of picked){
     if(other === enemy) continue;
-    const granter = CHECK_DATA[other].resist.find(r => r.name === name && r.grantsTo && entryActive(r));
+    const granter = CHECK_DATA[other].resist.find(r => sameName(r.name, name) && r.grantsTo && entryActive(r));
     if(!granter) continue;
     const grant = granter.grantsTo.find(g => g.name === enemy);
     if(grant) return { name, cond: grant.cond };
@@ -599,10 +604,12 @@ function resolveResist(enemy, name){
 // inf.effect 그대로 유지).
 function resolveResistForInflict(enemy, inf){
   let entry = resolveResist(enemy, inf.effect);
-  if(entry) return { entry, matchedName: inf.effect };
-  if(inf.tag && inf.tag !== inf.effect){
-    entry = resolveResist(enemy, inf.tag);
-    if(entry) return { entry, matchedName: inf.tag };
+  if(entry) return { entry, matchedName: entry.name || inf.effect };
+  // 태그 저항: 적의 저항 이름이 이 효과의 태그(gmap.gg 원본 칩) 중 하나와
+  // 같으면 그 효과 전체가 막힌다. 표시 이름은 적이 실제로 가진 저항 이름.
+  for(const tag of (inf.tags || [])){
+    entry = resolveResist(enemy, tag);
+    if(entry) return { entry, matchedName: entry.name || tag };
   }
   return null;
 }
@@ -625,7 +632,7 @@ function renderMatrix(){
   // 전체 캐릭터 목록이다(적으로 픽됐다고 아군 후보에서 빠지지 않음 — renderRisk와
   // 동일한 원칙, 위 allyCandidates 주석 참고).
   const hasMatch = (effectName) => Object.keys(CHECK_DATA).some(ally =>
-    CHECK_DATA[ally].inflict.some(inf => inf.effect === effectName || inf.tag === effectName)
+    CHECK_DATA[ally].inflict.some(inf => sameName(inf.effect, effectName) || (inf.tags || []).some(t => sameName(t, effectName)))
   );
 
   // PINNED_ROW_NAMES는 이 매트릭스가 아니라 상단 "출전시 주의사항" 박스에서
@@ -710,7 +717,7 @@ function renderRisk(){
           // 방어자 저항이 효과 이름 그대로 매칭됐으면(예: 침묵→침묵)
           // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬제어)
           // "OO저항" 형태로 구분해서 보여준다.
-          const resistLabel = match.matchedName === inf.effect ? match.matchedName : `${match.matchedName}저항`;
+          const resistLabel = match.matchedName;
           rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, resist: resistLabel, cond: match.entry.cond || inf.cond });
         }
       });
@@ -726,12 +733,12 @@ function renderRisk(){
     rows.forEach(r => {
       if(!skillMap.has(r.skill)) skillMap.set(r.skill, new Map());
       const effMap = skillMap.get(r.skill);
-      if(!effMap.has(r.effect)) effMap.set(r.effect, []);
-      const targets = effMap.get(r.effect);
+      if(!effMap.has(r.resist)) effMap.set(r.resist, []);
+      const targets = effMap.get(r.resist);
       if(!targets.includes(r.target)) targets.push(r.target);
     });
     const tags = Array.from(skillMap.entries()).map(([skill, effMap]) => {
-      const effParts = Array.from(effMap.entries()).map(([effect, targets]) => `${effect}저항-${targets.join(',')}`);
+      const effParts = Array.from(effMap.entries()).map(([resistName, targets]) => `${resistName}저항-${targets.join(',')}`);
       return `${skill}(${effParts.join(' / ')})`;
     }).join(', ');
     html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항</th><th>저항 조건</th></tr></thead><tbody>`;
