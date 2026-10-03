@@ -253,13 +253,10 @@
 // 매칭(겹치는 부분 찾기)은 여기 저장하지 않고 아래 render() 시점에 항상
 // 그 자리에서 계산한다 — 그래야 mod_check으로 inflict 항목 하나를 지우면
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
-// 이름 문자열은 gmap.gg 원문의 표기를 그대로 쓰되, 동일 상태이상을
-// 가리키는 표기 차이(예: "스킬 제어 효과 면역" vs "스킬제어")만 정규화했다.
-// inflict 항목은 선택적으로 tag(그 효과가 속한 게임 시스템 상위 태그,
-// 예: effect:'침묵', tag:'스킬제어')를 가질 수 있다 — 매칭은 resist.name이
-// inf.effect와 같을 때뿐 아니라 inf.tag와 같을 때도 성립한다(add_check
-// SKILL.md 5-3장 참고). tag는 gmap.gg에 명시적으로 붙은 뱃지가 있을 때만
-// 채우고, 근거 없이 추측으로 채우지 않는다.
+// resist.name은 툴팁에 "저항"/"면역"으로 적힌 이름 그대로(표기 차이만 정규화).
+// inflict.tags는 그 효과에 gmap.gg 원본 칩으로 붙은 태그 그대로(예: ['기절','행동제어']).
+// 매칭: resist.name이 inf.effect와 같으면 그 효과만, inf.tags 중 하나와 같으면
+// (태그 저항) 그 스킬 전체가 막힌다. 원칙은 add_check SKILL.md 1장.
 // ============================================================
 const CHECK_DATA = {
   '헬카이트': {
@@ -595,18 +592,12 @@ function resolveResist(enemy, name){
   return null;
 }
 
-// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정. 1순위로 구체적
-// 효과 이름(inf.effect, 예: "침묵")으로 resolveResist를 시도하고, 못
-// 찾으면(그리고 inf.tag가 effect와 다르면) 상위 태그(inf.tag, 예:
-// "스킬제어")로 재시도한다 — add_check 5-3장 태그 매칭 규칙.
-// 반환값의 matchedName은 실제로 매칭에 쓰인 이름(effect 또는 tag) —
-// "주의할 아군" 표의 "저항" 열 표시에 쓰인다(효과 열 자체는 항상
-// inf.effect 그대로 유지).
+// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정 — 효과 이름 1:1 매칭을
+// 먼저, 없으면 태그 저항. matchedName은 적이 실제로 가진 저항 이름이고
+// "주의할 아군"의 저항 표시에 그대로 쓰인다.
 function resolveResistForInflict(enemy, inf){
   let entry = resolveResist(enemy, inf.effect);
   if(entry) return { entry, matchedName: entry.name || inf.effect };
-  // 태그 저항: 적의 저항 이름이 이 효과의 태그(gmap.gg 원본 칩) 중 하나와
-  // 같으면 그 효과 전체가 막힌다. 표시 이름은 적이 실제로 가진 저항 이름.
   for(const tag of (inf.tags || [])){
     entry = resolveResist(enemy, tag);
     if(entry) return { entry, matchedName: entry.name || tag };
