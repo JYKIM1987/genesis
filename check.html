@@ -637,8 +637,16 @@ function entryActive(entry){
 // grantsTo가 없으면 기존 동작과 완전히 동일 — 다른 모든 캐릭터엔 영향 없음.
 // 이름 비교는 띄어쓰기를 무시한다 — gmap.gg 태그 칩은 '행동제어'처럼 붙여
 // 쓰고 저항 이름은 '행동 제어'처럼 띄어 쓴 경우가 있기 때문.
+// NAME_ALIAS: 같은 뜻으로 보고 연결하는 이름(띄어쓰기 없이 적는다).
+// '이동방해'(저항 원문) ↔ '이동력제어'(태그 칩)는 정확한 대응이 확인되지
+// 않았지만 사용자 지시로 일단 연결해 둔 것 — 틀리면 이 줄만 지운다.
+const NAME_ALIAS = { '이동방해': '이동력제어' };
+function canonName(s){
+  const k = String(s).replace(/\s+/g, '');
+  return NAME_ALIAS[k] || k;
+}
 function sameName(a, b){
-  return String(a).replace(/\s+/g, '') === String(b).replace(/\s+/g, '');
+  return canonName(a) === canonName(b);
 }
 function resolveResist(enemy, name){
   const own = CHECK_DATA[enemy].resist.find(r => sameName(r.name, name));
