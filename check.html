@@ -66,6 +66,9 @@
   #matrixHost table{ table-layout:fixed; background:var(--panel); }
   #matrixHost thead th:not(:first-child):not(.unpicked){ color:var(--char-name); font-weight:800; }
   #matrixHost th.unpicked{ color:var(--border); font-weight:normal; }
+  #matrixHost thead th.pick-col{ cursor:pointer; user-select:none; }
+  #matrixHost thead th.pick-col:hover{ background:var(--accent-bg); }
+  #matrixHost thead th.pick-col.focus{ background:var(--char-name); color:#fff; }
   #matrixHost td.unpicked{ color:var(--border); }
   td.yes{ background:var(--warn-bg); color:var(--warn); font-weight:bold; }
   td.no{ color:var(--border); }
@@ -605,8 +608,16 @@ function resolveResistForInflict(enemy, inf){
   return null;
 }
 
+// 매트릭스 헤더의 캐릭터 이름을 누르면 그 캐릭터가 가진 저항 행이 맨 위로
+// 오도록 정렬한다. 같은 이름을 다시 누르면 해제.
+let matrixFocus = null;
+function toggleMatrixFocus(name){
+  matrixFocus = (matrixFocus === name) ? null : name;
+  renderMatrix();
+}
 function renderMatrix(){
   const host = document.getElementById('matrixHost');
+  if(matrixFocus && !picked.includes(matrixFocus)) matrixFocus = null;
   if(picked.length === 0){
     host.innerHTML = '<div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div>';
     return;
@@ -630,6 +641,11 @@ function renderMatrix(){
   // renderNotice()가 표시한다 — 여기서는 일반 저항 행에서 제외만 한다.
   const rowArr = Array.from(rowNames).filter(n => !PINNED_ROW_NAMES.includes(n));
   rowArr.sort((a, b) => {
+    if(matrixFocus){
+      const af = resolveResist(matrixFocus, a) ? 0 : 1;
+      const bf = resolveResist(matrixFocus, b) ? 0 : 1;
+      if(af !== bf) return af - bf;
+    }
     const am = hasMatch(a) ? 0 : 1;
     const bm = hasMatch(b) ? 0 : 1;
     if(am !== bm) return am - bm;
@@ -649,7 +665,11 @@ function renderMatrix(){
   let html = '<table><colgroup><col style="width:12%">';
   for(let i = 0; i < 4; i++){ html += '<col style="width:22%">'; }
   html += '</colgroup><thead><tr><th>상태이상</th>';
-  slots.forEach(name => { html += name ? `<th>${name}</th>` : `<th class="unpicked">미선택</th>`; });
+  slots.forEach(name => {
+    html += name
+      ? `<th class="pick-col${name === matrixFocus ? ' focus' : ''}" onclick="toggleMatrixFocus('${name}')" title="이 캐릭터의 저항을 위로 정렬">${name}</th>`
+      : `<th class="unpicked">미선택</th>`;
+  });
   html += '</tr></thead><tbody>';
 
   if(rowArr.length === 0 && manualRows.length === 0){
