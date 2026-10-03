@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>흑태자 스탯 계산기</title>
 <style>
   :root{
@@ -194,6 +195,27 @@
     .col-left{ height:auto; overflow-y:visible; padding-right:0; grid-template-columns:1fr; }
     .col-right{ width:100%; height:auto; }
     .results{ height:auto; overflow-y:visible; }
+  }
+  /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
+     설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
+     render()는 #left/#results 안쪽만 다시 그리므로, 탭 상태는 body 클래스(mv-save/mv-char/mv-stat)로 두면 재렌더 후에도 유지된다. */
+  .mobile-tabs{ display:none; }
+  @media (max-width: 768px){
+    body{ padding:10px 10px calc(64px + env(safe-area-inset-bottom)); }
+    body:not(.mv-save) .sub{ display:none; }
+    .mobile-tabs{
+      display:flex; gap:6px; position:fixed; left:0; right:0; bottom:0; z-index:50;
+      background:var(--panel); border-top:1px solid var(--border);
+      padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    }
+    .mobile-tabs button{
+      flex:1 1 0; background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:6px;
+      padding:10px 4px; font-size:13px; font-weight:bold; cursor:pointer;
+    }
+    .mobile-tabs button.active{ background:var(--accent); color:#fff; }
+    body.mv-save .col-left > .card:not(:first-child), body.mv-save .col-right{ display:none; }
+    body.mv-char .col-left > .card:first-child, body.mv-char .col-right{ display:none; }
+    body.mv-stat .col-left{ display:none; }
   }
 </style>
 </head>
@@ -2453,6 +2475,28 @@ render();
   };
   s.onerror = () => { /* equipment.js 없음 — 내장 폴백 그대로 사용 */ };
   document.head.appendChild(s);
+})();
+</script>
+<div class="mobile-tabs">
+  <button type="button" data-view="save" onclick="setMobileView('save')">설정저장</button>
+  <button type="button" data-view="char" onclick="setMobileView('char')">캐릭세팅</button>
+  <button type="button" data-view="stat" onclick="setMobileView('stat')">스탯확인</button>
+</div>
+<script>
+// 모바일 하단 탭 — body 클래스만 바꾼다(PC 폭에서는 CSS가 적용되지 않아 아무 영향 없음). 마지막 탭은 기기별로 기억.
+const MOBILE_VIEW_KEY = 'genesisStatCalcMobileView';
+function setMobileView(v){
+  document.body.classList.remove('mv-save','mv-char','mv-stat');
+  document.body.classList.add('mv-'+v);
+  document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view===v));
+  try{ localStorage.setItem(MOBILE_VIEW_KEY, v); }catch(e){}
+  window.scrollTo(0, 0);
+}
+(function(){
+  let v = 'char';
+  try{ v = localStorage.getItem(MOBILE_VIEW_KEY) || 'char'; }catch(e){}
+  if(!['save','char','stat'].includes(v)) v = 'char';
+  setMobileView(v);
 })();
 </script>
 </body>
