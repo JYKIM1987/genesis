@@ -782,9 +782,6 @@ function initState(){
   state.openDescLeft = null; state.openDescRight = null;
 }
 initState();
-// 페이지를 새로 열었을 때 이전에 자동 저장된 선택이 있으면 기본값 대신 그걸로 복원한다.
-// (아래 "초기화" 버튼은 initState()만 다시 호출하므로 이 복원 로직을 타지 않고 항상 기본값으로 돌아간다.)
-{ const auto = loadAutosave(state.character); if(auto) state = auto; }
 
 /* ================= 캐릭터별 저장 세팅 (localStorage, 캐릭터당 3슬롯) ================= */
 const SAVE_KEY = 'genesisStatCalcSaves';
@@ -833,15 +830,9 @@ function deleteBuildSlot(slotIdx){
 }
 
 /* ================= 왼쪽 탭 선택 자동 저장(창을 닫았다 다시 열어도 유지) =================
-   자체 localStorage에도 저장하지만(단독 실행 시 유일한 저장소), 로더 iframe으로 열린 경우엔 로더의
-   top-level localStorage에도 같은 상태를 relay한다 — iframe(3rd-party 컨텍스트) 자체 localStorage는
-   브라우저를 완전히 재시작하면 사라지는 경우가 있어(로더 자신의 저장은 안정적으로 남는 것과 대비),
-   로더 쪽 저장을 진짜 저장소로 취급한다(초기 복원은 아래 genesisRestoreBuildState 핸들러가 담당). */
+   render()가 끝날 때마다 현재 선택(state)을 localStorage에 캐릭터별로 저장하고, 페이지를 다시 열면 아래 복원
+   블록이 그 값을 불러온다. 단독 실행(file://)이든 stat.html iframe 안이든(같은 출처라 저장소 공유) 동일하게 동작한다. */
 const AUTOSAVE_KEY = 'genesisStatCalcAutosave';
-// 로더(부모)가 이 캐릭터의 저장된 빌드를 응답해줄 때까지는, 초기 렌더(기본값 또는 이 iframe 자신의
-// localStorage에서 불러온 값)를 로더 쪽에 다시 저장하지 않는다 — 안 그러면 그 초기 렌더가 로더의
-// 진짜 저장값을 기본값으로 덮어써버리고, 뒤이은 복원 응답이 그 방금 덮어써진(잘못된) 값을 그대로
-// 돌려주는 경쟁 상태가 생겨 "브라우저를 껐다 켜면 항상 초기화"되는 원인이 된다.
 function saveAutosave(){
   try {
     const all = JSON.parse(localStorage.getItem(AUTOSAVE_KEY)||'{}');
@@ -855,6 +846,13 @@ function loadAutosave(charName){
     return all[charName] || null;
   } catch(e){ return null; }
 }
+// 페이지를 새로 열었을 때 이전에 자동 저장된 선택이 있으면 기본값 대신 그걸로 복원한다. 반드시 AUTOSAVE_KEY/
+// loadAutosave 정의 뒤에 둔다 — 그 앞에서 부르면 const 초기화 전이라 조용히 실패(null)하고, 이어지는 첫 render()의
+// 자동 저장이 저장돼 있던 선택을 기본값으로 덮어써 "껐다 켜면 항상 초기화"가 된다. 기본값(initState) 위에 저장값을
+// 덮어씌우므로, 예전 버전에서 저장돼 새로 생긴 필드가 없는 값도 그대로 쓸 수 있다.
+// (위쪽 "초기화" 버튼은 initState()만 다시 호출하므로 이 복원 로직을 타지 않고 항상 기본값으로 돌아간다.)
+let restoredFromAutosave = false;
+{ const auto = loadAutosave(state.character); if(auto){ state = Object.assign(state, auto); restoredFromAutosave = true; } }
 // "저장된 세팅과 완전히 같은가"는 activeMaxMode/maxModeLocked(방금 MAX 버튼을 눌렀는지)와
 // openDescLeft/openDescRight("?" 팝업이 열려있는지) 같은 화면 UI 상태는 빼고, 실제 빌드 선택만 비교한다.
 function stateForCompare(s){
@@ -2459,7 +2457,8 @@ function renderResults(){
   document.getElementById('results').innerHTML = html;
 }
 
-render();
+// 자동 저장값이 지금 데이터와 맞지 않아(삭제된 장비 코드 등) 첫 렌더가 실패하면, 화면이 깨진 채 남지 않도록 기본값으로 다시 그린다.
+try { render(); } catch(e){ if(!restoredFromAutosave) throw e; initState(); render(); }
 
 // equipment.js가 이 파일과 같은 폴더에 있으면 그 내용을 우선 적용하고, 없으면(또는 로드 실패)
 // 위에 내장된 폴백 사본을 그대로 쓴다. equipment.js는 window.EQUIPMENT_OVERRIDE에 코드 키(ARM01/
