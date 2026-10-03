@@ -220,7 +220,7 @@ async function downloadAllZip(){
     // 로더 자신도 그대로 담아서, 압축을 풀었을 때 실제 사이트와 같은 폴더 구조(로더 + char_html/)로
     // 재현되게 한다 — 그래야 로더를 열었을 때 지금 사이트와 똑같이 동작한다.
     const selfHtml = await (await fetch(location.href)).text();
-    const selfName = decodeURIComponent(location.pathname.split('/').pop()) || '스탯계산기.html';
+    const selfName = decodeURIComponent(location.pathname.split('/').pop()) || 'stat.html';
     zip.file(selfName, selfHtml);
     for(const name of names){
       btn.textContent = `${name} 처리 중...`;
