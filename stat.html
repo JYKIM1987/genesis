@@ -65,14 +65,14 @@
   @media (max-width: 768px){
     body{ padding:8px; height:100vh; height:100dvh; }
     h1{ display:none; }
-    /* 상단 바: "캐릭터 선택 : 세타 [변경 ▾]" — 지금 보는 캐릭터와 눌러서 바꿀 수 있다는 걸 한눈에 보이도록 강조색 바탕 + 큰 이름 */
+    /* 상단 바: "선택된 캐릭 : 세타 [변경 ▾]" — 지금 보는 캐릭터와 눌러서 바꿀 수 있다는 걸 한눈에 보이도록 강조색 바탕 + 큰 이름 */
     .m-charbar{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%;
+      display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%;
       background:var(--accent); color:#fff; border:0; border-radius:8px;
       padding:11px 14px; margin:0 0 8px; cursor:pointer; flex:0 0 auto; text-align:left;
       box-shadow:0 1px 3px rgba(0,0,0,0.18);
     }
-    .m-charbar .m-cur{ display:flex; align-items:baseline; gap:6px; min-width:0; }
+    .m-charbar .m-cur{ display:flex; align-items:center; gap:8px; min-width:0; }
     .m-charbar .m-label{ font-size:13px; font-weight:normal; opacity:0.9; white-space:nowrap; }
     .m-charbar #mCurName{ font-size:19px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .m-charbar .m-change{
@@ -106,7 +106,7 @@
 <div class="wrap">
 
 <h1>스탯 계산기</h1>
-<button type="button" class="m-charbar" onclick="openCharSheet()"><span class="m-cur"><span class="m-label">캐릭터 선택 :</span><span id="mCurName">선택하세요</span></span><span class="m-change">변경 ▾</span></button>
+<button type="button" class="m-charbar" onclick="openCharSheet()"><span class="m-cur"><span class="m-label">선택된 캐릭 :</span><span id="mCurName">선택하세요</span><span class="m-change">변경 ▾</span></span></button>
 <div class="char-sheet" id="charSheet">
 <div class="sheet-head"><b>캐릭터 선택</b><button type="button" onclick="closeCharSheet()">닫기</button></div>
 <div class="picker-bar">
