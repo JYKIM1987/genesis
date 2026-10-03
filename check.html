@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>기사단전 주의사항</title>
 <style>
   :root{
@@ -109,13 +110,62 @@
   .risk-accordion summary .cnt{ margin-left:auto; padding-left:8px; font-size:10.5px; font-weight:normal; color:var(--text-dim); flex:0 0 auto; }
   .risk-accordion .detail-wrap{ border-top:1px solid var(--border); padding:6px 10px 8px; }
   .risk-accordion table{ margin-top:2px; }
+
+  .mo-only{ display:none; }
+
+  /* 모바일(좁은 화면) — 사이드바를 위로 쌓고, 캐릭터 목록은 탭하기 쉬운
+     칩 그리드로, "주의할 아군" 상세 표는 행마다 카드형으로 바꾼다.
+     데스크톱 레이아웃은 이 블록 밖이라 그대로 유지된다. */
+  @media (max-width:720px){
+    body{ padding:10px; font-size:14px; }
+    .pc-only{ display:none; }
+    .mo-only{ display:inline; }
+    h1{ font-size:20px; }
+    .sub{ font-size:12.5px; }
+    .wrap{ flex-direction:column; gap:12px; }
+    .sidebar{ flex:none; width:100%; position:static; max-height:none; padding:12px; }
+    .picker-title{ font-size:18px; }
+    .sidebar input[type=text]{ font-size:16px; padding:9px 10px; }
+    .char-list{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; max-height:42vh; overflow-y:auto; }
+    .sidebar label{ justify-content:center; text-align:center; min-height:40px; padding:6px 4px; font-size:13.5px;
+      background:var(--panel); border:1px solid var(--border); border-radius:6px; word-break:keep-all; }
+    .sidebar label input{ display:none; }
+    .sidebar label.picked{ background:var(--title); border-color:var(--title); color:#fff; }
+    .sidebar .count{ display:none; }
+
+    .notice-box, .ally-box{ padding:12px; margin-bottom:12px; }
+    .notice-box h2, .ally-box h2{ font-size:17px; margin-bottom:10px; }
+    .ally-box h2 .h2-note{ display:block; margin-top:2px; }
+    .notice-item{ font-size:14px; padding:9px 10px; }
+    .notice-item .cond{ font-size:12.5px; }
+
+    .matrix-box{ padding:10px; }
+    .matrix-box h2{ font-size:16px; }
+    #matrixHost col:first-child{ width:20% !important; }
+    #matrixHost col:not(:first-child){ width:20% !important; }
+    #matrixHost th, #matrixHost td{ padding:6px 3px; font-size:12px; word-break:keep-all; overflow-wrap:anywhere; }
+    .cond-note{ font-size:10.5px; }
+
+    .risk-accordion summary{ flex-wrap:wrap; padding:10px; font-size:14.5px; }
+    .risk-accordion summary .tags{ order:3; flex:1 1 100%; margin:4px 0 0 15px; font-size:12px; line-height:1.5; }
+    .risk-accordion summary .cnt{ font-size:12px; }
+    .risk-accordion .detail-wrap{ padding:8px; }
+    table.risk-table thead{ display:none; }
+    table.risk-table, table.risk-table tbody, table.risk-table tr, table.risk-table td{ display:block; width:100%; }
+    table.risk-table tr{ border:1px solid var(--border); border-radius:6px; margin-bottom:6px; padding:4px 0; background:var(--panel); }
+    table.risk-table tr:last-child{ margin-bottom:0; }
+    table.risk-table td, table.risk-table td.effect, table.risk-table td.target, table.risk-table td.resist{
+      border:none; display:flex; gap:8px; text-align:left; padding:3px 10px; font-size:13px; }
+    table.risk-table td.cond{ font-size:12px; }
+    table.risk-table td::before{ content:attr(data-label); flex:0 0 58px; color:var(--text-dim); font-weight:normal; font-size:12px; }
+  }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>기사단전 주의사항</h1>
-  <div class="sub">좌측에서 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
+  <div class="sub"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
 </div>
 
 <div class="wrap">
@@ -142,7 +192,7 @@
 
     <div class="matrix-box">
       <h2>고유저항 매트릭스</h2>
-      <div id="matrixHost"><div class="empty-hint">좌측에서 적을 선택하세요</div></div>
+      <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적을 선택하세요</div></div>
     </div>
   </div>
 </div>
@@ -507,7 +557,7 @@ function resolveResistForInflict(enemy, inf){
 function renderMatrix(){
   const host = document.getElementById('matrixHost');
   if(picked.length === 0){
-    host.innerHTML = '<div class="empty-hint">좌측에서 적을 선택하세요</div>';
+    host.innerHTML = '<div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적을 선택하세요</div>';
     return;
   }
   // 선택된 적들의 저항 항목을 "상태이상 이름" 기준으로만 모은다(중복 제거) —
@@ -633,7 +683,7 @@ function renderRisk(){
     }).join(', ');
     html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항</th><th>저항 조건</th></tr></thead><tbody>`;
     rows.forEach(r => {
-      html += `<tr><td>${r.skill}</td><td>${r.category}</td><td class="effect">${r.effect}</td><td class="target">${r.target}</td><td class="resist">${r.resist}</td><td class="cond">${r.cond}</td></tr>`;
+      html += `<tr><td data-label="스킬">${r.skill}</td><td data-label="분류">${r.category}</td><td class="effect" data-label="효과">${r.effect}</td><td class="target" data-label="대상">${r.target}</td><td class="resist" data-label="저항">${r.resist}</td><td class="cond" data-label="저항 조건">${r.cond}</td></tr>`;
     });
     html += '</tbody></table></div></details>';
   });
