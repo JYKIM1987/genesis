@@ -112,7 +112,7 @@
   .risk-accordion table{ margin-top:2px; }
 
   .mo-only{ display:none; }
-  .mo-picker-toggle, .mo-tabbar{ display:none; }
+  .mo-pickbar, .mo-tabbar{ display:none; }
 
   /* 모바일(좁은 화면) — 사이드바를 위로 쌓고, 캐릭터 목록은 탭하기 쉬운
      칩 그리드로, "주의할 아군" 상세 표는 행마다 카드형으로 바꾼다.
@@ -124,36 +124,40 @@
     h1{ font-size:20px; }
     .sub{ font-size:12.5px; }
     .wrap{ flex-direction:column; gap:12px; }
-    /* 상단 고정 선택 바 — 평소엔 선택된 이름만 한 줄로 보이고, 바를 탭하면
-       (body.picker-open) 검색창+캐릭터 버튼 목록이 펼쳐진다. */
-    body{ padding-bottom:calc(72px + env(safe-area-inset-bottom)); }
-    .sidebar{ flex:none; width:100%; position:sticky; top:0; z-index:20; max-height:none; padding:0;
-      box-shadow:0 2px 8px rgba(0,0,0,.12); }
-    .picker-title, .picker-count{ display:none; }
-    .mo-picker-toggle{ display:flex; align-items:center; gap:8px; width:100%; border:none; background:transparent;
-      padding:12px; font:inherit; color:var(--text); text-align:left; cursor:pointer; }
-    .mo-picker-toggle .t{ font-size:15px; font-weight:900; color:var(--title); flex:0 0 auto; }
-    .mo-picker-toggle .names{ flex:1 1 auto; min-width:0; font-size:13.5px; font-weight:bold; color:var(--char-name);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .mo-picker-toggle .names.empty{ color:var(--text-dim); font-weight:normal; }
-    .mo-picker-toggle .arr{ flex:0 0 auto; font-size:11px; color:var(--text-dim); }
-    .sidebar input[type=text], .char-list{ display:none; }
-    body.picker-open .sidebar input[type=text]{ display:block; width:calc(100% - 24px); margin:0 12px 8px; }
-    body.picker-open .char-list{ display:grid; margin:0 12px 12px; }
-
-    /* 하단 고정 탭 — 주의 아군 / 적군 저항 중 하나만 보여준다.
-       출전시 주의사항(notice-box)은 탭과 무관하게 항상 위에 표시. */
-    body.tab-matrix .ally-box{ display:none; }
+    /* 하단 고정 탭 3개(공격할 방덱 / 주의할 아군 / 적저항 요약) 중 하나만
+       보여준다 — body의 tab-pick / tab-risk / tab-matrix 클래스로 전환.
+       html,body height:100%를 풀어야 body 하단 패딩이 실제 스크롤 끝에 붙어서
+       마지막 내용이 하단 탭에 가려지지 않는다. */
+    html,body{ height:auto; }
+    body{ padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
+    .sidebar{ flex:none; width:100%; position:static; max-height:none; padding:12px; }
+    .picker-title{ font-size:18px; }
+    body:not(.tab-pick) .sidebar{ display:none; }
+    body.tab-pick .main{ display:none; }
+    body.tab-pick .mo-pickbar{ display:none; }
     body.tab-risk .matrix-box{ display:none; }
+    body.tab-matrix .ally-box{ display:none; }
+
+    /* 결과 탭 상단에 붙는 선택 요약 바 — 탭하면 공격할 방덱 탭으로 이동 */
+    .mo-pickbar{ display:flex; align-items:center; gap:8px; width:100%; position:sticky; top:0; z-index:20;
+      background:var(--sidebar-tint); border:1px solid var(--border); border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.12);
+      padding:12px; font:inherit; color:var(--text); text-align:left; cursor:pointer; }
+    .mo-pickbar .t{ font-size:15px; font-weight:900; color:var(--title); flex:0 0 auto; }
+    .mo-pickbar .names{ flex:1 1 auto; min-width:0; font-size:13.5px; font-weight:bold; color:var(--char-name);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mo-pickbar .names.empty{ color:var(--text-dim); font-weight:normal; }
+    .mo-pickbar .arr{ flex:0 0 auto; font-size:12px; color:var(--text-dim); }
+
     .mo-tabbar{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--panel);
       border-top:1px solid var(--border); box-shadow:0 -2px 8px rgba(0,0,0,.08);
       padding:6px 8px calc(6px + env(safe-area-inset-bottom)); gap:6px; }
     .mo-tabbar button{ flex:1 1 0; border:1px solid var(--border); background:var(--panel2); color:var(--text-dim);
-      border-radius:8px; padding:12px 4px; font:inherit; font-size:15px; font-weight:bold; cursor:pointer; }
+      border-radius:8px; padding:12px 2px; font:inherit; font-size:14.5px; font-weight:bold; cursor:pointer; word-break:keep-all; }
+    body.tab-pick .mo-tabbar button[data-tab="pick"],
     body.tab-risk .mo-tabbar button[data-tab="risk"],
     body.tab-matrix .mo-tabbar button[data-tab="matrix"]{ background:var(--title); border-color:var(--title); color:#fff; }
     .sidebar input[type=text]{ font-size:16px; padding:9px 10px; }
-    .char-list{ grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; max-height:55vh; overflow-y:auto; }
+    .char-list{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; max-height:none; overflow:visible; }
     .sidebar label{ justify-content:center; text-align:center; min-height:40px; padding:6px 4px; font-size:13.5px;
       background:var(--panel); border:1px solid var(--border); border-radius:6px; word-break:keep-all; }
     .sidebar label input{ display:none; }
@@ -188,20 +192,20 @@
   }
 </style>
 </head>
-<body class="tab-risk">
+<body class="tab-pick">
 
 <div class="header">
   <h1>기사단전 주의사항</h1>
-  <div class="sub"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
+  <div class="sub"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
 </div>
 
 <div class="wrap">
+  <button type="button" class="mo-pickbar" onclick="setTab('pick')">
+    <span class="t">방덱 <span id="moPickCount">0</span>/4</span>
+    <span class="names empty" id="moPickNames">적을 선택하세요</span>
+    <span class="arr">변경 ›</span>
+  </button>
   <div class="sidebar">
-    <button type="button" class="mo-picker-toggle" onclick="togglePicker()">
-      <span class="t">방덱 <span id="moPickCount">0</span>/4</span>
-      <span class="names empty" id="moPickNames">탭해서 적 선택</span>
-      <span class="arr" id="moPickArr">▼</span>
-    </button>
     <h3 class="picker-title">방덱 4인 선택</h3>
     <div class="picker-count">선택 <b><span id="pickCount">0</span>/4</b></div>
     <input type="text" id="charSearch" placeholder="캐릭터 검색" oninput="filterChars(this.value)">
@@ -224,14 +228,15 @@
 
     <div class="matrix-box">
       <h2>고유저항 매트릭스</h2>
-      <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적을 선택하세요</div></div>
+      <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div></div>
     </div>
   </div>
 </div>
 
 <div class="mo-tabbar">
-  <button type="button" data-tab="risk" onclick="setTab('risk')">주의 아군</button>
-  <button type="button" data-tab="matrix" onclick="setTab('matrix')">적군 저항</button>
+  <button type="button" data-tab="pick" onclick="setTab('pick')">공격할 방덱</button>
+  <button type="button" data-tab="risk" onclick="setTab('risk')">주의할 아군</button>
+  <button type="button" data-tab="matrix" onclick="setTab('matrix')">적저항 요약</button>
 </div>
 
 <script>
@@ -488,7 +493,6 @@ function toggle(name){
   } else {
     if(picked.length >= MAX_PICK) return;
     picked.push(name);
-    if(picked.length === MAX_PICK) togglePicker(false);
   }
   syncPickerUI();
   render();
@@ -497,7 +501,7 @@ function syncPickerUI(){
   document.getElementById('pickCount').textContent = picked.length;
   document.getElementById('moPickCount').textContent = picked.length;
   const namesEl = document.getElementById('moPickNames');
-  namesEl.textContent = picked.length ? picked.join(' · ') : '탭해서 적 선택';
+  namesEl.textContent = picked.length ? picked.join(' · ') : '적을 선택하세요';
   namesEl.classList.toggle('empty', picked.length === 0);
   charListEl.querySelectorAll('label').forEach(l => {
     const name = l.dataset.name;
@@ -507,16 +511,11 @@ function syncPickerUI(){
     l.querySelector('input').checked = isPicked;
   });
 }
-// 모바일 전용 — 상단 선택 바 펼침/접힘. 4명이 다 차면 toggle()에서 자동으로 접는다.
-function togglePicker(force){
-  const open = document.body.classList.toggle('picker-open', force);
-  document.getElementById('moPickArr').textContent = open ? '▲' : '▼';
-}
-// 모바일 전용 — 하단 탭(주의 아군 / 적군 저항) 전환. PC에서는 두 박스가
-// 항상 같이 보이므로(이 클래스를 쓰는 CSS가 미디어쿼리 안에만 있음) 영향 없음.
+// 모바일 전용 — 하단 탭(공격할 방덱 / 주의할 아군 / 적저항 요약) 전환.
+// 페이지를 열면 항상 공격할 방덱(tab-pick)부터 시작(<body class="tab-pick">).
+// PC에서는 이 클래스를 쓰는 CSS가 미디어쿼리 안에만 있어서 영향 없음.
 function setTab(tab){
-  document.body.classList.toggle('tab-risk', tab === 'risk');
-  document.body.classList.toggle('tab-matrix', tab === 'matrix');
+  ['pick', 'risk', 'matrix'].forEach(t => document.body.classList.toggle('tab-' + t, t === tab));
   window.scrollTo(0, 0);
 }
 function filterChars(q){
@@ -611,7 +610,7 @@ function resolveResistForInflict(enemy, inf){
 function renderMatrix(){
   const host = document.getElementById('matrixHost');
   if(picked.length === 0){
-    host.innerHTML = '<div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">위에서</span> 적을 선택하세요</div>';
+    host.innerHTML = '<div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div>';
     return;
   }
   // 선택된 적들의 저항 항목을 "상태이상 이름" 기준으로만 모은다(중복 제거) —
