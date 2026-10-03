@@ -2483,13 +2483,18 @@ try { render(); } catch(e){ if(!restoredFromAutosave) throw e; initState(); rend
 </div>
 <script>
 // 모바일 하단 탭 — body 클래스만 바꾼다(PC 폭에서는 CSS가 적용되지 않아 아무 영향 없음). 마지막 탭은 기기별로 기억.
+// 탭별 스크롤 위치는 페이지를 열어 둔 동안만 기억 — 다른 탭을 보고 돌아오면 떠날 때 위치로 복원, 처음 여는 탭만 맨 위.
 const MOBILE_VIEW_KEY = 'genesisStatCalcMobileView';
+const mobileViewScroll = {};
+let mobileViewCur = null;
 function setMobileView(v){
+  if(mobileViewCur) mobileViewScroll[mobileViewCur] = window.scrollY;
   document.body.classList.remove('mv-save','mv-char','mv-stat');
   document.body.classList.add('mv-'+v);
   document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view===v));
   try{ localStorage.setItem(MOBILE_VIEW_KEY, v); }catch(e){}
-  window.scrollTo(0, 0);
+  window.scrollTo(0, mobileViewScroll[v] || 0);
+  mobileViewCur = v;
 }
 (function(){
   let v = 'char';
