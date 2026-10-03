@@ -65,30 +65,39 @@
      PC에서는 .char-sheet가 display:contents라 안쪽 picker-bar/bulk-bar가 기존 위치 그대로 보이고, 바·시트 머리줄은 숨겨진다.
      모바일에서는 기존 #picker 버튼들을 그대로 시트 안에서 여러 줄로 펼쳐 보여주므로 selectChar/검색/파일 없음 숨김 로직을 그대로 쓴다.
      (캐릭터 계산기 iframe 안에 하단 탭 3개가 떠 있으므로 목차 쪽 선택 버튼은 아래가 아니라 위에 둔다.) */
-  .char-sheet{ display:contents; }
-  .m-charbar, .sheet-head{ display:none; }
+  /* 모바일 상단 바 오른쪽 [저장/불러오기]는 별도 .save-sheet(일괄저장 파일 다운로드 + 이름으로 서버 저장)를 연다 —
+     캐릭터 선택 시트와 저장 시트를 분리. PC에서는 둘 다 display:contents라 기존 순서·위치 그대로. */
+  .char-sheet, .save-sheet{ display:contents; }
+  .m-topbar, .sheet-head{ display:none; }
   @media (max-width: 768px){
     body{ padding:8px; height:100vh; height:100dvh; }
     h1{ display:none; }
     /* 상단 바: "선택된 캐릭 : 세타 [변경 ▾]" — 지금 보는 캐릭터와 눌러서 바꿀 수 있다는 걸 한눈에 보이도록 강조색 바탕 + 큰 이름 */
+    .m-topbar{ display:flex; align-items:stretch; gap:6px; margin:0 0 8px; flex:0 0 auto; }
     .m-charbar{
-      display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%;
+      display:flex; align-items:center; justify-content:flex-start; gap:6px; flex:1 1 auto; min-width:0;
       background:var(--accent); color:#fff; border:0; border-radius:8px;
-      padding:11px 14px; margin:0 0 8px; cursor:pointer; flex:0 0 auto; text-align:left;
+      padding:11px 10px; margin:0; cursor:pointer; text-align:left;
       box-shadow:0 1px 3px rgba(0,0,0,0.18);
     }
-    .m-charbar .m-cur{ display:flex; align-items:center; gap:8px; min-width:0; }
-    .m-charbar .m-label{ font-size:13px; font-weight:normal; opacity:0.9; white-space:nowrap; }
+    .m-savebtn{
+      flex:0 0 auto; background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:8px;
+      padding:0 8px; font-size:12.5px; font-weight:bold; white-space:nowrap; cursor:pointer;
+      box-shadow:0 1px 3px rgba(0,0,0,0.12);
+    }
+    .m-charbar .m-cur{ display:flex; align-items:center; gap:6px; min-width:0; }
+    .m-charbar .m-label{ font-size:12px; font-weight:normal; opacity:0.9; white-space:nowrap; }
     .m-charbar #mCurName{ font-size:19px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .m-charbar .m-change{
       flex:0 0 auto; background:#fff; color:var(--accent); border-radius:999px;
-      padding:5px 12px; font-size:13px; font-weight:bold; white-space:nowrap;
+      padding:5px 9px; font-size:13px; font-weight:bold; white-space:nowrap;
     }
-    .char-sheet{
+    .char-sheet, .save-sheet{
       display:none; position:fixed; inset:0; z-index:100; background:var(--bg);
       padding:12px 12px calc(12px + env(safe-area-inset-bottom)); overflow-y:auto;
     }
-    body.sheet-open .char-sheet{ display:block; }
+    body.sheet-open .char-sheet, body.save-open .save-sheet{ display:block; }
+    .sheet-head + .bulk-bar{ margin-top:0; padding-top:0; border-top:0; }
     .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
     .sheet-head b{ font-size:16px; color:var(--accent); }
     .sheet-head button{
@@ -113,7 +122,10 @@
 <div class="wrap">
 
 <h1>스탯 계산기</h1>
-<button type="button" class="m-charbar" onclick="openCharSheet()"><span class="m-cur"><span class="m-label">선택된 캐릭 :</span><span id="mCurName">선택하세요</span><span class="m-change">변경 ▾</span></span></button>
+<div class="m-topbar">
+  <button type="button" class="m-charbar" onclick="openCharSheet()"><span class="m-cur"><span class="m-label">선택된 캐릭 :</span><span id="mCurName">선택하세요</span><span class="m-change">변경 ▾</span></span></button>
+  <button type="button" class="m-savebtn" onclick="openSaveSheet()">저장/불러오기</button>
+</div>
 <div class="char-sheet" id="charSheet">
 <div class="sheet-head"><b>캐릭터 선택</b><button type="button" onclick="closeCharSheet()">닫기</button></div>
 <div class="picker-bar">
@@ -122,6 +134,9 @@
   <button class="picker-arrow" onclick="scrollPicker(1)" title="오른쪽으로 스크롤">▶</button>
   <input type="text" id="pickerSearch" placeholder="캐릭터 검색" oninput="filterPicker(this.value)">
 </div>
+</div>
+<div class="save-sheet" id="saveSheet">
+<div class="sheet-head"><b>저장/불러오기</b><button type="button" onclick="closeSaveSheet()">닫기</button></div>
 <div class="bulk-bar">
   <button id="bulkSaveBtn" onclick="downloadAllZip()">전체 일괄저장(파일 다운로드)</button>
   <span class="bulk-hint">모든 캐릭터를 zip 파일 하나로 내려받습니다. 지금 저장돼 있는 설정(자동저장·저장 슬롯)도 함께 담겨서, 다운로드한 파일은 쿠키를 지워도 그대로 열립니다.</span>
@@ -157,6 +172,8 @@ function selectChar(name){
 // 모바일 캐릭터 선택 시트 열기/닫기 — body 클래스만 바꾼다(PC 폭에서는 CSS가 적용되지 않아 아무 영향 없음).
 function openCharSheet(){ document.body.classList.add('sheet-open'); }
 function closeCharSheet(){ document.body.classList.remove('sheet-open'); }
+function openSaveSheet(){ document.body.classList.add('save-open'); }
+function closeSaveSheet(){ document.body.classList.remove('save-open'); }
 
 const picker = document.getElementById('picker');
 const buttonsByName = {};
@@ -330,6 +347,7 @@ async function serverLoad(){
     // 지금 보고 있는 캐릭터 계산기를 다시 열어 불러온 세팅이 바로 보이게 한다.
     const cur = localStorage.getItem(LAST_KEY);
     if(cur && buttonsByName[cur]) selectChar(cur);
+    closeSaveSheet();
     alert('불러왔습니다.');
   } catch(e){
     alert('불러오기 실패: ' + e.message);
