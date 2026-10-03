@@ -33,17 +33,11 @@
   .picker{ display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
   .picker button{
     background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:6px;
-    padding:6px 8px 6px 12px; font-size:12.5px; font-weight:bold; cursor:pointer; white-space:nowrap; flex:0 0 auto;
-    display:flex; align-items:center; gap:6px;
+    padding:6px 12px; font-size:12.5px; font-weight:bold; cursor:pointer; white-space:nowrap; flex:0 0 auto;
   }
   .picker button:hover{ background:var(--accent-bg); }
   .picker button.active{ background:var(--accent); color:#fff; }
   .picker button.hidden{ display:none; }
-  /* 캐릭터 버튼 안쪽에 붙는 작은 개별 다운로드 아이콘 — 클릭 시 stopPropagation으로 캐릭터 선택과 분리. */
-  .dl-icon{
-    font-size:10px; font-weight:normal; opacity:0.6; padding:2px 4px; border-radius:4px; line-height:1;
-  }
-  .dl-icon:hover{ opacity:1; background:rgba(0,0,0,0.12); }
   /* 아우터원/이너브레이크 그룹 구분 — 세로줄 하나만, 별도 라벨 없이. */
   .picker .group-divider{ flex:0 0 auto; width:1px; align-self:stretch; background:var(--border); margin:2px 4px; }
   #pickerSearch{
@@ -76,7 +70,7 @@
 </div>
 <div class="bulk-bar">
   <button id="bulkSaveBtn" onclick="downloadAllZip()">전체 일괄저장(ZIP)</button>
-  <span class="bulk-hint">캐릭터 이름 옆 ⬇는 그 캐릭터만 파일로 저장, "전체 일괄저장"은 모든 캐릭터를 zip 하나로 저장합니다. 지금 저장돼 있는 설정(자동저장·저장 슬롯)도 함께 담겨서, 다운로드한 파일은 쿠키를 지워도 그대로 열립니다.</span>
+  <span class="bulk-hint">"전체 일괄저장"은 모든 캐릭터를 zip 하나로 저장합니다. 지금 저장돼 있는 설정(자동저장·저장 슬롯)도 함께 담겨서, 다운로드한 파일은 쿠키를 지워도 그대로 열립니다.</span>
 </div>
 <div class="frame-wrap" id="frameWrap"><div class="empty">캐릭터를 선택하세요</div></div>
 
@@ -106,16 +100,7 @@ function addCharButton(name){
   btn.dataset.missing = '0';
   btn.onclick = () => selectChar(name);
 
-  const nameSpan = document.createElement('span');
-  nameSpan.textContent = name;
-  btn.appendChild(nameSpan);
-
-  const dl = document.createElement('span');
-  dl.className = 'dl-icon';
-  dl.textContent = '⬇';
-  dl.title = name + ' 파일로 저장(현재 설정 포함)';
-  dl.onclick = (e) => { e.stopPropagation(); downloadSingle(name, dl); };
-  btn.appendChild(dl);
+  btn.textContent = name;
 
   picker.appendChild(btn);
   buttonsByName[name] = btn;
@@ -177,19 +162,6 @@ function triggerFileDownload(filename, content, mime){
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-async function downloadSingle(name, iconEl){
-  const orig = iconEl ? iconEl.textContent : null;
-  try{
-    if(iconEl){ iconEl.textContent = '...'; iconEl.style.pointerEvents = 'none'; }
-    const html = await buildDownloadHtml(name);
-    triggerFileDownload(`${name}.html`, html, 'text/html;charset=utf-8');
-  } catch(e){
-    alert('다운로드 실패: ' + e.message);
-  } finally {
-    if(iconEl){ iconEl.textContent = orig; iconEl.style.pointerEvents = ''; }
-  }
 }
 
 async function downloadAllZip(){
