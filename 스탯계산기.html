@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탯 계산기</title>
 <style>
   :root{
@@ -55,6 +56,41 @@
   .frame-wrap{ flex:1 1 auto; min-height:0; border:1px solid var(--border); border-radius:7px; overflow:hidden; background:var(--panel); }
   iframe{ width:100%; height:100%; border:0; display:block; }
   .empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-dim); font-size:13px; }
+  /* ===== 모바일(폭 768px 이하): 캐릭터 선택을 상단 얇은 바 + 전체화면 시트로 =====
+     PC에서는 .char-sheet가 display:contents라 안쪽 picker-bar/bulk-bar가 기존 위치 그대로 보이고, 바·시트 머리줄은 숨겨진다.
+     모바일에서는 기존 #picker 버튼들을 그대로 시트 안에서 여러 줄로 펼쳐 보여주므로 selectChar/검색/파일 없음 숨김 로직을 그대로 쓴다.
+     (캐릭터 계산기 iframe 안에 하단 탭 3개가 떠 있으므로 목차 쪽 선택 버튼은 아래가 아니라 위에 둔다.) */
+  .char-sheet{ display:contents; }
+  .m-charbar, .sheet-head{ display:none; }
+  @media (max-width: 768px){
+    body{ padding:8px; height:100vh; height:100dvh; }
+    h1{ display:none; }
+    .m-charbar{
+      display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+      background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:7px;
+      padding:9px 12px; margin:0 0 8px; font-size:15px; font-weight:bold; cursor:pointer; flex:0 0 auto;
+    }
+    .m-charbar .m-label{ font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:6px; }
+    .char-sheet{
+      display:none; position:fixed; inset:0; z-index:100; background:var(--bg);
+      padding:12px 12px calc(12px + env(safe-area-inset-bottom)); overflow-y:auto;
+    }
+    body.sheet-open .char-sheet{ display:block; }
+    .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .sheet-head b{ font-size:16px; color:var(--accent); }
+    .sheet-head button{
+      background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px;
+      padding:6px 12px; font-size:14px; cursor:pointer;
+    }
+    .picker-bar{ flex-direction:column; align-items:stretch; gap:10px; }
+    .picker-arrow{ display:none; }
+    #pickerSearch{ order:-1; flex:none; width:100%; padding:9px 10px; font-size:16px; }
+    .picker-scroll{ overflow:visible; }
+    .picker{ flex-wrap:wrap; gap:8px; }
+    .picker button{ padding:10px 14px; font-size:14px; }
+    .picker .group-divider{ flex:0 0 100%; width:auto; height:1px; margin:4px 0; align-self:auto; }
+    .bulk-bar{ margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -62,6 +98,9 @@
 <div class="wrap">
 
 <h1>스탯 계산기</h1>
+<button type="button" class="m-charbar" onclick="openCharSheet()"><span><span class="m-label">캐릭터</span><span id="mCurName">선택하세요</span></span><span>▾</span></button>
+<div class="char-sheet" id="charSheet">
+<div class="sheet-head"><b>캐릭터 선택</b><button type="button" onclick="closeCharSheet()">닫기</button></div>
 <div class="picker-bar">
   <button class="picker-arrow" onclick="scrollPicker(-1)" title="왼쪽으로 스크롤">◀</button>
   <div class="picker-scroll" id="pickerScroll"><div class="picker" id="picker"></div></div>
@@ -71,6 +110,7 @@
 <div class="bulk-bar">
   <button id="bulkSaveBtn" onclick="downloadAllZip()">전체 일괄저장(ZIP)</button>
   <span class="bulk-hint">"전체 일괄저장"은 모든 캐릭터를 zip 하나로 저장합니다. 지금 저장돼 있는 설정(자동저장·저장 슬롯)도 함께 담겨서, 다운로드한 파일은 쿠키를 지워도 그대로 열립니다.</span>
+</div>
 </div>
 <div class="frame-wrap" id="frameWrap"><div class="empty">캐릭터를 선택하세요</div></div>
 
@@ -90,7 +130,12 @@ function selectChar(name){
   localStorage.setItem(LAST_KEY, name);
   document.querySelectorAll('.picker button').forEach(b => b.classList.toggle('active', b.dataset.name===name));
   document.getElementById('frameWrap').innerHTML = `<iframe src="${OUT_DIR}/${encodeURIComponent(name)}.html" title="${name} 스탯 계산기"></iframe>`;
+  document.getElementById('mCurName').textContent = name;
+  closeCharSheet();
 }
+// 모바일 캐릭터 선택 시트 열기/닫기 — body 클래스만 바꾼다(PC 폭에서는 CSS가 적용되지 않아 아무 영향 없음).
+function openCharSheet(){ document.body.classList.add('sheet-open'); }
+function closeCharSheet(){ document.body.classList.remove('sheet-open'); }
 
 const picker = document.getElementById('picker');
 const buttonsByName = {};
