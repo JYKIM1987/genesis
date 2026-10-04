@@ -258,8 +258,10 @@
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
 // resist.name은 툴팁에 "저항"/"면역"으로 적힌 이름 그대로(표기 차이만 정규화).
 // inflict.tags는 그 효과에 gmap.gg 원본 칩으로 붙은 태그 그대로(예: ['기절','행동제어']).
-// 매칭: resist.name이 inf.effect와 같으면 그 효과만, inf.tags 중 하나와 같으면
-// (태그 저항) 그 스킬 전체가 막힌다. 원칙은 add_check SKILL.md 1장.
+// resist.type: 툴팁 표기가 "무시"면 '무시', 아니면 생략(= 면역).
+// 매칭: resist.name이 inf.effect와 같으면 그 효과가 막힌다. inf.tags 중 하나와
+// 같으면 면역은 그 효과 전체가 안 걸리고, 무시는 효과는 걸리되 그 태그 부분만
+// 무효다. 원칙은 add_check SKILL.md 1장.
 // ============================================================
 const CHECK_DATA = {
   '헬카이트': {
@@ -324,11 +326,12 @@ const CHECK_DATA = {
       { name: '기절', cond: '클래스 "킹"(상시)' },
       { name: '공포', cond: '클래스 "킹"(상시)' },
       { name: '클래스패시브 봉쇄', cond: '클래스 "킹"(상시)' },
-      { name: '부정 오라 무시', cond: '클래스 "킹"(상시)' },
-      { name: '추가 이동 봉쇄 무시', cond: '클래스 "킹"(상시)' },
-      { name: '추가 행동 봉쇄 무시', cond: '클래스 "킹"(상시)' },
+      { name: '부정 오라 무시', cond: '클래스 "킹"(상시)', type: '무시' },
+      { name: '추가 이동 봉쇄 무시', cond: '클래스 "킹"(상시)', type: '무시' },
+      { name: '추가 행동 봉쇄 무시', cond: '클래스 "킹"(상시)', type: '무시' },
       { name: '추방', cond: '고유패시브 "빛의 인도자"(3각 이상, 상시)' },
-      { name: '정신지배', cond: '고유패시브 "빛의 인도자"(3각 이상, 상시)' }
+      { name: '정신지배', cond: '고유패시브 "빛의 인도자"(3각 이상, 상시)' },
+      { name: '치유 방해', cond: '아우터스킬 "열 세 날개의 성역"(1초 이상, 상시)' }
     ],
     inflict: [
       { skill: '타임 하이재킹', category: '액티브 스킬', effect: 'TP 획득 불가', tags: [], cond: '철가면 본인 사용 시 대상에게 부여, 해제 불가' }
@@ -355,7 +358,7 @@ const CHECK_DATA = {
   '알테어': {
     resist: [
       { name: '스킬제어', cond: '아티팩트 "마도의 결정"(상시)' },
-      { name: '쿨타임제어', cond: '아티팩트 "마도의 결정"(★3 이상, 상시)' }
+      { name: '쿨타임제어', cond: '아티팩트 "마도의 결정"(★3 이상, 상시)', type: '무시' }
     ],
     inflict: []
   },
@@ -434,8 +437,8 @@ const CHECK_DATA = {
   // 포스드 에피타프/파워 업/고결한 희생 보호막(수치형·버프 관련).
   '메르세데스': {
     resist: [
-      { name: 'TP 감소', cond: '고유패시브 "검은 베일의 여인" — "검은 베일의 여인" 상태 중(아군이 죽음에 이르는 피해를 받거나 사망 시 3턴)' },
-      { name: '쿨타임제어', cond: '고유패시브 "검은 베일의 여인" — "검은 베일의 여인" 상태 중(아군이 죽음에 이르는 피해를 받거나 사망 시 3턴)' },
+      { name: 'TP 감소', cond: '고유패시브 "검은 베일의 여인" — "검은 베일의 여인" 상태 중(아군이 죽음에 이르는 피해를 받거나 사망 시 3턴)', type: '무시' },
+      { name: '쿨타임제어', cond: '고유패시브 "검은 베일의 여인" — "검은 베일의 여인" 상태 중(아군이 죽음에 이르는 피해를 받거나 사망 시 3턴)', type: '무시' },
       { name: '클래스패시브 봉쇄', cond: '클래스 "엘레지스트" — "추도의 애가" 보호막 보유 중(광휘 스킬 사용 시 획득, 2턴)' },
       { name: '치유 방해', cond: '클래스 "엘레지스트" — "추도의 애가" 보호막 보유 중(광휘 스킬 사용 시 획득, 2턴)' },
       { name: '행동 제어', cond: '아티팩트 "추억의 이중주" — "고요한 선율" 오라 중(게임 시작부터 적에게 공격받기 전까지, 캐릭터 턴 종료 시 다시 돌아옴, 주위 3칸 아군 포함)' }
@@ -591,22 +594,36 @@ function resolveResist(enemy, name){
   return null;
 }
 
-// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정 — 효과 이름 1:1 매칭을
-// 먼저, 없으면 태그 저항. matchedName은 적이 실제로 가진 저항 이름이고
-// "주의할 아군"의 저항 표시에 그대로 쓰인다.
+// inf(아군의 inflict 원자값)가 enemy에게 막히는지 판정.
+// 1) 효과 이름과 같은 저항 → 그 효과가 막힘(full).
+// 2) 태그와 같은 저항 — 면역이면 효과 전체가 안 걸림(full), 무시면 효과는
+//    걸리고 그 태그 부분만 무효(partial). 면역 매칭이 있으면 그쪽을 우선한다.
+// matchedName은 적이 실제로 가진 저항 이름 — "주의할 아군" 표시에 쓰인다.
 function resolveResistForInflict(enemy, inf){
   let entry = resolveResist(enemy, inf.effect);
-  if(entry) return { entry, matchedName: entry.name || inf.effect };
+  if(entry) return { entry, matchedName: entry.name || inf.effect, partial: false };
+  let partial = null;
   for(const tag of (inf.tags || [])){
     entry = resolveResist(enemy, tag);
-    if(entry) return { entry, matchedName: entry.name || tag };
+    if(!entry) continue;
+    if(entry.type === '무시'){ if(!partial) partial = { entry, matchedName: entry.name || tag, partial: true }; continue; }
+    return { entry, matchedName: entry.name || tag, partial: false };
   }
-  return null;
+  return partial;
 }
 
 // 매트릭스 헤더의 캐릭터 이름을 누르면 그 캐릭터가 가진 저항 행이 맨 위로
 // 오도록 정렬한다. 같은 이름을 다시 누르면 해제.
 let matrixFocus = null;
+// 저항 출처 분류 순서 — 고유패시브 → 전용무기 → 클래스 → 아티팩트 → 그 외
+// (아우터스킬/액티브/오의). cond 앞머리의 분류 이름으로 판정한다.
+const RESIST_SRC_ORDER = ['고유패시브', '전용무기', '클래스', '아티팩트'];
+function resistSrcRank(enemy, name){
+  const ranks = CHECK_DATA[enemy].resist
+    .filter(r => sameName(r.name, name) && entryActive(r))
+    .map(r => { const i = RESIST_SRC_ORDER.findIndex(k => String(r.cond || '').startsWith(k)); return i < 0 ? RESIST_SRC_ORDER.length : i; });
+  return ranks.length ? Math.min(...ranks) : RESIST_SRC_ORDER.length + 1;
+}
 function toggleMatrixFocus(name){
   matrixFocus = (matrixFocus === name) ? null : name;
   renderMatrix();
@@ -641,6 +658,10 @@ function renderMatrix(){
       const af = resolveResist(matrixFocus, a) ? 0 : 1;
       const bf = resolveResist(matrixFocus, b) ? 0 : 1;
       if(af !== bf) return af - bf;
+      if(af === 0){
+        const ar = resistSrcRank(matrixFocus, a), br = resistSrcRank(matrixFocus, b);
+        if(ar !== br) return ar - br;
+      }
     }
     const am = hasMatch(a) ? 0 : 1;
     const bm = hasMatch(b) ? 0 : 1;
@@ -689,7 +710,7 @@ function renderMatrix(){
         if(!enemy){ html += `<td class="no unpicked">·</td>`; return; }
         const entry = resolveResist(enemy, name);
         if(entry){
-          html += `<td class="yes">면역${entry.cond ? `<span class="cond-note">${entry.cond}</span>` : ''}</td>`;
+          html += `<td class="yes">${entry.type === '무시' ? '무시' : '면역'}${entry.cond ? `<span class="cond-note">${entry.cond}</span>` : ''}</td>`;
         } else {
           html += `<td class="no">—</td>`;
         }
@@ -724,7 +745,7 @@ function renderRisk(){
           // 방어자 저항이 효과 이름 그대로 매칭됐으면(예: 침묵→침묵)
           // 그 이름 그대로, 상위 태그로 매칭됐으면(예: 침묵→스킬제어)
           // "OO저항" 형태로 구분해서 보여준다.
-          const resistLabel = match.matchedName;
+          const resistLabel = match.partial ? `${match.matchedName} 무시(해당 효과만)` : `${match.matchedName}저항`;
           rows.push({ skill: inf.skill, category: inf.category, effect: inf.effect, target: enemy, resist: resistLabel, cond: match.entry.cond || inf.cond });
         }
       });
@@ -745,7 +766,7 @@ function renderRisk(){
       if(!targets.includes(r.target)) targets.push(r.target);
     });
     const tags = Array.from(skillMap.entries()).map(([skill, effMap]) => {
-      const effParts = Array.from(effMap.entries()).map(([resistName, targets]) => `${resistName}저항-${targets.join(',')}`);
+      const effParts = Array.from(effMap.entries()).map(([resistLabel, targets]) => `${resistLabel}-${targets.join(',')}`);
       return `${skill}(${effParts.join(' / ')})`;
     }).join(', ');
     html += `<details><summary>${ally}<span class="tags">${tags}</span><span class="cnt">${rows.length}건</span></summary><div class="detail-wrap"><table class="risk-table"><thead><tr><th>스킬</th><th>분류</th><th>효과</th><th>대상</th><th>저항</th><th>저항 조건</th></tr></thead><tbody>`;
