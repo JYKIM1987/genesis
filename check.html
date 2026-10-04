@@ -475,9 +475,17 @@ const MAX_PICK = 4;
 let picked = [];
 
 const charListEl = document.getElementById('charList');
+// 공격할 방덱 목록에서 아우터원을 맨 앞에 출시순으로 보여준다. 나머지는
+// CHECK_DATA 순서 그대로. 새 아우터원이 추가되면 이 배열 끝에 넣는다.
+const OUTER_ONE_ORDER = ['흑태자', '하이델룬', '시라노', '철가면'];
+function charListOrder(){
+  const keys = Object.keys(CHECK_DATA);
+  const outer = OUTER_ONE_ORDER.filter(n => keys.includes(n));
+  return outer.concat(keys.filter(n => !outer.includes(n)));
+}
 function buildCharList(){
   charListEl.innerHTML = '';
-  Object.keys(CHECK_DATA).forEach(name => {
+  charListOrder().forEach(name => {
     const label = document.createElement('label');
     label.dataset.name = name;
     label.innerHTML = `<input type="checkbox"> ${name}`;
