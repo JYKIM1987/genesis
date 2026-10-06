@@ -19,8 +19,7 @@
   /* 캐릭터 카드 상단 저항·조건 확인 요약 박스(박스 인 박스) */
   .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
   .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
-  .kit-resist{ gap:4px 6px; }
-  .kit-sep{ color:var(--text-dim); }
+  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
   .kit-label b{ color:var(--accent); }
   .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
   .kit-item b{ color:var(--accent); }
@@ -1090,10 +1089,10 @@ function resistSummaryLine(){
   [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
     if(!list.length) return;
     const d = descButton(key, buildResistDetail(list));
-    parts.push(`<span class="kit-item"><b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: '- ' + parts.join(' <span class="kit-sep">/</span> '), boxes: boxes.join('') };
+  return { line: parts.join(''), boxes: boxes.join('') };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
