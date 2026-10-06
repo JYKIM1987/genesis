@@ -19,7 +19,9 @@
   /* 캐릭터 카드 상단 저항·조건 확인 요약 박스(박스 인 박스) */
   .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
   .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
-  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .kit-resist{ gap:4px 6px; }
+  .kit-sep{ color:var(--text-dim); }
+  .kit-label b{ color:var(--accent); }
   .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:4px; padding-top:4px; border-top:1px dashed var(--border); }
   .kit-item b{ color:var(--accent); }
   .kit-label{ color:var(--text-dim); }
@@ -1086,13 +1088,13 @@ function resistSummaryLine(){
   if(!always.length && !cond.length) return null;
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
   const parts = [], boxes = [];
-  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
+  [['저항', always, 'leftResistAlways'], ['조건부', cond, 'leftResistCond']].forEach(([label, list, key]) => {
     if(!list.length) return;
     const d = descButton(key, buildResistDetail(list));
-    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    parts.push(`<span class="kit-item"><b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: parts.join(''), boxes: boxes.join('') };
+  return { line: '- ' + parts.join(' <span class="kit-sep">/</span> '), boxes: boxes.join('') };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1168,7 +1170,7 @@ function extraActionSummaryLine(){
     parts.push(`<span class="kit-item${has?'':' kit-none'}"><b>${t}</b> ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: '<span class="kit-label">- 조건 확인 :</span>' + parts.join(''), boxes: boxes.join('') };
+  return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
