@@ -22,10 +22,9 @@
   .kit-resist{ gap:4px 6px; }
   .kit-sep{ color:var(--text-dim); }
   .kit-label b{ color:var(--accent); }
-  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:4px; padding-top:4px; border-top:1px dashed var(--border); }
+  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
   .kit-item b{ color:var(--accent); }
   .kit-label{ color:var(--text-dim); }
-  .kit-none{ opacity:.45; }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -1088,7 +1087,7 @@ function resistSummaryLine(){
   if(!always.length && !cond.length) return null;
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
   const parts = [], boxes = [];
-  [['저항', always, 'leftResistAlways'], ['조건부', cond, 'leftResistCond']].forEach(([label, list, key]) => {
+  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
     if(!list.length) return;
     const d = descButton(key, buildResistDetail(list));
     parts.push(`<span class="kit-item"><b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
@@ -1158,16 +1157,15 @@ function buildExtraActionDetail(items, onlyType){
 }
 // 왼쪽 탭용 압축 요약 — resistSummaryLine과 달리 그룹(고유/조건부) 구분 없이 "사용 가능한 카테고리 이름"만
 // EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
-// 재행동·추가턴·TP 수급은 항상 표시(없으면 흐리게 + "해당 없음"), 추가이동·추가 공격/스킬은 있을 때만 뒤에 붙인다.
-const KIT_SUMMARY_FIXED = ['재행동','추가턴','TP 수급'];
+// 캐릭터 킷에 있는 항목만 KIT_SUMMARY_TYPES 순서로 보여준다(없는 항목은 표시하지 않음, 전부 없으면 줄 자체 생략).
 function extraActionSummaryLine(){
   const items = collectExtraActionItems(CHARACTERS[state.character]);
-  const names = KIT_SUMMARY_TYPES.filter(t => KIT_SUMMARY_FIXED.includes(t) || items.some(i=>i.type===t));
+  const names = KIT_SUMMARY_TYPES.filter(t => items.some(i=>i.type===t));
+  if(!names.length) return null;
   const parts = [], boxes = [];
   names.forEach(t => {
-    const has = items.some(i=>i.type===t);
-    const d = descButton('leftKit_'+t, has ? buildExtraActionDetail(items, t) : `[${t}]\n해당 없음`);
-    parts.push(`<span class="kit-item${has?'':' kit-none'}"><b>${t}</b> ${d.btn}</span>`);
+    const d = descButton('leftKit_'+t, buildExtraActionDetail(items, t));
+    parts.push(`<span class="kit-item"><b>${t}</b> ${d.btn}</span>`);
     boxes.push(d.box);
   });
   return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
@@ -1553,7 +1551,7 @@ function render(){
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
   // 저항 + 조건 확인(재행동/추가턴/TP 수급) 요약 — 카드 안의 박스로 묶어 가시성 확보. 펼친 "?" 상자는 박스 안 각 줄 아래에 붙는다.
   { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
-    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}<div class="kit-row">${ea.line}</div>${ea.boxes}</div>`; }
+    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}${ea ? `<div class="kit-row">${ea.line}</div>${ea.boxes}` : ''}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
