@@ -15,6 +15,7 @@
     --sidebar-tint:#fafafa;
     --ally-tint:#fff4f3; --ally-border:#e7b9b4;
     --matrix-tint:#f6f7f9; --matrix-border:#dfe1e6;
+    --outer-tint:#eef6fc; --outer-tint-hover:#e2effa; --outer-border:#cfe2f2; /* 공격할 방덱 목록의 아우터원 구분 음영 */
   }
   * { box-sizing: border-box; }
   html,body{ height:100%; }
@@ -51,6 +52,8 @@
   .char-list{ flex:1 1 auto; min-height:0; overflow-y:auto; }
   .sidebar label{ display:flex; align-items:center; gap:6px; padding:5px 4px; border-radius:5px; font-size:12.5px; cursor:pointer; }
   .sidebar label:hover{ background:var(--panel2); }
+  .sidebar label.outer{ background:var(--outer-tint); }
+  .sidebar label.outer:hover{ background:var(--outer-tint-hover); }
   .sidebar label.picked{ background:var(--accent-bg); color:var(--accent); font-weight:bold; }
   .sidebar label.filtered-out{ display:none; }
   .sidebar label.disabled{ opacity:.35; cursor:default; }
@@ -169,6 +172,7 @@
     .char-list{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; max-height:none; overflow:visible; }
     .sidebar label{ justify-content:center; text-align:center; min-height:40px; padding:6px 4px; font-size:13.5px;
       background:var(--panel); border:1px solid var(--border); border-radius:6px; word-break:keep-all; }
+    .sidebar label.outer{ background:var(--outer-tint); border-color:var(--outer-border); }
     .sidebar label input{ display:none; }
     .sidebar label.picked{ background:var(--title); border-color:var(--title); color:#fff; }
     .sidebar .count{ display:none; }
@@ -518,19 +522,20 @@ const MAX_PICK = 4;
 let picked = [];
 
 const charListEl = document.getElementById('charList');
-// 공격할 방덱 목록에서 아우터원을 맨 앞에 출시순으로 보여준다. 나머지는
-// CHECK_DATA 순서 그대로. 새 아우터원이 추가되면 이 배열 끝에 넣는다.
+// 공격할 방덱 목록에서 아우터원을 맨 앞에 출시순으로 보여준다(연한 하늘색 음영으로 구분).
+// 나머지(이너브레이크 계열)는 가나다순. 새 아우터원이 추가되면 이 배열 끝에 넣는다.
 const OUTER_ONE_ORDER = ['흑태자', '하이델룬', '시라노', '철가면'];
 function charListOrder(){
   const keys = Object.keys(CHECK_DATA);
   const outer = OUTER_ONE_ORDER.filter(n => keys.includes(n));
-  return outer.concat(keys.filter(n => !outer.includes(n)));
+  return outer.concat(keys.filter(n => !outer.includes(n)).sort((a, b) => a.localeCompare(b, 'ko')));
 }
 function buildCharList(){
   charListEl.innerHTML = '';
   charListOrder().forEach(name => {
     const label = document.createElement('label');
     label.dataset.name = name;
+    if(OUTER_ONE_ORDER.includes(name)) label.classList.add('outer');
     label.innerHTML = `<input type="checkbox"> ${name}`;
     label.querySelector('input').addEventListener('change', () => toggle(name));
     label.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT'){ e.preventDefault(); toggle(name); } });
