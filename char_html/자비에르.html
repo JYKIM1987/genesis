@@ -1787,6 +1787,14 @@ function render(){
   const wStat = state.weaponOn ? wp.starStats[state.weaponStar] : {};
   const wZone = Object.values(wp.starStats[1])[0].zone;
   html += optLine(c.weaponName, wStat, state.weaponOn ? wZone : null, wp.desc, wp.note);
+  // 전용 스킬이 추가 능력치와 같은 스탯 키를 다른 zone으로 주는 무기(예: 추가 능력치 최대 체력=마을, 전용 스킬 최대 체력=인게임)는
+  // starStats 한 객체에 담을 수 없어 skillStats(성급별, 선택)로 분리한다 — 별도 줄로 보여주고 합산도 따로 더한다.
+  if(wp.skillStats){
+    const wsStat = state.weaponOn ? (wp.skillStats[state.weaponStar]||{}) : {};
+    const wsZones = Object.values(wp.skillStats[state.weaponStar]||wp.skillStats[1]||{}).map(e=>e&&e.zone).filter(Boolean);
+    const wsZone = !wsZones.length ? null : (wsZones.every(z=>z==='always') ? 'always' : (wsZones.every(z=>z==='village') ? 'village' : 'cond'));
+    html += `<div class="opt-line"><div class="opt-top"><span class="name">전용 스킬 능력치</span>${state.weaponOn && wsZone ? zoneBadge(wsZone) : ''}</div><div class="opt-bottom">${statStrObj(wsStat)}</div></div>`;
+  }
   if(wp.stack){
     const wStackMax = resolveWeaponStackMax(wp, state.weaponStar);
     if(state.weaponStack > wStackMax) state.weaponStack = wStackMax;
@@ -2325,6 +2333,7 @@ function computeTotals(){
   if(state.weaponOn){
     const wp = WEAPONS[c.weaponName];
     addStatObj(bucket, wp.starStats[state.weaponStar], '무기 - '+c.weaponName, condLog);
+    if(wp.skillStats) addStatObj(bucket, wp.skillStats[state.weaponStar], '무기 - '+c.weaponName+' (전용 스킬)', condLog);
     if(wp.stack){
       const stackPer = resolveWeaponStackPerStat(wp, state.weaponStar);
       for(const k in stackPer){
