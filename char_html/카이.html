@@ -278,6 +278,10 @@ const WEAPONS = {
     extraAction: [
       { type:'재행동', cond:'★3 이상, 초필살기 사용 후("필살의 문장")' }
     ],
+    tpGain: [
+      { cond:'이동 공격 스킬 사용 시 "집중" 획득 → 행동 종료 시 TP 1(쿨타임 2, ★4부터 1)' },
+      { cond:'★3 이상, 초필살기 사용 후 TP +2("필살의 문장")' }
+    ],
     desc: '★6(최고 성급) 기준\n· 추가 능력치(마을, 상시): 공격력/최대 체력 +15%\n\n전용 스킬 「초열 강화」(카이 전용)\n· 물리 관통/최대 체력 +20%\n· 기본 공격 또는 스킬 사용 전 "초열 강화 6" 효과 획득\n· 이동 공격 스킬 사용 시 "집중" 효과 및 "초열 강화 6" 효과 최대 중첩 획득(쿨타임 1)\n· "필살의 문장 2" 효과 보유\n· "집중"(해제 불가): 행동 종료 시 1 TP 획득\n· "초열 강화 6"(최대 3중첩, 해제 불가): 공격력/지속 피해량 +10%. 최대 중첩 상태에서 협공 후 "초열 폭파 2" 발동. 턴 시작 시 중첩 감소\n· "필살의 문장 2"(해제 불가): 초필살기 피해량 +20%. 초필살기 사용 후 TP +2/재행동 획득/초필살기 쿨타임 -2\n· "초열 폭파 2"(해제 불가): 2칸 범위 내에 공격력의 50% 암흑/화염 물리 피해. 치명타 발동 가능\n\n일반 스킬 「달궈진 칼날」(다른 캐릭터가 이 무기 장착 시)\n· 스킬 사용 전 "달궈진 칼날" 효과 획득\n· 이동 공격 스킬 사용 시 "집중" 효과 획득(쿨타임 1)\n· "달궈진 칼날"(2턴 지속, 최대 2중첩, 해제 불가): 공격력/지속 피해량 +10%',
     note: '[변경점]\n\n★2: 공격력/최대 체력 11% (+1%p), 초열 강화 물리 관통/최대 체력 12% (+2%p), 초열 강화 중첩당 공격력/지속 피해량 6% (+1%p)\n\n★3: 공격력/최대 체력 12% (+1%p), 초열 강화 물리 관통/최대 체력 14% (+2%p), 초열 강화 중첩당 공격력/지속 피해량 7% (+1%p), "필살의 문장 1"(초필살기 피해량 +10%, 초필살기 사용 후 TP +2/재행동 획득)(신규)\n\n★4: 공격력/최대 체력 13% (+1%p), 초열 강화 물리 관통/최대 체력 16% (+2%p), 초열 강화 중첩당 공격력/지속 피해량 8% (+1%p), 이동 공격 스킬 최대 중첩 획득 쿨타임 1 (-1)\n\n★5: 공격력/최대 체력 14% (+1%p), 초열 강화 물리 관통/최대 체력 18% (+2%p), 초열 강화 중첩당 공격력/지속 피해량 9% (+1%p), 초열 강화 최대 중첩 3 (+1), "초열 폭파 2" 공격력의 50% (+20%p), "필살의 문장 2" 초필살기 피해량 20% (+10%p), 초필살기 쿨타임 -2 (신규)\n\n★6: 공격력/최대 체력 15% (+1%p), 초열 강화 물리 관통/최대 체력 20% (+2%p), 초열 강화 중첩당 공격력/지속 피해량 10% (+1%p)',
     stack: {
@@ -363,6 +367,9 @@ const CHARACTERS = {
       ],
       extraAction: [
         { type: '재행동', cond: '화염 디버프가 4개 이상인 적 공격 시 턴당 한 번(쿨타임 2) — 2초부터 3개 이상·쿨타임 1, "헬카이트의 시선" 착용 시 필요 개수 -1' }
+      ],
+      tpGain: [
+        { cond: '죽음에 이르는 피해를 당해 "잿불의 소생"으로 부활할 때 TP 1(5각부터 2, 4초부터 3)' }
       ],
       stack: {
         label: '"불꽃의 염원" 중첩', shortName: '불꽃의 염원',
@@ -1070,8 +1077,8 @@ function resistSummaryLine(){
   if(!always.length && !cond.length) return '';
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
   const parts = [];
-  if(always.length) parts.push('고유 저항 : ' + uniqNames(always));
-  if(cond.length) parts.push('조건부 저항 : ' + uniqNames(cond));
+  if(always.length) parts.push('<b>고유 저항</b> : ' + uniqNames(always));
+  if(cond.length) parts.push('<b>조건부 저항</b> : ' + uniqNames(cond));
   return parts.join(' / ');
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
@@ -1080,39 +1087,43 @@ function resistSummaryLine(){
 // 재행동(쿨타임은 그대로, 턴당 1회 제한 스킬도 그대로, 그냥 한 번 더 행동만 가능 — 인게임 "추가 행동" 툴팁
 // 표현이 여기 해당) vs 추가이동(이동만) vs 추가 공격/스킬(공격 또는 스킬 사용만 한 번 더).
 const EXTRA_ACTION_TYPES = ['추가턴','재행동','추가이동','추가 공격/스킬'];
+// 저항 밑 요약 줄에 보여줄 항목 순서 — 행동추가 4종 + TP 수급(자신이 TP를 얻는 효과, tpGain 필드).
+const KIT_SUMMARY_TYPES = ['재행동','추가턴','추가이동','추가 공격/스킬','TP 수급'];
 function collectExtraActionItems(c){
   const items = [];
+  // tpGain은 extraAction과 같은 위치·같은 {cond} 형태라 같은 수집 루프에서 type만 'TP 수급'으로 붙인다.
+  const both = o => (o.extraAction||[]).concat((o.tpGain||[]).map(e => Object.assign({type:'TP 수급'}, e)));
   (c.classes||[]).forEach(cls => {
-    (cls.extraAction||[]).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
+    both(cls).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
   });
-  if(c.uniquePassive && c.uniquePassive.extraAction){
-    c.uniquePassive.extraAction.forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
+  if(c.uniquePassive){
+    both(c.uniquePassive).forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
   }
-  if(c.ultimate && c.ultimate.extraAction){
-    c.ultimate.extraAction.forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
+  if(c.ultimate){
+    both(c.ultimate).forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
   }
-  if(c.outerSkill && c.outerSkill.extraAction){
-    c.outerSkill.extraAction.forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
+  if(c.outerSkill){
+    both(c.outerSkill).forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
   }
   (c.actives||[]).forEach(a => {
-    (a.extraAction||[]).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
+    both(a).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
   });
   (c.artifacts||[]).forEach(art => {
-    (art.extraAction||[]).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
+    both(art).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
   });
   const wp = WEAPONS[c.weaponName];
-  if(wp && wp.extraAction){
-    wp.extraAction.forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
+  if(wp){
+    both(wp).forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
   }
   return items;
 }
 // "?" 상세(왼쪽 탭) — 저항의 buildResistDetail과 달리 1차 그룹은 4가지 고정 카테고리(EXTRA_ACTION_TYPES 순서), 그
 // 안에서 다시 출처(RESIST_CATEGORY_ORDER 순서)별로 나눠 조건을 나열한다.
-function buildExtraActionDetail(items){
+function buildExtraActionDetail(items, onlyType){
   const byType = {};
   items.forEach(it => { (byType[it.type] = byType[it.type]||[]).push(it); });
   const blocks = [];
-  EXTRA_ACTION_TYPES.forEach(type => {
+  KIT_SUMMARY_TYPES.filter(t => !onlyType || t===onlyType).forEach(type => {
     const list = byType[type];
     if(!list || !list.length) return;
     let block = `[${type}]`;
@@ -1134,9 +1145,11 @@ function buildExtraActionDetail(items){
 // EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
 function extraActionSummaryLine(){
   const items = collectExtraActionItems(CHARACTERS[state.character]);
-  const names = EXTRA_ACTION_TYPES.filter(t => items.some(i=>i.type===t));
-  if(!names.length) return '';
-  return '행동 추가 기믹 : ' + names.join(', ');
+  const names = KIT_SUMMARY_TYPES.filter(t => items.some(i=>i.type===t));
+  if(!names.length) return null;
+  const parts = [], boxes = [];
+  names.forEach(t => { const d = descButton('leftKit_'+t, buildExtraActionDetail(items, t)); parts.push(`<b>${t}</b> ${d.btn}`); boxes.push(d.box); });
+  return { line: parts.join(' · '), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1518,7 +1531,7 @@ function render(){
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
   { const rLine = resistSummaryLine(); if(rLine){ const {always, cond} = collectResistItems(c); const rd = descButton('leftResist', buildResistDetail(always.concat(cond))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${rLine} ${rd.btn}</div>${rd.box}`; } }
-  { const eaLine = extraActionSummaryLine(); if(eaLine){ const ed = descButton('leftExtraAction', buildExtraActionDetail(collectExtraActionItems(c))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${eaLine} ${ed.btn}</div>${ed.box}`; } }
+  { const ea = extraActionSummaryLine(); if(ea){ html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${ea.line}</div>${ea.boxes}`; } }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
