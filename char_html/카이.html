@@ -16,6 +16,13 @@
     --danger:#c0392b;
   }
   * { box-sizing: border-box; }
+  /* 캐릭터 카드 상단 저항·조건 확인 요약 박스(박스 인 박스) */
+  .kit-box{ margin-top:6px; padding:6px 8px; background:var(--panel2); border:1px solid var(--border); border-radius:6px; font-size:11.5px; color:var(--text); }
+  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
+  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:4px; padding-top:4px; border-top:1px dashed var(--border); }
+  .kit-item b{ color:var(--accent); }
+  .kit-label{ color:var(--text-dim); }
+  .kit-none{ opacity:.45; }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -1073,13 +1080,18 @@ function buildResistDetail(items){
 }
 // 캐릭터 카드 상단(무게등급/무기 줄 바로 아래)에 넣는 압축 한 줄 요약 — 이름만 나열(그룹 내 중복 제거). "?"는 render()의 호출부에서 붙인다.
 function resistSummaryLine(){
+  // 고유 저항 / 조건부 저항을 각자 "?"로 분리 — 누르면 그 그룹의 출처·조건만 보인다.
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
-  if(!always.length && !cond.length) return '';
+  if(!always.length && !cond.length) return null;
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
-  const parts = [];
-  if(always.length) parts.push('<b>고유 저항</b> : ' + uniqNames(always));
-  if(cond.length) parts.push('<b>조건부 저항</b> : ' + uniqNames(cond));
-  return parts.join(' / ');
+  const parts = [], boxes = [];
+  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
+    if(!list.length) return;
+    const d = descButton(key, buildResistDetail(list));
+    parts.push(`<span class="kit-item"><b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: parts.join(''), boxes: boxes.join('') };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1143,13 +1155,19 @@ function buildExtraActionDetail(items, onlyType){
 }
 // 왼쪽 탭용 압축 요약 — resistSummaryLine과 달리 그룹(고유/조건부) 구분 없이 "사용 가능한 카테고리 이름"만
 // EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
+// 재행동·추가턴·TP 수급은 항상 표시(없으면 흐리게 + "해당 없음"), 추가이동·추가 공격/스킬은 있을 때만 뒤에 붙인다.
+const KIT_SUMMARY_FIXED = ['재행동','추가턴','TP 수급'];
 function extraActionSummaryLine(){
   const items = collectExtraActionItems(CHARACTERS[state.character]);
-  const names = KIT_SUMMARY_TYPES.filter(t => items.some(i=>i.type===t));
-  if(!names.length) return null;
+  const names = KIT_SUMMARY_TYPES.filter(t => KIT_SUMMARY_FIXED.includes(t) || items.some(i=>i.type===t));
   const parts = [], boxes = [];
-  names.forEach(t => { const d = descButton('leftKit_'+t, buildExtraActionDetail(items, t)); parts.push(`<b>${t}</b> ${d.btn}`); boxes.push(d.box); });
-  return { line: parts.join(' · '), boxes: boxes.join('') };
+  names.forEach(t => {
+    const has = items.some(i=>i.type===t);
+    const d = descButton('leftKit_'+t, has ? buildExtraActionDetail(items, t) : `[${t}]\n해당 없음`);
+    parts.push(`<span class="kit-item${has?'':' kit-none'}"><b>${t}</b> ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: '<span class="kit-label">조건 확인 :</span>' + parts.join(''), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1530,8 +1548,9 @@ function render(){
 
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
-  { const rLine = resistSummaryLine(); if(rLine){ const {always, cond} = collectResistItems(c); const rd = descButton('leftResist', buildResistDetail(always.concat(cond))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${rLine} ${rd.btn}</div>${rd.box}`; } }
-  { const ea = extraActionSummaryLine(); if(ea){ html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${ea.line}</div>${ea.boxes}`; } }
+  // 저항 + 조건 확인(재행동/추가턴/TP 수급) 요약 — 카드 안의 박스로 묶어 가시성 확보. 펼친 "?" 상자는 박스 안 각 줄 아래에 붙는다.
+  { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
+    html += `<div class="kit-box">${rs ? `<div class="kit-row">${rs.line}</div>${rs.boxes}` : ''}<div class="kit-row">${ea.line}</div>${ea.boxes}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
