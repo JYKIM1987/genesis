@@ -17,8 +17,9 @@
   }
   * { box-sizing: border-box; }
   /* 캐릭터 카드 상단 저항·조건 확인 요약 박스(박스 인 박스) */
-  .kit-box{ margin-top:6px; padding:6px 8px; background:transparent; border:1px solid var(--border); border-radius:6px; font-size:11.5px; color:var(--text); }
+  .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
   .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
+  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
   .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:4px; padding-top:4px; border-top:1px dashed var(--border); }
   .kit-item b{ color:var(--accent); }
   .kit-label{ color:var(--text-dim); }
@@ -1088,7 +1089,7 @@ function resistSummaryLine(){
   [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
     if(!list.length) return;
     const d = descButton(key, buildResistDetail(list));
-    parts.push(`<span class="kit-item"><b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
     boxes.push(d.box);
   });
   return { line: parts.join(''), boxes: boxes.join('') };
@@ -1167,7 +1168,7 @@ function extraActionSummaryLine(){
     parts.push(`<span class="kit-item${has?'':' kit-none'}"><b>${t}</b> ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: '<span class="kit-label">조건 확인 :</span>' + parts.join(''), boxes: boxes.join('') };
+  return { line: '<span class="kit-label">- 조건 확인 :</span>' + parts.join(''), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1550,7 +1551,7 @@ function render(){
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
   // 저항 + 조건 확인(재행동/추가턴/TP 수급) 요약 — 카드 안의 박스로 묶어 가시성 확보. 펼친 "?" 상자는 박스 안 각 줄 아래에 붙는다.
   { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
-    html += `<div class="kit-box">${rs ? `<div class="kit-row">${rs.line}</div>${rs.boxes}` : ''}<div class="kit-row">${ea.line}</div>${ea.boxes}</div>`; }
+    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}<div class="kit-row">${ea.line}</div>${ea.boxes}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
