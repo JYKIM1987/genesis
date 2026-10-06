@@ -15,7 +15,9 @@
     --sidebar-tint:#fafafa;
     --ally-tint:#fff4f3; --ally-border:#e7b9b4;
     --matrix-tint:#f6f7f9; --matrix-border:#dfe1e6;
-    --outer-tint:#eef6fc; --outer-tint-hover:#e2effa; --outer-border:#cfe2f2; /* 공격할 방덱 목록의 아우터원 구분 음영 */
+    /* 공격할 방덱 목록 구분 음영 — 아우터원은 아주 연한 붉은색, 얼터너티브·콜라보레이션은 아주 연한 하늘색 */
+    --outer-tint:#fdf1ef; --outer-tint-hover:#fae4e0; --outer-border:#f0d2cc;
+    --special-tint:#eef6fc; --special-tint-hover:#e2effa; --special-border:#cfe2f2;
   }
   * { box-sizing: border-box; }
   html,body{ height:100%; }
@@ -54,6 +56,8 @@
   .sidebar label:hover{ background:var(--panel2); }
   .sidebar label.outer{ background:var(--outer-tint); }
   .sidebar label.outer:hover{ background:var(--outer-tint-hover); }
+  .sidebar label.special{ background:var(--special-tint); }
+  .sidebar label.special:hover{ background:var(--special-tint-hover); }
   .sidebar label.picked{ background:var(--accent-bg); color:var(--accent); font-weight:bold; }
   .sidebar label.filtered-out{ display:none; }
   .sidebar label.disabled{ opacity:.35; cursor:default; }
@@ -173,6 +177,7 @@
     .sidebar label{ justify-content:center; text-align:center; min-height:40px; padding:6px 4px; font-size:13.5px;
       background:var(--panel); border:1px solid var(--border); border-radius:6px; word-break:keep-all; }
     .sidebar label.outer{ background:var(--outer-tint); border-color:var(--outer-border); }
+    .sidebar label.special{ background:var(--special-tint); border-color:var(--special-border); }
     .sidebar label input{ display:none; }
     .sidebar label.picked{ background:var(--title); border-color:var(--title); color:#fff; }
     .sidebar .count{ display:none; }
@@ -522,9 +527,12 @@ const MAX_PICK = 4;
 let picked = [];
 
 const charListEl = document.getElementById('charList');
-// 공격할 방덱 목록에서 아우터원을 맨 앞에 출시순으로 보여준다(연한 하늘색 음영으로 구분).
-// 나머지(이너브레이크 계열)는 가나다순. 새 아우터원이 추가되면 이 배열 끝에 넣는다.
+// 공격할 방덱 목록에서 아우터원을 맨 앞에 출시순으로 보여준다(아주 연한 붉은색 음영).
+// 나머지는 가나다순. 새 아우터원이 추가되면 이 배열 끝에 넣는다.
 const OUTER_ONE_ORDER = ['흑태자', '하이델룬', '시라노', '철가면'];
+// 얼터너티브·콜라보레이션 캐릭터 — 정렬은 가나다순 그대로, 아주 연한 하늘색 음영으로만 구분.
+const ALTERNATIVE_NAMES = ['카이'];
+const COLLAB_NAMES = ['제피르', '알테어'];
 function charListOrder(){
   const keys = Object.keys(CHECK_DATA);
   const outer = OUTER_ONE_ORDER.filter(n => keys.includes(n));
@@ -536,6 +544,7 @@ function buildCharList(){
     const label = document.createElement('label');
     label.dataset.name = name;
     if(OUTER_ONE_ORDER.includes(name)) label.classList.add('outer');
+    else if(ALTERNATIVE_NAMES.includes(name) || COLLAB_NAMES.includes(name)) label.classList.add('special');
     label.innerHTML = `<input type="checkbox"> ${name}`;
     label.querySelector('input').addEventListener('change', () => toggle(name));
     label.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT'){ e.preventDefault(); toggle(name); } });
