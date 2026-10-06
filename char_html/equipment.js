@@ -199,6 +199,11 @@ window.EQUIPMENT_OVERRIDE = {
       set4:{atk:{v:20,zone:'always'},hp:{v:20,zone:'always'}}, set4desc:'공격력/최대 체력 +20%(상시). 공격으로 치명타 적중 시 대상에게 "철갑 파쇄"(방어력/저항력 -15%, 받는 참격 피해 +15%, 2턴 지속, 해제불가) 부여 — 적 방어력/저항력 감소는 내 스탯과 직접 연결되지 않고, 받는 참격 피해 증가는 무기 공격 타입(참격)에 한정된 효과라 둘 다 스탯 합계에 미반영.',
       pieces:{투구:{name:'드레드노트 머플러',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'드레드노트 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'드레드노트 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'드레드노트 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
     },
+    ARM26: {name:'고결한 검황', grade:'전설',
+      set2:{hp:{v:15,zone:'village'},critResChance:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 받는 치명타 확률 -15%.',
+      set4:{crit:{v:20,zone:'always'},critDmg:{v:10,zone:'always'},dotDmgReduction:{v:30,zone:'always'}}, set4desc:'전투 시 속성 상성 무시. 공격 시 적이 받는 치명타 확률 +20%/받는 치명타 피해 +10%, 지속 피해 감소율 +30%.',
+      pieces:{투구:{name:'고결한 검황의 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'고결한 검황의 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'고결한 검황의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'고결한 검황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+    },
   },
 
   // ── 악세사리 ────────────────────────────────────────────────────
