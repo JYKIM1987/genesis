@@ -16,6 +16,14 @@
     --danger:#c0392b;
   }
   * { box-sizing: border-box; }
+  /* 캐릭터 카드 상단 요약(- 고유 저항 / - 조건부 저항 / - 조건 확인). 줄마다 진한 라벨 + 항목별 "?",
+     펼친 "?" 상자는 해당 줄 바로 아래에 붙는다. 저항 두 그룹은 항상 각자 한 줄(.kit-resist). */
+  .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
+  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
+  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
+  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .kit-label{ color:var(--text-dim); }
+  .kit-item b, .kit-label b{ color:var(--accent); }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -325,7 +333,7 @@ const CHARACTERS = {
         desc: '「디지털 팬데믹」 — 최대 탄환 3, 아군 턴 시작 시 탄환 0이면 붕괴탄 재장전. 적 공격 시 적의 디버프 1개당 대상이 받는 피해량이 자신의 캐릭터 턴 종료 시까지 +10%(1랭크)/+15%(2랭크) 증가(무한 스케일링 — 위 토글로 대표 1개 기준 반영). 적 공격 후 대상이 해제 가능한 디버프를 가지고 있다면 주위 3칸 내 가까운 적 1명에게 그 디버프를 복사(디버프 전파 메커닉이라 미반영).'
       },
       {
-        id: 'L.T.K', baseCrit: 6,
+        id: 'L.T.K', tpGain:[{cond:'적 처치 시 "완벽한 사격" 재획득과 함께 TP 1'}], baseCrit: 6,
         stat: {},
         toggle: {
           label: '「완벽한 사격」 상태 유지 중',
@@ -338,7 +346,7 @@ const CHARACTERS = {
         desc: '「완벽한 사격」 — 최대 탄환 3, 게임 시작 시 완벽한 사격 효과 보유, 적 처치 시 TP 1 획득 + 재획득(TP 수급은 미추적). 위 토글은 기본적으로 켜진 상태(전투 시작 직후 기준)로 시작하되, 피격 후에는 실제로는 꺼진 상태라는 점을 감안해 사용할 것.'
       }
     ],
-    uniquePassive: {
+    uniquePassive: { extraAction:[{type:'재행동', cond:'행동 제어 효과를 받으면 "시퀀스 브레이크"(2턴 지속) 획득 → 스킬 사용 후 추가 행동(발동 시 해제)'}],
       name: '시스템 이단자',
       stages: {
         label: '각성/초 단계',
@@ -392,7 +400,7 @@ const CHARACTERS = {
       desc: '스킬 사용 시 남은 체력의 50%를 잃고 다음 턴 시작 시까지 공격력/치명타 확률/물리 관통이 50% 증가합니다(5초 기준).\n대상을 지정해 주변 3바퀴 내 적에게 공격력의 150%만큼 피해를 주고 중심으로 끌어당깁니다(사거리 1-4, 광역, TP 5).\n자해(체력 50% 소모)가 크므로 체력 관리에 유의.',
       note: '[변경점]\n\n1초: 공격력/치명타 확률/물리 관통 30% (6각 25% 대비 +5%), 피해량 공격력의 130% (6각 120% 대비 +10%)\n\n3초: 공격력/치명타 확률/물리 관통 40% (+10%), 피해량 공격력의 140% (+10%)\n\n5초: 공격력/치명타 확률/물리 관통 50% (+10%), 피해량 공격력의 150% (+10%)'
     },
-    outerSkill: {
+    outerSkill: { tpGain:[{cond:'5초부터, 시전 시 TP 1'}],
       name: '엔트로피 고스트',
       stages: {
         label: '초 단계', default: 2,
@@ -406,9 +414,9 @@ const CHARACTERS = {
       note: '[변경점]\n\n3초: 시전 시 자신의 디버프 모두 제거 (신규)\n\n5초: 시전 시 TP 1 회복 (신규)'
     },
     actives: [
-      { name: '제압 사격', stat: {},
+      { name: '제압 사격', extraAction:[{type:'추가이동', cond:'사용 후 "철수"(1턴) 획득 → 턴 종료 전 추가 이동'}], stat: {},
         desc: '탄환 1발 소모. 적에게 공격력의 120% 피해를 주고 반격제압(공격력/반격 피해량 -25%, 반격 불가, 2턴)을 걸고 철수(턴 종료 전 추가 이동, 1턴) 효과를 획득합니다. 사거리 2-4, 범위 단일, 쿨타임 2턴, TP 1. 전부 적 디버프/이동 효과라 추적 대상 스탯 없음.' },
-      { name: '철갑탄 장전',
+      { name: '철갑탄 장전', extraAction:[{type:'추가 공격/스킬', cond:'"철갑탄 장전" 사용 시'}],
         stat: {
           atk:{v:20,zone:'cond',cond:'"철갑탄 장전" 사용 시 2턴간(전의 효과)'},
           mag:{v:20,zone:'cond',cond:'"철갑탄 장전" 사용 시 2턴간(전의 효과)'}
@@ -416,13 +424,13 @@ const CHARACTERS = {
         desc: '남은 탄환을 모두 비우고 철갑탄을 최대치까지 장전, 스킬 사용 시 전의 효과(공격력/주문력 +20%, 2턴)를 얻고 추가로 공격하거나 스킬을 사용할 수 있습니다. 전의 상태에서는 탄환 소모 시 대상에게 공격력의 25% 추가 물리 고정 피해도 발생(탄환 없어도 발동, 미추적). 사거리 자신, 쿨타임 3턴, TP 1.' },
       { name: '더블 다운', stat: {},
         desc: '탄환 2발 소모. 적에게 총을 발사해 공격력의 80% 피해를 주고, 한 발 더 발사해 공격력의 50% 피해를 추가로 줍니다. 사거리 2-4, 쿨타임 3턴, TP 2. 기본 피해량 수치 외 추적 대상 효과 없음.' },
-      { name: '오버라이드 필드',
+      { name: '오버라이드 필드', extraAction:[{type:'추가 공격/스킬', cond:'"오버라이드 필드" 사용 직후'}],
         stat: {
           dmgIncrease:{v:50,zone:'cond',cond:'"오버라이드 필드" 사용 시 2턴간'},
           dmgReduction:{v:50,zone:'cond',cond:'"오버라이드 필드" 사용 시 2턴간'}
         },
         desc: '스킬 사용 직후 추가로 공격하거나 스킬을 사용할 수 있습니다. 2턴 동안 오버라이드 필드 효과(속성/공방 상성 무시, 모든 적에게 유리한 것처럼 주는 피해 +50%·받는 피해 -50%, 해제 불가)를 얻습니다. 사거리 자신, 쿨타임 2턴, TP 1.' },
-      { name: '전술 기동', stat: {},
+      { name: '전술 기동', extraAction:[{type:'추가 공격/스킬', cond:'"전술 기동" 사용 직후'}], tpGain:[{cond:'이동하며 적의 TP를 훔침(훔친 TP가 0이면 TP를 돌려받고 쿨타임 -1)'}], stat: {},
         desc: '방향을 지정해 전방 4칸 내 가장 멀리 떨어진 빈칸까지 이동하며 적의 TP를 훔칩니다. 훔친 TP가 0이면 TP를 돌려받고 이 스킬의 쿨타임이 1 감소합니다. 스킬 사용 직후 추가로 공격하거나 스킬을 사용할 수 있습니다. 사거리 1-1, 범위 광역, 쿨타임 3턴, TP 1. 이동/TP 관련 효과라 추적 대상 스탯 없음.' },
       { name: '터미널 프로토콜', stat: {},
         desc: '탄환 1발 소모. 적에게 공격력의 170%에 대상의 버프 하나당 공격력의 20%만큼 추가된 피해를 줍니다. 엄폐 효과의 적용을 받지 않고 호위할 수 없습니다. 적이 죽지 않았다면 1턴 동안 추방합니다. 사거리 2-4, 쿨타임 3턴, TP 2. 버프 개수 비례 추가 피해는 스킬 자체 피해 공식이라 추적 대상 스탯이 아님.' },
@@ -1034,15 +1042,20 @@ function buildResistDetail(items){
   });
   return blocks.join('\n\n');
 }
-// 캐릭터 카드 상단(무게등급/무기 줄 바로 아래)에 넣는 압축 한 줄 요약 — 이름만 나열(그룹 내 중복 제거). "?"는 render()의 호출부에서 붙인다.
+// 캐릭터 카드 상단 요약의 저항 부분 — "고유 저항"/"조건부 저항"을 각자 한 줄로, 이름만 나열(그룹 내 중복 제거)하고
+// 그룹마다 따로 "?"를 붙인다(누르면 그 그룹의 출처·조건만 보인다). 반환: {line, boxes} 또는 null(저항 없음).
 function resistSummaryLine(){
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
-  if(!always.length && !cond.length) return '';
+  if(!always.length && !cond.length) return null;
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
-  const parts = [];
-  if(always.length) parts.push('고유 저항 : ' + uniqNames(always));
-  if(cond.length) parts.push('조건부 저항 : ' + uniqNames(cond));
-  return parts.join(' / ');
+  const parts = [], boxes = [];
+  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
+    if(!list.length) return;
+    const d = descButton(key, buildResistDetail(list));
+    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: parts.join(''), boxes: boxes.join('') };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1050,39 +1063,43 @@ function resistSummaryLine(){
 // 재행동(쿨타임은 그대로, 턴당 1회 제한 스킬도 그대로, 그냥 한 번 더 행동만 가능 — 인게임 "추가 행동" 툴팁
 // 표현이 여기 해당) vs 추가이동(이동만) vs 추가 공격/스킬(공격 또는 스킬 사용만 한 번 더).
 const EXTRA_ACTION_TYPES = ['추가턴','재행동','추가이동','추가 공격/스킬'];
+// "조건 확인" 줄의 표시 순서 — 행동추가 4종 + TP 수급(자신이 TP를 얻는 효과, tpGain 필드).
+const KIT_SUMMARY_TYPES = ['재행동','추가턴','추가이동','추가 공격/스킬','TP 수급'];
 function collectExtraActionItems(c){
   const items = [];
+  // tpGain은 extraAction과 같은 위치·같은 {cond} 형태라 같은 수집 루프에서 type만 'TP 수급'으로 붙인다.
+  const both = o => (o.extraAction||[]).concat((o.tpGain||[]).map(e => Object.assign({type:'TP 수급'}, e)));
   (c.classes||[]).forEach(cls => {
-    (cls.extraAction||[]).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
+    both(cls).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
   });
-  if(c.uniquePassive && c.uniquePassive.extraAction){
-    c.uniquePassive.extraAction.forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
+  if(c.uniquePassive){
+    both(c.uniquePassive).forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
   }
-  if(c.ultimate && c.ultimate.extraAction){
-    c.ultimate.extraAction.forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
+  if(c.ultimate){
+    both(c.ultimate).forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
   }
-  if(c.outerSkill && c.outerSkill.extraAction){
-    c.outerSkill.extraAction.forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
+  if(c.outerSkill){
+    both(c.outerSkill).forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
   }
   (c.actives||[]).forEach(a => {
-    (a.extraAction||[]).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
+    both(a).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
   });
   (c.artifacts||[]).forEach(art => {
-    (art.extraAction||[]).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
+    both(art).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
   });
   const wp = WEAPONS[c.weaponName];
-  if(wp && wp.extraAction){
-    wp.extraAction.forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
+  if(wp){
+    both(wp).forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
   }
   return items;
 }
-// "?" 상세(왼쪽 탭) — 저항의 buildResistDetail과 달리 1차 그룹은 4가지 고정 카테고리(EXTRA_ACTION_TYPES 순서), 그
-// 안에서 다시 출처(RESIST_CATEGORY_ORDER 순서)별로 나눠 조건을 나열한다.
-function buildExtraActionDetail(items){
+// "조건 확인" 항목의 "?" 상세 — 항목(KIT_SUMMARY_TYPES) 안에서 출처(RESIST_CATEGORY_ORDER 순서)별로 조건을 나열한다.
+// onlyType을 주면 그 항목 하나만 만든다(항목마다 "?"가 따로라 평소엔 항상 하나씩 호출).
+function buildExtraActionDetail(items, onlyType){
   const byType = {};
   items.forEach(it => { (byType[it.type] = byType[it.type]||[]).push(it); });
   const blocks = [];
-  EXTRA_ACTION_TYPES.forEach(type => {
+  KIT_SUMMARY_TYPES.filter(t => !onlyType || t===onlyType).forEach(type => {
     const list = byType[type];
     if(!list || !list.length) return;
     let block = `[${type}]`;
@@ -1100,13 +1117,19 @@ function buildExtraActionDetail(items){
   });
   return blocks.join('\n\n');
 }
-// 왼쪽 탭용 압축 요약 — resistSummaryLine과 달리 그룹(고유/조건부) 구분 없이 "사용 가능한 카테고리 이름"만
-// EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
+// 캐릭터 카드 상단 요약의 "조건 확인" 줄 — 킷에 있는 항목만 KIT_SUMMARY_TYPES 순서로, 항목마다 "?"를 붙인다
+// (없는 항목은 표시하지 않고, 하나도 없으면 null을 돌려 줄 자체를 생략).
 function extraActionSummaryLine(){
   const items = collectExtraActionItems(CHARACTERS[state.character]);
-  const names = EXTRA_ACTION_TYPES.filter(t => items.some(i=>i.type===t));
-  if(!names.length) return '';
-  return '행동 추가 기믹 : ' + names.join(', ');
+  const names = KIT_SUMMARY_TYPES.filter(t => items.some(i=>i.type===t));
+  if(!names.length) return null;
+  const parts = [], boxes = [];
+  names.forEach(t => {
+    const d = descButton('leftKit_'+t, buildExtraActionDetail(items, t));
+    parts.push(`<span class="kit-item"><b>${t}</b> ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1487,8 +1510,9 @@ function render(){
 
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
-  { const rLine = resistSummaryLine(); if(rLine){ const {always, cond} = collectResistItems(c); const rd = descButton('leftResist', buildResistDetail(always.concat(cond))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${rLine} ${rd.btn}</div>${rd.box}`; } }
-  { const eaLine = extraActionSummaryLine(); if(eaLine){ const ed = descButton('leftExtraAction', buildExtraActionDetail(collectExtraActionItems(c))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${eaLine} ${ed.btn}</div>${ed.box}`; } }
+  // 캐릭터 카드 상단 요약: - 고유 저항 / - 조건부 저항 / - 조건 확인(재행동·추가턴·TP 수급 등). 계산기_적용원칙.md 10-4장.
+  { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
+    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}${ea ? `<div class="kit-row">${ea.line}</div>${ea.boxes}` : ''}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;

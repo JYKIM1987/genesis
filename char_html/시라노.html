@@ -16,6 +16,14 @@
     --danger:#c0392b;
   }
   * { box-sizing: border-box; }
+  /* 캐릭터 카드 상단 요약(- 고유 저항 / - 조건부 저항 / - 조건 확인). 줄마다 진한 라벨 + 항목별 "?",
+     펼친 "?" 상자는 해당 줄 바로 아래에 붙는다. 저항 두 그룹은 항상 각자 한 줄(.kit-resist). */
+  .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
+  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
+  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
+  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .kit-label{ color:var(--text-dim); }
+  .kit-item b, .kit-label b{ color:var(--accent); }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -339,7 +347,7 @@ const CHARACTERS = {
         desc: '클래스패시브 「심연의 칼날」(2랭크): 공격력/저항력 +50%, 받는 피해 -20%(모두 상시). 공격 전 "통제의 오라 2" 획득 시 추가로 받는 피해 감소(아래 토글, 오라 범위 밖 공격에만 적용) — 클래스 패시브 봉쇄 불가(미추적).'
       }
     ],
-    uniquePassive: {
+    uniquePassive: { extraAction:[{type:'재행동', cond:'적 플레이어/소환수 처치 또는 대형 몬스터 공격 시(쿨타임 3, 5각부터 2, 6초 기준 1)'}], tpGain:[{cond:'적 플레이어/소환수 처치 또는 대형 몬스터 공격 시 추가 행동과 함께 TP 1(쿨타임 1)'},{cond:'게임 중 1회, 죽음에 이르는 피해를 받아 "임계재생"으로 부활할 때 TP 회복(5각부터 1, 6초 기준 2)'}],
       name: '회색 망토의 기사',
       stages: {
         label: '단계', default: 6,
@@ -369,7 +377,7 @@ const CHARACTERS = {
       desc: '[5초 기준] 주변 3바퀴 내 적들에게 공격력의 180%만큼 물리 피해를 주고 "파멸의 기세 3" 획득(3턴 지속, 해제 불가): 물리 흡혈 +30%(미추적), 이동력 +1(아래 반영), 공격 후/반격 후 대상에게 공격력의 40%만큼 방어 무시 암흑 피해(미추적).',
       note: '[변경점]\n\n3초: 피해 계수 170%→175%(미추적)\n\n5초: "파멸의 기세 3"으로 강화 — 물리 흡혈 20%→30%(미추적), 이동력 +1(신규), 방어 무시 암흑 피해 계수 30%→40%(미추적), 피해 계수 175%→180%(미추적)'
     },
-    outerSkill: {
+    outerSkill: { extraAction:[{type:'재행동', cond:'"엑토플라즘" 스킬 사용 후'}], tpGain:[{cond:'5초부터, 스킬 사용 후 TP가 없으면 TP 2'}],
       name: '엑토플라즘',
       stages: {
         label: '초 단계', default: 2,
@@ -385,7 +393,7 @@ const CHARACTERS = {
     actives: [
       {name:'연섬', stat:{}, desc:'공격력 130% 피해, 반격당하면 추가타로 공격력 30% 피해.'},
       {name:'무쌍관파', stat:{}, desc:'공격력 170% 피해, 치명타 발동 시 공격력 50%만큼 체력 회복(미추적). 적 처치 시 적이 있던 자리로 전진.'},
-      {name:'질주', stat:{ crit:{v:15, zone:'cond', cond:'사용한 턴에만'} }, desc:'사용 직후 추가 행동 획득, 이번 턴 치명타 확률 +15%.'},
+      {name:'질주', extraAction:[{type:'재행동', cond:'"질주" 사용 직후'}], stat:{ crit:{v:15, zone:'cond', cond:'사용한 턴에만'} }, desc:'사용 직후 추가 행동 획득, 이번 턴 치명타 확률 +15%.'},
       {name:'단월섬', stat:{}, desc:'공격력 150% 피해.'},
       {name:'혼돈의 장막', stat:{ dmgReduction:{v:10, zone:'cond', cond:'사용 시 "혼돈의 장막" 획득(2턴 지속, 해제 불가)'}, critResDmg:{v:10, zone:'cond', cond:'사용 시 "혼돈의 장막" 획득(2턴 지속, 해제 불가)'} },
         desc:'사용 시 "혼돈의 장막" 획득(2턴 지속, 해제 불가): 받는 피해/받는 치명타 피해량 -10%(중첩무관), 걸려있는 버프/디버프를 적에게 숨김. 플레이어 공격을 받으면 중첩 증가, 최대 중첩 시 해제되며 "혼돈의 수호" 보호막(공격력 50%, 미추적) 획득 + 걸려 있는 디버프를 3칸 내 적에게 복사 후 자신의 디버프 모두 해제(자신 디버프가 없었다면 무작위 혼돈 디버프 1개를 범위 내 적에게 부여 — 확률적 간접 적 디버프라 미추적). 추가 공격/스킬 사용 기회 획득(미추적).'},
@@ -396,7 +404,7 @@ const CHARACTERS = {
     ],
     artifacts: [
       {
-        name: '섬광연격 비전서', grade:'영웅', maxStar:4,
+        name: '섬광연격 비전서', tpGain:[{cond:'근접 범위 스킬 사용 후 "집중" 획득(쿨타임 1) → 행동 종료 시 TP 1'}], grade:'영웅', maxStar:4,
         starStats: {
           1:{ atk:{v:10,zone:'always'}, phys:{v:10,zone:'always'}, crit:{v:10,zone:'always'} },
           2:{ atk:{v:13,zone:'always'}, phys:{v:13,zone:'always'}, crit:{v:13,zone:'always'} },
@@ -991,15 +999,20 @@ function buildResistDetail(items){
   });
   return blocks.join('\n\n');
 }
-// 캐릭터 카드 상단(무게등급/무기 줄 바로 아래)에 넣는 압축 한 줄 요약 — 이름만 나열(그룹 내 중복 제거). "?"는 render()의 호출부에서 붙인다.
+// 캐릭터 카드 상단 요약의 저항 부분 — "고유 저항"/"조건부 저항"을 각자 한 줄로, 이름만 나열(그룹 내 중복 제거)하고
+// 그룹마다 따로 "?"를 붙인다(누르면 그 그룹의 출처·조건만 보인다). 반환: {line, boxes} 또는 null(저항 없음).
 function resistSummaryLine(){
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
-  if(!always.length && !cond.length) return '';
+  if(!always.length && !cond.length) return null;
   const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
-  const parts = [];
-  if(always.length) parts.push('고유 저항 : ' + uniqNames(always));
-  if(cond.length) parts.push('조건부 저항 : ' + uniqNames(cond));
-  return parts.join(' / ');
+  const parts = [], boxes = [];
+  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
+    if(!list.length) return;
+    const d = descButton(key, buildResistDetail(list));
+    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: parts.join(''), boxes: boxes.join('') };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1007,39 +1020,43 @@ function resistSummaryLine(){
 // 재행동(쿨타임은 그대로, 턴당 1회 제한 스킬도 그대로, 그냥 한 번 더 행동만 가능 — 인게임 "추가 행동" 툴팁
 // 표현이 여기 해당) vs 추가이동(이동만) vs 추가 공격/스킬(공격 또는 스킬 사용만 한 번 더).
 const EXTRA_ACTION_TYPES = ['추가턴','재행동','추가이동','추가 공격/스킬'];
+// "조건 확인" 줄의 표시 순서 — 행동추가 4종 + TP 수급(자신이 TP를 얻는 효과, tpGain 필드).
+const KIT_SUMMARY_TYPES = ['재행동','추가턴','추가이동','추가 공격/스킬','TP 수급'];
 function collectExtraActionItems(c){
   const items = [];
+  // tpGain은 extraAction과 같은 위치·같은 {cond} 형태라 같은 수집 루프에서 type만 'TP 수급'으로 붙인다.
+  const both = o => (o.extraAction||[]).concat((o.tpGain||[]).map(e => Object.assign({type:'TP 수급'}, e)));
   (c.classes||[]).forEach(cls => {
-    (cls.extraAction||[]).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
+    both(cls).forEach(e => items.push({type:e.type, category:'클래스패시브', group:cls.id, cond:e.cond||null}));
   });
-  if(c.uniquePassive && c.uniquePassive.extraAction){
-    c.uniquePassive.extraAction.forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
+  if(c.uniquePassive){
+    both(c.uniquePassive).forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
   }
-  if(c.ultimate && c.ultimate.extraAction){
-    c.ultimate.extraAction.forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
+  if(c.ultimate){
+    both(c.ultimate).forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
   }
-  if(c.outerSkill && c.outerSkill.extraAction){
-    c.outerSkill.extraAction.forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
+  if(c.outerSkill){
+    both(c.outerSkill).forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
   }
   (c.actives||[]).forEach(a => {
-    (a.extraAction||[]).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
+    both(a).forEach(e => items.push({type:e.type, category:'액티브 스킬', group:a.name, cond:e.cond||null}));
   });
   (c.artifacts||[]).forEach(art => {
-    (art.extraAction||[]).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
+    both(art).forEach(e => items.push({type:e.type, category:'아티팩트', group:art.name, cond:e.cond||null}));
   });
   const wp = WEAPONS[c.weaponName];
-  if(wp && wp.extraAction){
-    wp.extraAction.forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
+  if(wp){
+    both(wp).forEach(e => items.push({type:e.type, category:'전용무기', cond:e.cond||null}));
   }
   return items;
 }
-// "?" 상세(왼쪽 탭) — 저항의 buildResistDetail과 달리 1차 그룹은 4가지 고정 카테고리(EXTRA_ACTION_TYPES 순서), 그
-// 안에서 다시 출처(RESIST_CATEGORY_ORDER 순서)별로 나눠 조건을 나열한다.
-function buildExtraActionDetail(items){
+// "조건 확인" 항목의 "?" 상세 — 항목(KIT_SUMMARY_TYPES) 안에서 출처(RESIST_CATEGORY_ORDER 순서)별로 조건을 나열한다.
+// onlyType을 주면 그 항목 하나만 만든다(항목마다 "?"가 따로라 평소엔 항상 하나씩 호출).
+function buildExtraActionDetail(items, onlyType){
   const byType = {};
   items.forEach(it => { (byType[it.type] = byType[it.type]||[]).push(it); });
   const blocks = [];
-  EXTRA_ACTION_TYPES.forEach(type => {
+  KIT_SUMMARY_TYPES.filter(t => !onlyType || t===onlyType).forEach(type => {
     const list = byType[type];
     if(!list || !list.length) return;
     let block = `[${type}]`;
@@ -1057,13 +1074,19 @@ function buildExtraActionDetail(items){
   });
   return blocks.join('\n\n');
 }
-// 왼쪽 탭용 압축 요약 — resistSummaryLine과 달리 그룹(고유/조건부) 구분 없이 "사용 가능한 카테고리 이름"만
-// EXTRA_ACTION_TYPES 순서로 나열한다(어떤 출처인지는 옆의 "?"에서 확인).
+// 캐릭터 카드 상단 요약의 "조건 확인" 줄 — 킷에 있는 항목만 KIT_SUMMARY_TYPES 순서로, 항목마다 "?"를 붙인다
+// (없는 항목은 표시하지 않고, 하나도 없으면 null을 돌려 줄 자체를 생략).
 function extraActionSummaryLine(){
   const items = collectExtraActionItems(CHARACTERS[state.character]);
-  const names = EXTRA_ACTION_TYPES.filter(t => items.some(i=>i.type===t));
-  if(!names.length) return '';
-  return '행동 추가 기믹 : ' + names.join(', ');
+  const names = KIT_SUMMARY_TYPES.filter(t => items.some(i=>i.type===t));
+  if(!names.length) return null;
+  const parts = [], boxes = [];
+  names.forEach(t => {
+    const d = descButton('leftKit_'+t, buildExtraActionDetail(items, t));
+    parts.push(`<span class="kit-item"><b>${t}</b> ${d.btn}</span>`);
+    boxes.push(d.box);
+  });
+  return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1444,8 +1467,9 @@ function render(){
 
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
-  { const rLine = resistSummaryLine(); if(rLine){ const {always, cond} = collectResistItems(c); const rd = descButton('leftResist', buildResistDetail(always.concat(cond))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${rLine} ${rd.btn}</div>${rd.box}`; } }
-  { const eaLine = extraActionSummaryLine(); if(eaLine){ const ed = descButton('leftExtraAction', buildExtraActionDetail(collectExtraActionItems(c))); html += `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${eaLine} ${ed.btn}</div>${ed.box}`; } }
+  // 캐릭터 카드 상단 요약: - 고유 저항 / - 조건부 저항 / - 조건 확인(재행동·추가턴·TP 수급 등). 계산기_적용원칙.md 10-4장.
+  { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
+    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}${ea ? `<div class="kit-row">${ea.line}</div>${ea.boxes}` : ''}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
