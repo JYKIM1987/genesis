@@ -872,7 +872,7 @@ function initState(){
   state.uniqueToggle2 = true; // stages.options[i].toggle2 — 같은 단계에 독립적으로 켜고 끄는 두 번째 토글이 있을 때만 사용
   state.classToggle = true; // 클래스패시브에 toggle이 있는 경우(예: 하이델룬 루트해커) 기본적으로 켜진 상태로 시작
   state.armor = { 투구:{set:'없음',star:6}, 갑옷:{set:'없음',star:6}, 장갑:{set:'없음',star:6}, 신발:{set:'없음',star:6} };
-  state.accessory = '없음'; state.accessoryStar = 1;
+  state.accessory = '없음'; state.accessoryStar = 1; state.accessoryStack = 0;
   state.runeSlots = ['없음','없음','없음','없음','없음','없음'];
   state.activeMaxMode = null;
   state.maxModeLocked = false;
@@ -1405,7 +1405,7 @@ function renderAccessorySummary(){
   }
   addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
   if(acc.skill){
-    const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+    const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
     addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
   }
   const keys = ALL_STATS.filter(k => bucket.village[k] || bucket.always[k] || bucket.cond[k]);
@@ -1433,6 +1433,19 @@ function accessorySortOrder(name){
 }
 function sortedAccessoryNames(){
   return Object.keys(ACCESSORIES).sort((a,b)=>accessorySortOrder(a)-accessorySortOrder(b));
+}
+// 악세사리 스킬 스탯(현재 성급 + 중첩 반영). skill.stack({maxStack})이 있으면 statByStar 값은 1중첩당 값이라
+// 중첩 수만큼 곱한다(계산기_적용원칙.md 5장 "중첩 수치는 1중첩당" 원칙). stack 인자를 생략하면 최대 중첩 기준
+// (드롭다운 미리보기·MAX 세팅용). statByStar에 해당 성급이 없으면 ★1 → 빈 객체 순으로 폴백.
+function accMaxStack(acc){ return (acc && acc.skill && acc.skill.stack) ? acc.skill.stack.maxStack : 0; }
+function accSkillStatAt(acc, star, stack){
+  if(!acc || !acc.skill || !acc.skill.statByStar) return {};
+  const base = acc.skill.statByStar[star] || acc.skill.statByStar[1] || {};
+  if(!acc.skill.stack) return base;
+  const n = (stack==null) ? acc.skill.stack.maxStack : Math.max(0, Math.min(stack, acc.skill.stack.maxStack));
+  const out = {};
+  for(const [k,e] of Object.entries(base)){ if(e) out[k] = Object.assign({}, e, {v:+(e.v*n).toFixed(2), cond:(e.cond||'')+(e.cond?' — ':'')+n+'중첩'}); }
+  return out;
 }
 // 악세사리 설명(desc/skill.desc)에 박혀있는 성급 범위 표기를 현재 선택된 성급의 실제 값으로 치환한다(2026-07-24 신설).
 // "?"를 열어둔 채 성급 슬라이더를 조작해도 설명 내용이 그 성급에 맞게 바뀌도록 하기 위함 — 단, 실제로
@@ -1886,7 +1899,7 @@ function render(){
     if(acc.extraAlways && acc.extraAlways[star]) for(const [k,v] of Object.entries(acc.extraAlways[star])) stat[k]={v,zone:'village'};
     const bits = [];
     const p1 = statPreviewPlain(stat); if(p1) bits.push(p1);
-    if(acc.skill){ const skillStat = acc.skill.statByStar[star]||acc.skill.statByStar[1]; const p2 = statPreviewPlain(skillStat); if(p2) bits.push(p2+'(조건부)'); }
+    if(acc.skill){ const skillStat = accSkillStatAt(acc, star); const p2 = statPreviewPlain(skillStat); if(p2) bits.push(p2+'(조건부)'); }
     const label = acc.name + (acc.unique?'★':'') + (bits.length ? '  【'+bits.join(' / ')+'】' : '');
     html += `<option value="${name}" ${state.accessory===name?'selected':''}>${label}</option>`;
   });
@@ -1906,9 +1919,17 @@ function render(){
     html += `<div class="opt-line"><div class="opt-top"><span class="name">추가능력치</span>${zoneBadge('village')}</div>
       <div class="opt-bottom">${statStrObj(stat)}</div></div>`;
     if(acc.skill){
-      const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
       const dtext = accessoryDescForStar(acc.skill.desc, acc.skill.statByStar, state.accessoryStar, acc.maxStar);
-      html += optLine('스킬 효과 (자동으로 조건부 합산됨)', skillStat, 'cond', dtext);
+      // 배지는 실제 스킬 스탯의 zone을 따른다(상시 효과면 "인게임", 조건부가 하나라도 있으면 "인게임·조건부").
+      const zs = Object.values(skillStat).map(e=>e&&e.zone).filter(Boolean);
+      const zb = !zs.length ? '' : (zs.every(z=>z==='always') ? 'always' : 'cond');
+      html += optLine(acc.skill.name ? '스킬: '+acc.skill.name : '스킬 효과', skillStat, zb, dtext, acc.skill.note);
+      if(acc.skill.stack){
+        const mx = acc.skill.stack.maxStack;
+        const cur = (state.accessoryStack==null) ? mx : state.accessoryStack;
+        html += `<div class="opt-bottom"><span class="slider-wrap">${acc.skill.stack.label||'중첩'}<button class="step-btn" onclick="state.accessoryStack=clampStep(${cur},-1,0,${mx}); render();">◀</button><input type="range" min="0" max="${mx}" value="${cur}" oninput="state.accessoryStack=+this.value; render();"><button class="step-btn" onclick="state.accessoryStack=clampStep(${cur},1,0,${mx}); render();">▶</button><span class="star-val">${cur}</span></span></div>`;
+      }
     } else if(acc.desc && (/\(★\d/.test(acc.desc) || Object.values(stat).some(e=>e && e.zone==='cond'))){
       // skill 블록 없이 desc 자체에 성급별로 달라지는 조건부 효과가 있는 항목(예: 수호의 반지, 용 비늘 각반) —
       // "?" 없이 항상 보이는 설명으로 유지하되 같은 방식으로 성급에 맞게 치환.
@@ -1986,7 +2007,7 @@ function onArmorFullSet(sname){
   });
   render();
 }
-function onAccessoryChange(val){ state.accessory = val; state.accessoryStar = val==='없음'?1:(ACCESSORIES[val].maxStar||1); render(); }
+function onAccessoryChange(val){ state.accessory = val; state.accessoryStar = val==='없음'?1:(ACCESSORIES[val].maxStar||1); state.accessoryStack = val==='없음'?0:accMaxStack(ACCESSORIES[val]); render(); }
 function onRuneSlotChange(idx, val){ state.runeSlots[idx] = val; render(); }
 function onArtifactChange(val){
   state.artifact = val;
@@ -2175,6 +2196,7 @@ function computeMaxSelections(statKey, baseState){
   } else if(fixed && fixed.accessory){
     s.accessory = fixed.accessory;
     s.accessoryStar = ACCESSORIES[fixed.accessory].maxStar;
+    s.accessoryStack = accMaxStack(ACCESSORIES[fixed.accessory]);
   } else {
     let bestAcc=null, bestAccVal=0, bestAccStar=1;
     Object.keys(ACCESSORIES).forEach(name=>{
@@ -2183,10 +2205,10 @@ function computeMaxSelections(statKey, baseState){
       const st = acc.starStats[star]||{};
       let v = (st[statKey]&&st[statKey].v)||0;
       if(acc.extraAlways && acc.extraAlways[star] && acc.extraAlways[star][statKey]) v += acc.extraAlways[star][statKey];
-      if(acc.skill){ const skillStat = acc.skill.statByStar[star]||acc.skill.statByStar[1]; if(skillStat[statKey] && skillStat[statKey].v) v += skillStat[statKey].v; }
+      if(acc.skill){ const skillStat = accSkillStatAt(acc, star); if(skillStat[statKey] && skillStat[statKey].v) v += skillStat[statKey].v; }
       if(v>bestAccVal){ bestAccVal=v; bestAcc=name; bestAccStar=star; }
     });
-    if(bestAcc){ s.accessory=bestAcc; s.accessoryStar=bestAccStar; }
+    if(bestAcc){ s.accessory=bestAcc; s.accessoryStar=bestAccStar; s.accessoryStack=accMaxStack(ACCESSORIES[bestAcc]); }
     // 기여하는 악세사리가 없으면 현재 선택 유지(강제로 "없음" 처리하지 않음)
   }
 
@@ -2365,7 +2387,7 @@ function computeTotals(){
     }
     addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
     if(acc.skill){
-      const skillStat = acc.skill.statByStar[state.accessoryStar]||acc.skill.statByStar[1];
+      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
       addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
     }
   }
