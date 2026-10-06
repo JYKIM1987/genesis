@@ -194,6 +194,11 @@ window.EQUIPMENT_OVERRIDE = {
       set4:{}, set4desc:'받는 피해량 감소 +5%. 피해를 받으면 2턴간 받는 피해 -5%(최대 2중첩).',
       pieces:{투구:{name:'인내의 수호자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'인내의 수호자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'인내의 수호자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'인내의 수호자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
     },
+    ARM25: {name:'드레드노트', grade:'전설',
+      set2:{hp:{v:15,zone:'village'},phys:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 물리 관통 +15%.',
+      set4:{atk:{v:20,zone:'always'},hp:{v:20,zone:'always'}}, set4desc:'공격력/최대 체력 +20%(상시). 공격으로 치명타 적중 시 대상에게 "철갑 파쇄"(방어력/저항력 -15%, 받는 참격 피해 +15%, 2턴 지속, 해제불가) 부여 — 적 방어력/저항력 감소는 내 스탯과 직접 연결되지 않고, 받는 참격 피해 증가는 무기 공격 타입(참격)에 한정된 효과라 둘 다 스탯 합계에 미반영.',
+      pieces:{투구:{name:'드레드노트 머플러',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'드레드노트 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'드레드노트 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'드레드노트 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+    },
   },
 
   // ── 악세사리 ────────────────────────────────────────────────────
