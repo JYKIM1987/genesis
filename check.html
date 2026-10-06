@@ -26,6 +26,11 @@
   h1{ font-size:18px; margin:0 0 4px; color:var(--accent); }
   .sub{ color:var(--text-dim); font-size:12px; margin-bottom:4px; }
   .header{ max-width:1180px; margin:0 auto 12px; }
+  /* 공지 칸 — 특별히 강조하지 않고 안내 문구처럼 흐린 글씨로. 최신 1줄 + [지난 공지 ▾]. */
+  .site-notice[hidden]{ display:none; }
+  .site-notice-old{ display:none; }
+  .site-notice.open .site-notice-old{ display:block; }
+  .site-notice-more{ background:none; border:0; padding:0; margin-left:4px; font:inherit; color:var(--text-dim); text-decoration:underline; cursor:pointer; }
 
   /* 사이드바는 뷰포트 높이에 맞춰 늘어나고(body 상하 패딩 16px씩 제외),
      그 안에서 char-list만 남는 공간을 다 채운 뒤 넘칠 때만 스크롤된다 —
@@ -200,7 +205,7 @@
 
 <div class="header">
   <h1>기사단전 주의사항</h1>
-  <div class="sub"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적 캐릭터를 최대 4명까지 고르면 저항 매트릭스와 상성 주의 목록이 갱신됩니다.</div>
+  <div class="sub site-notice" id="siteNotice" hidden></div>
 </div>
 
 <div class="wrap">
@@ -244,6 +249,29 @@
 </div>
 
 <script>
+// ===== 공지 칸(사이트 공지) =====
+// SITE_NOTICES 배열은 /notice 스킬로만 수정한다(D:\CP\Genesis\CLAUDE.md 공지 원칙). 최신 공지가 맨 앞.
+// 형식: {date:'YYYY.MM.DD', text:'...'} — 화면엔 "날짜 텍스트" 한 줄. 최신 1줄만 보이고, 2개 이상이면
+// [지난 공지 ▾]로 나머지를 펼친다. 배열이 비어 있으면 공지 칸 자체를 숨긴다.
+const SITE_NOTICES = [
+];
+function renderSiteNotice(){
+  const el = document.getElementById('siteNotice'); if(!el) return;
+  if(!SITE_NOTICES.length){ el.hidden = true; return; }
+  const line = n => `<span class="site-notice-date">${n.date}</span> ${n.text}`;
+  el.hidden = false;
+  el.innerHTML = `<div class="site-notice-line">${line(SITE_NOTICES[0])}`
+    + (SITE_NOTICES.length > 1 ? ` <button type="button" class="site-notice-more" onclick="toggleSiteNotice()">지난 공지 ▾</button>` : '')
+    + `</div>`
+    + (SITE_NOTICES.length > 1 ? `<div class="site-notice-old">${SITE_NOTICES.slice(1).map(n => `<div class="site-notice-line">${line(n)}</div>`).join('')}</div>` : '');
+}
+function toggleSiteNotice(){
+  const el = document.getElementById('siteNotice');
+  const open = el.classList.toggle('open');
+  el.querySelector('.site-notice-more').textContent = open ? '접기 ▴' : '지난 공지 ▾';
+}
+renderSiteNotice();
+
 // ============================================================
 // CHECK_DATA — add_check이 gmap.gg를 직접 조사해(결과는 check_raw/
 // <이름>_raw.md에 보관) 채우는 데이터.
