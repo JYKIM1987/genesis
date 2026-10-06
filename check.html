@@ -55,9 +55,10 @@
   .sidebar label{ display:flex; align-items:center; gap:6px; padding:5px 4px; border-radius:5px; font-size:12.5px; cursor:pointer; }
   .sidebar label:hover{ background:var(--panel2); }
   .sidebar label.outer{ background:var(--outer-tint); }
-  .sidebar label.outer:hover{ background:var(--outer-tint-hover); }
+  /* :not(.picked) — 터치 후 남는 hover 상태가 선택(.picked) 색을 덮지 않도록 */
+  .sidebar label.outer:not(.picked):hover{ background:var(--outer-tint-hover); }
   .sidebar label.special{ background:var(--special-tint); }
-  .sidebar label.special:hover{ background:var(--special-tint-hover); }
+  .sidebar label.special:not(.picked):hover{ background:var(--special-tint-hover); }
   .sidebar label.picked{ background:var(--accent-bg); color:var(--accent); font-weight:bold; }
   .sidebar label.filtered-out{ display:none; }
   .sidebar label.disabled{ opacity:.35; cursor:default; }
