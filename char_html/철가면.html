@@ -984,7 +984,7 @@ function buildResistDetail(always, cond){
     rows.push(`- ${n} : ${srcs.join(', ')}`);
   }));
   // 요약(상시/조건부) 줄은 진하게.
-  return {html: head.map(h => `<b>${escapeHtml(h)}</b>`).join('\n') + '\n' + rows.map(escapeHtml).join('\n')};
+  return {html: head.map(h => `<b>${escapeHtml(h)}</b>`).join('\n') + '\n\n' + rows.map(escapeHtml).join('\n')};
 }
 // 요약 줄의 "면역/무시" 항목 — 항상 표시(저항이 없으면 "?"에 "없음").
 function resistSummaryLine(){
