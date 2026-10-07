@@ -16,14 +16,11 @@
     --danger:#c0392b;
   }
   * { box-sizing: border-box; }
-  /* 캐릭터 카드 상단 요약(- 고유 저항 / - 조건부 저항 / - 조건 확인). 줄마다 진한 라벨 + 항목별 "?",
-     펼친 "?" 상자는 해당 줄 바로 아래에 붙는다. 저항 두 그룹은 항상 각자 한 줄(.kit-resist). */
+  /* 캐릭터 카드 상단 요약 한 줄(- 면역/무시 ?, 재행동 ?, …). 항목마다 진한 라벨 + "?", 펼친 상자는 줄 아래에 붙는다. */
   .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
-  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
-  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
-  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
-  .kit-label{ color:var(--text-dim); }
-  .kit-item b, .kit-label b{ color:var(--accent); }
+  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 4px; }
+  .kit-sep{ color:var(--text-dim); margin-right:6px; }
+  .kit-item b{ color:var(--accent); }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -284,7 +281,7 @@ const CRIT_DMG_VILLAGE_BASE = 150;
 
 /* ================= 무기 ================= */
 const WEAPONS = {
-  '락타 파르바티': {
+  '락타 파르바티': { resist:[{name:'TP 제거에 면역', cond:'★3 이상, "진홍빛 낙원" 오라 보유 중(행동 종료 시 이번 턴 공격하지 않았을 때)'}],
     category: '스태프/로드',
     starStats: {
       1: { mag:{v:10,zone:'village'}, hp:{v:10,zone:'village'}, phys:{v:15,zone:'cond',cond:'행동 종료 시 이번 턴에 적을 공격하지 않았다면 다음 턴 시작까지 "진홍빛 낙원" 오라 보유(전용 스킬 한정)'}, magPen:{v:15,zone:'cond',cond:'위와 동일'}, aoeDmgReduction:{v:10,zone:'cond',cond:'위와 동일'} },
@@ -294,7 +291,6 @@ const WEAPONS = {
       5: { mag:{v:14,zone:'village'}, hp:{v:14,zone:'village'}, phys:{v:27,zone:'cond',cond:'행동 종료 시 이번 턴에 적을 공격하지 않았다면 다음 턴 시작까지 "진홍빛 낙원" 오라 보유(전용 스킬 한정, TP 제거 면역 동반)'}, magPen:{v:27,zone:'cond',cond:'위와 동일'}, aoeDmgReduction:{v:18,zone:'cond',cond:'위와 동일'} },
       6: { mag:{v:15,zone:'village'}, hp:{v:15,zone:'village'}, phys:{v:30,zone:'cond',cond:'행동 종료 시 이번 턴에 적을 공격하지 않았다면 다음 턴 시작까지 "진홍빛 낙원" 오라 보유(전용 스킬 한정, TP 제거 면역 동반)'}, magPen:{v:30,zone:'cond',cond:'위와 동일'}, aoeDmgReduction:{v:20,zone:'cond',cond:'위와 동일'} }
     },
-    resist: [ {name:'TP 감소', cond:'★3 이상, "진홍빛 낙원" 오라 보유 중(행동 종료 시 이번 턴 공격 안 했을 때)'} ],
     desc: '★6(최고 성급) 기준: 주문력/최대 체력 +15%(마을).\n전용 스킬 「진홍빛 낙원 6」: 자신이 부여한 광휘 속성 버프가 해제되면 턴 당 한번 주위 2칸 내 아군의 체력을 주문력의 100%만큼 회복시키고 무작위 버프를 부여(절대 회복량이라 스탯 아님). 행동 종료 시 이번 턴에 적을 공격하지 않았다면 다음 턴 시작까지 오라를 가져 주위 3칸 내 아군들(자신 포함)의 물리 관통/마법 관통 +30%, TP 제거 면역을 부여하고(위 표 반영), 그 오라를 보유 중인 동안 아네모네 자신은 받는 범위 피해 -20%(위 표 반영).\n일반 스킬 「후방 조율사 6」은 회복 효과만 있고 위 오라/피해 감소 효과가 없음 — 다른 캐릭터가 이 무기 장착 시 대체 적용.',
     note: '[변경점]\n\n★2: 주문력/최대 체력 11% (+1%), 관통 18% (+3%p), 받는 범위 피해 감소 12% (+2%p)\n\n★3: 주문력/최대 체력 12% (+1%), 관통 21% (+3%p), 받는 범위 피해 감소 14% (+2%p), TP 제거 면역 추가(신규, 위 표 반영)\n\n★4: 주문력/최대 체력 13% (+1%), 관통 24% (+3%p), 오라 범위 2칸→3칸(신규), 받는 범위 피해 감소 16% (+2%p)\n\n★5: 주문력/최대 체력 14% (+1%), 관통 27% (+3%p), 받는 범위 피해 감소 18% (+2%p), 회복 시 무작위 버프 부여 추가(신규, 스탯 아님)\n\n★6: 주문력/최대 체력 15% (+1%), 관통 30% (+3%p), 받는 범위 피해 감소 20% (+2%p)'
   }
@@ -354,12 +350,8 @@ const CHARACTERS = {
         desc: '「골든 타임」(2랭크): 주문력 +40%, 받는 피해 -20%, 받는 치명타 확률 -20%(전부 상시, 위 표 반영). 아군이 턴 종료 시 2명 이상의 적과 인접해 있으면 "골든 타임 2" 효과와 TP 1 회복을 얻는다(아래 토글 참고).'
       }
     ],
-    uniquePassive: {
+    uniquePassive: { resist:[{name:'아군을 제외한 적으로부터 대상 지정 불가'},{name:'이동 방해 면역'}],
       name: '진홍의 궤적',
-      resist: [
-        { name: '이동 방해' },
-        { name: '적 대상 지정 불가(아군 제외)' }
-      ],
       stages: {
         label: '각성/초 단계',
         default: 6,
@@ -498,13 +490,12 @@ const CHARACTERS = {
         desc: '주위 3칸 내 아군을 지정해 주문력의 100%만큼 체력을 회복시키고(절대 회복량) "바이탈 이문"(2턴 지속, 해제 불가, 클래스패시브 봉쇄 불가, 추가 행동 획득 불가 무시, 치유 방해 면역, 받는 치유 효과/받는 보호막 효과 +100%, 캐릭터 턴 종료 시 시전자 주문력의 100% 자가 회복)을 부여합니다. 대상 지정형 스킬로 버프는 다른 아군에게 가는 효과라 위 표와 무관(시전자 자가 회복도 절대량이라 스탯 아님).'
       },
       {
-        name: '아이언 맨데이트', extraAction:[{type:'재행동', cond:'"아이언 맨데이트" 효과 보유 중 턴 종료 시 이번 턴에 적을 공격하지 않았다면 턴당 1회'}],
+        name: '아이언 맨데이트', resist:[{name:'쿨타임 제어 면역', cond:'"아이언 맨데이트" 효과 보유 중'}], extraAction:[{type:'재행동', cond:'"아이언 맨데이트" 효과 보유 중 턴 종료 시 이번 턴에 적을 공격하지 않았다면 턴당 1회'}],
         stat: {
           hp: { v: 30, zone: 'cond', cond: '스킬 사용 후 시전자가 이미 "아이언 맨데이트" 효과를 보유하고 있지 않다면 1턴간 "아이언 베일"(무적이지만 행동 불가) 상태가 됐다가 다음 턴 시작 시 자동으로 "아이언 맨데이트"(2턴 지속, 해제 불가) 효과를 자신도 획득' },
           physRes: { v: 30, zone: 'cond', cond: '위와 동일' },
           magRes: { v: 30, zone: 'cond', cond: '위와 동일' }
         },
-        resist: [ { name: '쿨타임 제어', cond: '"아이언 맨데이트" 효과 보유 중' } ],
         desc: '아군을 지정해 대상 주위 2칸 내 아군들에게 "아이언 맨데이트"(2턴 지속, 해제 불가: 최대 체력/물리·마법 관통 저항 +30%, 쿨타임 제어 면역, 턴 종료 시 이번 턴 공격 안 했다면 턴당 1회 재행동)를 부여합니다. 대상 지정형 스킬이라 이 버프 자체(다른 아군 대상)는 위 표와 무관하지만, 스킬 사용 후 시전자(자신)가 아직 "아이언 맨데이트"가 없다면 1턴간 "아이언 베일"(피해/스킬 영향 없음, 행동 불가) 상태가 됐다가 다음 턴 시작에 자동으로 자신도 "아이언 맨데이트"를 획득합니다(위 표 반영).'
       },
       {
@@ -536,7 +527,6 @@ const CHARACTERS = {
           3: { basicAtkDmgReduction: {v:60, zone:'village'}, basicAtkDmgIncrease: {v:30, zone:'village'} },
           4: { basicAtkDmgReduction: {v:80, zone:'village'}, basicAtkDmgIncrease: {v:40, zone:'village'} }
         },
-        resist: [ { name: '반격 무효화' } ],
         desc: '★4(최고 성급) 기준: 오라를 가져 주위 3칸 내 아군들(자신 포함)에게 "보호의 날개 4"(해제 불가) 부여: 받는 기본 공격 피해량 -80%, 기본 공격 시 피해량 +40%(위 표 반영), 기본 공격 시 반격당하지 않음.',
         note: '[변경점]\n\n★2: 받는 기본공격 피해 감소 50% (+20%p), 기본공격 피해 증가 25% (+10%p)\n\n★3: 받는 기본공격 피해 감소 60% (+10%p), 기본공격 피해 증가 30% (+5%p), 오라 범위 2칸→3칸\n\n★4: 받는 기본공격 피해 감소 80% (+20%p), 기본공격 피해 증가 40% (+10%p)'
       },
@@ -1038,101 +1028,50 @@ function toggleDesc(side, key){
   state[stKey] = (state[stKey]===key) ? null : key;
   render();
 }
-// 저항/면역(왼쪽 탭 캐릭터 카드 상단 요약 줄의 "?" 상세) — 현재 선택(state)과 무관하게 캐릭터 kit 전체(클래스 전부/고유패시브/
-// 오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)를 훑어 상태 저항·면역을 모은다. 클래스/액티브/아티팩트처럼
-// "택1"이라 항상 보장되지 않는 출처는 전부 조건부(cond 배열)로, 고유패시브/오의/아우터스킬/무기처럼 캐릭터에게
-// 항상 있는 출처는 고유(always 배열)로 분류한다. 각 항목엔 "왼쪽 탭 카테고리"(`category`)와, 클래스패시브/
-// 액티브/아티팩트처럼 그 카테고리 안에 여러 선택 가능한 항목이 있는 경우엔 그 구체적 이름(`group` — 클래스
-// id·액티브명·아티팩트명)도 함께 붙인다 — "?" 상세가 이 기준으로 다시 묶어서 보여주기 때문(buildResistDetail 참고).
-// 각 블록의 `resist` 필드는 `{name}`(그 항목을 선택/사용/장착하면 바로 적용, 추가 조건 없음) 또는
-// `{name, cond}`(선택/사용/장착만으로는 부족하고 cond에 적은 추가 조건까지 필요 — 액티브 스킬은 예외로
-// 지속시간·범위 등 보충 설명으로 쓰임, 아래 buildResistDetail 참고) 형태의 배열이다.
-const RESIST_CATEGORY_ORDER = ['고유패시브','오의','아우터스킬','전용무기','클래스패시브','아티팩트','액티브 스킬'];
+// 면역/무시(저항) — 캐릭터 킷 전체(클래스 전부/고유패시브/오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)의
+// resist를 모아 "상시"와 "조건부"로 나눈다(계산기_적용원칙.md 10-1장). 상시 = 고유패시브·전용무기·클래스패시브 중
+// cond가 없는 것, 조건부 = 그 외 전부(오의·아우터스킬·액티브·아티팩트, 그리고 위 셋이라도 cond가 있는 것).
+// name은 툴팁 표기 그대로(면역/무시/저항/불가를 바꾸거나 합치지 않는다).
+const RESIST_CATEGORY_ORDER = ['고유패시브','전용무기','클래스패시브','오의','아우터스킬','아티팩트','액티브 스킬'];
+const RESIST_ALWAYS_CATEGORIES = ['고유패시브','전용무기','클래스패시브'];
 function collectResistItems(c){
-  const always = [];
-  const cond = [];
-  (c.classes||[]).forEach(cls => {
-    (cls.resist||[]).forEach(r => cond.push({name:r.name, category:'클래스패시브', group:cls.id, cond:r.cond||null}));
-  });
-  if(c.uniquePassive && c.uniquePassive.resist){
-    c.uniquePassive.resist.forEach(r => always.push({name:r.name, category:'고유패시브', cond:r.cond||null}));
-  }
-  if(c.ultimate && c.ultimate.resist){
-    c.ultimate.resist.forEach(r => always.push({name:r.name, category:'오의', cond:r.cond||null}));
-  }
-  if(c.outerSkill && c.outerSkill.resist){
-    c.outerSkill.resist.forEach(r => always.push({name:r.name, category:'아우터스킬', cond:r.cond||null}));
-  }
-  (c.actives||[]).forEach(a => {
-    (a.resist||[]).forEach(r => cond.push({name:r.name, category:'액티브 스킬', group:a.name, cond:r.cond||null}));
-  });
-  (c.artifacts||[]).forEach(art => {
-    (art.resist||[]).forEach(r => cond.push({name:r.name, category:'아티팩트', group:art.name, cond:r.cond||null}));
-  });
+  const items = [];
+  const add = (list, category, src) => (list||[]).forEach(r => items.push({name:r.name, category, src, cond:r.cond||null}));
+  (c.classes||[]).forEach(cls => add(cls.resist, '클래스패시브', cls.id));
+  if(c.uniquePassive) add(c.uniquePassive.resist, '고유패시브', c.uniquePassive.name);
+  if(c.ultimate) add(c.ultimate.resist, '오의', c.ultimate.name);
+  if(c.outerSkill) add(c.outerSkill.resist, '아우터스킬', c.outerSkill.name);
+  (c.actives||[]).forEach(a => add(a.resist, '액티브 스킬', a.name));
+  (c.artifacts||[]).forEach(art => add(art.resist, '아티팩트', art.name));
   const wp = WEAPONS[c.weaponName];
-  if(wp && wp.resist){
-    wp.resist.forEach(r => always.push({name:r.name, category:'전용무기', cond:r.cond||null}));
-  }
+  if(wp) add(wp.resist, '전용무기', c.weaponName);
+  const always = items.filter(i => RESIST_ALWAYS_CATEGORIES.includes(i.category) && !i.cond);
+  const cond = items.filter(i => !always.includes(i));
   return {always, cond};
 }
-// "?" 상세 텍스트 — "왼쪽 탭 카테고리"(RESIST_CATEGORY_ORDER 순서) 단위로 묶는다.
-// 클래스패시브/아티팩트는 카테고리 안에 선택 가능한 항목이 여럿이라 `group`(클래스/아티팩트명)으로 한 번 더
-// 나누고, 그 안에서 "상시"(cond 없음, 선택만으로 바로 적용)/"조건부"(cond 문구별로 합쳐서)를 나열한다.
-// 액티브 스킬은 "사용 시"가 이미 트리거 자체라 상시/조건부 구분이 의미 없어, `group`(액티브명) 사용 시
-// 항목을 바로 나열하고 cond가 있으면 지속시간/범위 같은 보충 설명을 괄호로 덧붙인다(조건별 병렬 표기).
-function buildResistDetail(items){
-  const byCat = {};
-  items.forEach(it => { (byCat[it.category] = byCat[it.category]||[]).push(it); });
+// "?" 상세 — [상시]/[조건부] 아래에 출처(분류 "이름")별로 한 줄씩, 같은 출처·같은 조건은 한 줄에 모은다.
+function buildResistDetail(always, cond){
+  const lines = list => {
+    const groups = [];
+    RESIST_CATEGORY_ORDER.forEach(cat => list.filter(i => i.category===cat).forEach(i => {
+      const key = cat+'|'+i.src+'|'+(i.cond||'');
+      let g = groups.find(x => x.key===key);
+      if(!g){ g = {key, cat, src:i.src, cond:i.cond, names:[]}; groups.push(g); }
+      if(!g.names.includes(i.name)) g.names.push(i.name);
+    }));
+    return groups.map(g => `- ${g.cat} "${g.src}"${g.cond ? ` (${g.cond})` : ''}: ${g.names.join(', ')}`).join('\n');
+  };
   const blocks = [];
-  RESIST_CATEGORY_ORDER.forEach(cat => {
-    const list = byCat[cat];
-    if(!list || !list.length) return;
-    let block = `[${cat}]`;
-    if(cat === '액티브 스킬'){
-      const byKey = {};
-      list.forEach(i => {
-        const key = i.group+'|||'+(i.cond||'');
-        (byKey[key] = byKey[key] || {group:i.group, cond:i.cond, names:[]}).names.push(i.name);
-      });
-      Object.values(byKey).forEach(g => {
-        block += `\n${g.group} 사용 시: ${g.names.join(', ')} 저항` + (g.cond ? ` (${g.cond})` : '');
-      });
-    } else if(list.some(i=>i.group)){
-      const byGroup = {};
-      list.forEach(i => { (byGroup[i.group] = byGroup[i.group]||[]).push(i); });
-      Object.entries(byGroup).forEach(([groupName, groupItems]) => {
-        block += `\n- ${groupName}`;
-        const alwaysNames = groupItems.filter(i=>!i.cond).map(i=>i.name);
-        if(alwaysNames.length) block += `\n  상시: ${alwaysNames.join(', ')}`;
-        const byCond = {};
-        groupItems.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
-        Object.entries(byCond).forEach(([condText, names]) => { block += `\n  조건부(${condText}): ${names.join(', ')}`; });
-      });
-    } else {
-      const alwaysNames = list.filter(i=>!i.cond).map(i=>i.name);
-      if(alwaysNames.length) block += `\n상시: ${alwaysNames.join(', ')}`;
-      const byCond = {};
-      list.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
-      Object.entries(byCond).forEach(([condText, names]) => { block += `\n조건부(${condText}): ${names.join(', ')}`; });
-    }
-    blocks.push(block);
-  });
+  if(always.length) blocks.push('[상시]\n' + lines(always));
+  if(cond.length) blocks.push('[조건부]\n' + lines(cond));
   return blocks.join('\n\n');
 }
-// 캐릭터 카드 상단 요약의 저항 부분 — "고유 저항"/"조건부 저항"을 각자 한 줄로, 이름만 나열(그룹 내 중복 제거)하고
-// 그룹마다 따로 "?"를 붙인다(누르면 그 그룹의 출처·조건만 보인다). 반환: {line, boxes} 또는 null(저항 없음).
+// 요약 줄의 "면역/무시" 항목 — 저항이 하나라도 있으면 {part, box}, 없으면 null.
 function resistSummaryLine(){
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
   if(!always.length && !cond.length) return null;
-  const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
-  const parts = [], boxes = [];
-  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
-    if(!list.length) return;
-    const d = descButton(key, buildResistDetail(list));
-    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
-    boxes.push(d.box);
-  });
-  return { line: parts.join(''), boxes: boxes.join('') };
+  const d = descButton('leftResist', buildResistDetail(always, cond));
+  return { part: `<span class="kit-item"><b>면역/무시</b> ${d.btn}</span>`, box: d.box };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1206,7 +1145,7 @@ function extraActionSummaryLine(){
     parts.push(`<span class="kit-item"><b>${t}</b> ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
+  return { parts, boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1587,9 +1526,10 @@ function render(){
 
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
-  // 캐릭터 카드 상단 요약: - 고유 저항 / - 조건부 저항 / - 조건 확인(재행동·추가턴·TP 수급 등). 계산기_적용원칙.md 10-4장.
+  // 캐릭터 카드 상단 요약 한 줄: - 면역/무시 (?), 재행동 (?), 추가턴 (?), TP 수급 (?) — 가진 항목만. 계산기_적용원칙.md 10-4장.
   { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
-    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}${ea ? `<div class="kit-row">${ea.line}</div>${ea.boxes}` : ''}</div>`; }
+    const parts = (rs ? [rs.part] : []).concat(ea ? ea.parts : []);
+    if(parts.length) html += `<div class="kit-box"><div class="kit-row">- ${parts.join('<span class="kit-sep">,</span>')}</div>${rs ? rs.box : ''}${ea ? ea.boxes : ''}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;

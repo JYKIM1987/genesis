@@ -16,14 +16,11 @@
     --danger:#c0392b;
   }
   * { box-sizing: border-box; }
-  /* 캐릭터 카드 상단 요약(- 고유 저항 / - 조건부 저항 / - 조건 확인). 줄마다 진한 라벨 + 항목별 "?",
-     펼친 "?" 상자는 해당 줄 바로 아래에 붙는다. 저항 두 그룹은 항상 각자 한 줄(.kit-resist). */
+  /* 캐릭터 카드 상단 요약 한 줄(- 면역/무시 ?, 재행동 ?, …). 항목마다 진한 라벨 + "?", 펼친 상자는 줄 아래에 붙는다. */
   .kit-box{ margin-top:4px; font-size:11.5px; color:var(--text); }
-  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; }
-  .kit-row + .kit-row, .kit-box .desc-box + .kit-row{ margin-top:2px; }
-  .kit-resist{ flex-direction:column; align-items:flex-start; gap:2px; }
-  .kit-label{ color:var(--text-dim); }
-  .kit-item b, .kit-label b{ color:var(--accent); }
+  .kit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 4px; }
+  .kit-sep{ color:var(--text-dim); margin-right:6px; }
+  .kit-item b{ color:var(--accent); }
   html, body{ height:100%; }
   body{
     background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Pretendard",sans-serif;
@@ -307,7 +304,7 @@ const CHARACTERS = {
     weaponName: '흑염',
     classes: [
       {
-        id: '베르딕트나이트', baseCrit: 5,
+        id: '베르딕트나이트', resist:[{name:'클래스 패시브 봉쇄 불가'}], baseCrit: 5,
         stat: {
           atk: {v:30, zone:'always'},
           critResChance: {v:30, zone:'always'},
@@ -319,9 +316,6 @@ const CHARACTERS = {
           cond: '적 버프 개수당 5%(공격 전: 주는 피해 증가 / 피격 전: 받는 피해 감소) — 슬라이더로 가정 적 버프 개수(0~4) 조절',
           desc: '"위상 해석": 공격 전 적 버프 개수당 대상이 받는 피해 +5%(최대 4개=20%), 피격 전 적 버프 개수당 자신의 받는 피해 감소 +5%(최대 4개=20%). 실제 개수는 전투 중 상대 버프 상황에 따라 달라지므로, 슬라이더로 가정 개수를 직접 조절해 확인하세요.'
         },
-        resist: [
-          {name:'클래스패시브 봉쇄'}
-        ],
         extraAction: [
           {type:'추가턴', cond:'"처형 집행": 행동력 소진 상태에서 3칸 내 적이 공격받은 후 체력 30% 이하로 생존 시(턴당 1회)'}
         ],
@@ -357,7 +351,7 @@ const CHARACTERS = {
         desc: '클래스패시브 「전장 지휘」(2랭크): 함성 스킬("전장의 함성") 사용 시 턴당 1회 "전장 지휘 2"(공격력 +30%, 받는 피해 -20%, 2턴 지속) 획득 + 추가 공격/스킬 사용 1회 획득. 함성 스킬 사용 후 효과를 받은 아군의 디버프 1개 해제(아군 대상, 미추적).'
       }
     ],
-    uniquePassive: {
+    uniquePassive: { resist:[{name:'TP제거 면역', cond:'6초, "영민의 유산" 3중첩(최대) 시'},{name:'기절 면역', cond:'6초, "영민의 유산" 3중첩(최대) 시'}],
       name: '로우엔의 영주',
       stages: {
         label: '단계', default: 6,
@@ -387,10 +381,6 @@ const CHARACTERS = {
         ]
       },
       base: {crit:{v:40,zone:'always'}, def:{v:40,zone:'always'}, res:{v:40,zone:'always'}, hp:{v:30,zone:'always'}},
-      resist: [
-        {name:'TP 감소', cond:'6초, 영민의 유산 3중첩(최대) 시'},
-        {name:'기절', cond:'6초, 영민의 유산 3중첩(최대) 시'}
-      ],
       extraAction: [
         {type:'재행동', cond:'공격으로 치명타 적중 시 획득(쿨타임 2, 3~5각 구간은 확률형: 50%/70%/90%, 6각부터 확정 발동)'},
         {type:'재행동', cond:'"신속 보행": 질주 미장착 시, 이동 후 공격/스킬 없이 턴 종료하면 턴당 1회 획득'}
@@ -424,11 +414,8 @@ const CHARACTERS = {
       {name:'서지 블레이드', stat:{crit:{v:20,zone:'cond',cond:'"서지 블레이드" 사용 후 3턴간(해제 불가)'}, critResChance:{v:20,zone:'cond',cond:'"서지 블레이드" 사용 후 3턴간(해제 불가)'}},  desc:'(퀀텀 커터, TP1/자신/쿨3, 쿨타임 제어·감소 무시) 사용 시 본인 디버프 2개 해제(미추적) + 추가 스킬/공격 기회 획득(스탯 아님). "서지 블레이드" 상태(3턴, 해제 불가): 치명타 확률/받는 치명타 확률 감소 +20%, 사거리 +1(미추적). 적 공격 시/협공 시 적에게 "전하 붕괴" 부여(최대 중첩 시 적이 공격력 30% 피해 + 버프 1개 해제 — 적 디버프라 미추적).'},
       {name:'활기의 함성', extraAction:[{type:'추가 공격/스킬', cond:'"활기의 함성" 사용 시 자신 포함 2턴간 "활기" 부여 — 근접 공격 후 1회 발동(발동 시 해제)'}], stat:{},  desc:'(나이트, TP4/자신/광역/쿨2) 자신을 포함해 인접 아군에게 2턴간 "활기"(근접 공격 후 추가 공격/스킬 1회, 발동 시 해제) 부여 — 행동 횟수 효과라 스탯 아님.'},
       {name:'천파만인격', tpGain:[{cond:'치명타 적중 시 "집중" 획득 → 행동 종료 시 TP 1'}], stat:{}, skillStat:{crit:{v:30}}, desc:'(베르딕트나이트, TP2/사거리1-1/광역/쿨2) 이 스킬 자체 치명타 확률 +30%(이 공격에만 적용되는 일회성 보정, 다른 공격엔 미적용) 상태로 공격력 30% 피해 + 인접 범위 120% 추가 피해(범위 피해에 추가타 가산). 치명타 적중 시 쿨타임 -2 + "집중"(행동 종료 시 TP 1 획득, 미추적) 획득.'},
-      {name:'충월참', stat:{crit:{v:25,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}, critDmg:{v:25,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}, move:{v:1,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}},
-        resist: [
-          {name:'이동방해', cond:'2턴 지속'}
-        ], desc:'(아크리퍼, TP1/사거리2/광역/쿨2) 대상 지점 빈 타일로 이동 + 주위 1바퀴 범위 적에게 공격력 90% 피해. 사용 전 이동 방해 효과 제거(미추적) + "관성" 획득(2턴): 치명타 확률/치명타 피해량 +25%, 이동력 +1, 이동 방해 면역(면역은 미추적).'},
-      {name:'전장의 함성', stat:{}, desc:'(커맨드나이트, TP1/자신/광역/쿨2) 3칸 내 아군의 공포/쇠약 해제 + "전장의 함성"(2턴: 공격력/주문력/최대 체력 +20%, 쇠약 면역) 부여 — 아군 대상이라 자신 스탯 아님. 동일 범위 내 적 버프 2개 해제(적 대상이라 미추적). 이 스킬 사용은 클래스패시브 「전장 지휘」의 "전장 지휘 2" 획득 조건이기도 함(위 클래스패시브 참고).'}
+      {name:'충월참', resist:[{name:'이동 방해 면역', cond:'"관성" 보유 중(2턴)'}], stat:{crit:{v:25,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}, critDmg:{v:25,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}, move:{v:1,zone:'cond',cond:'"충월참" 사용 시 관성 효과 획득(2턴 지속)'}}, desc:'(아크리퍼, TP1/사거리2/광역/쿨2) 대상 지점 빈 타일로 이동 + 주위 1바퀴 범위 적에게 공격력 90% 피해. 사용 전 이동 방해 효과 제거(미추적) + "관성" 획득(2턴): 치명타 확률/치명타 피해량 +25%, 이동력 +1, 이동 방해 면역(면역은 미추적).'},
+      {name:'전장의 함성', resist:[{name:'쇠약 효과 면역', cond:'"전장의 함성" 보유 중(2턴)'}], stat:{}, desc:'(커맨드나이트, TP1/자신/광역/쿨2) 3칸 내 아군의 공포/쇠약 해제 + "전장의 함성"(2턴: 공격력/주문력/최대 체력 +20%, 쇠약 면역) 부여 — 아군 대상이라 자신 스탯 아님. 동일 범위 내 적 버프 2개 해제(적 대상이라 미추적). 이 스킬 사용은 클래스패시브 「전장 지휘」의 "전장 지휘 2" 획득 조건이기도 함(위 클래스패시브 참고).'}
     ],
     artifacts: [
       {name:'섬광연격 비전서', tpGain:[{cond:'근접 범위 스킬 사용 후 "집중" 획득(쿨타임 1) → 행동 종료 시 TP 1'}], grade:'영웅', maxStar:4,
@@ -449,7 +436,7 @@ const CHARACTERS = {
         },
         desc:'★4(최고 성급) 기준: 공격력/물리 관통/방어력/저항력 +25%(상시). 행동제어 효과를 받으면 "재기의 바람 4"(2턴, 최대 2중첩) 획득: 받는 피해 -20% + 턴 시작 시 방어력·공격력 중 높은 값의 50%만큼 체력 회복(회복량 미추적), 최대 중첩 시 이 버프 해제 및 행동제어 효과 해제(미추적).',
         note:'[변경점]\n\n★2: 공격력/물리 관통/방어력/저항력 15% (+5%), 받는 피해 감소 12% (+4%), 회복 계수 40% (+5%)\n\n★3: 공격력/물리 관통/방어력/저항력 20% (+5%), 받는 피해 감소 16% (+4%), 회복 계수 45% (+5%)\n\n★4: 공격력/물리 관통/방어력/저항력 25% (+5%), 받는 피해 감소 20% (+4%), 회복 계수 50% (+5%)'},
-      {name:'루멘 코어', grade:'영웅', maxStar:4,
+      {name:'루멘 코어', resist:[{name:'스킬 제어 면역', cond:'★4'}], grade:'영웅', maxStar:4,
         starStats:{
           1:{atk:{v:5,zone:'always'}, hp:{v:5,zone:'always'}, dmgReduction:{v:10,zone:'cond',cond:'게임 시작 시 "잔광의 수호 1" 2중첩(해제 불가) 보유 — 매 턴 시작마다 1중첩씩 "전의 고조"로 전환되며 감소, 완전 전환 시 소멸'}},
           2:{atk:{v:10,zone:'always'}, hp:{v:10,zone:'always'}, dmgReduction:{v:10,zone:'cond',cond:'게임 시작 시 "잔광의 수호 2" 2중첩(해제 불가) 보유 — 매 턴 시작마다 1중첩씩 "전의 고조"로 전환되며 감소, 완전 전환 시 소멸'}},
@@ -461,9 +448,6 @@ const CHARACTERS = {
           1:{atk:10}, 2:{atk:12.5}, 3:{atk:15}, 4:{atk:15, def:15, res:15}
         },
         cond:'매 턴 시작 시 "잔광의 수호" 1중첩이 "전의 고조" 1중첩으로 전환(최대 2중첩)',
-        resist: [
-          {name:'스킬제어', cond:'★4 이상 장착 시'}
-        ],
         desc:'★4(최고 성급) 기준: 공격력/최대 체력 +15%(상시). 게임 시작 시 "잔광의 수호 4"(해제 불가) 2중첩 보유: 중첩당 받는 피해 -5%(최대 -10%), 매 턴 시작마다 1중첩이 "전의 고조 4"로 전환(디버프 2개 해제 동반, 미추적)되며 감소. "전의 고조 4" 중첩당 공격력/방어력/저항력 +15%(최대 2중첩) — 아래 중첩 슬라이더로 진행 상태를 조절(전환이 끝날수록 잔광의 수호 받는피해감소는 사라지고 전의 고조 스탯이 채워짐). ★4부터 스킬 제어 효과 면역(미추적).',
         note:'[변경점]\n\n★2: 공격력/최대 체력 10% (+5%), 전의 고조 공격력 12.5%/중첩 (+2.5%)\n\n★3: 공격력/최대 체력 15% (+5%), 전의 고조 공격력 15%/중첩 (+2.5%), 잔광의 수호 전환 시 디버프 해제 1개 추가\n\n★4: 전의 고조 방어력/저항력 15%/중첩 (신규), 잔광의 수호 전환 시 디버프 해제 2개, 스킬 제어 면역 (신규)'}
     ]
@@ -942,101 +926,50 @@ function toggleDesc(side, key){
   state[stKey] = (state[stKey]===key) ? null : key;
   render();
 }
-// 저항/면역(왼쪽 탭 캐릭터 카드 상단 요약 줄의 "?" 상세) — 현재 선택(state)과 무관하게 캐릭터 kit 전체(클래스 전부/고유패시브/
-// 오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)를 훑어 상태 저항·면역을 모은다. 클래스/액티브/아티팩트처럼
-// "택1"이라 항상 보장되지 않는 출처는 전부 조건부(cond 배열)로, 고유패시브/오의/아우터스킬/무기처럼 캐릭터에게
-// 항상 있는 출처는 고유(always 배열)로 분류한다. 각 항목엔 "왼쪽 탭 카테고리"(`category`)와, 클래스패시브/
-// 액티브/아티팩트처럼 그 카테고리 안에 여러 선택 가능한 항목이 있는 경우엔 그 구체적 이름(`group` — 클래스
-// id·액티브명·아티팩트명)도 함께 붙인다 — "?" 상세가 이 기준으로 다시 묶어서 보여주기 때문(buildResistDetail 참고).
-// 각 블록의 `resist` 필드는 `{name}`(그 항목을 선택/사용/장착하면 바로 적용, 추가 조건 없음) 또는
-// `{name, cond}`(선택/사용/장착만으로는 부족하고 cond에 적은 추가 조건까지 필요 — 액티브 스킬은 예외로
-// 지속시간·범위 등 보충 설명으로 쓰임, 아래 buildResistDetail 참고) 형태의 배열이다.
-const RESIST_CATEGORY_ORDER = ['고유패시브','오의','아우터스킬','전용무기','클래스패시브','아티팩트','액티브 스킬'];
+// 면역/무시(저항) — 캐릭터 킷 전체(클래스 전부/고유패시브/오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)의
+// resist를 모아 "상시"와 "조건부"로 나눈다(계산기_적용원칙.md 10-1장). 상시 = 고유패시브·전용무기·클래스패시브 중
+// cond가 없는 것, 조건부 = 그 외 전부(오의·아우터스킬·액티브·아티팩트, 그리고 위 셋이라도 cond가 있는 것).
+// name은 툴팁 표기 그대로(면역/무시/저항/불가를 바꾸거나 합치지 않는다).
+const RESIST_CATEGORY_ORDER = ['고유패시브','전용무기','클래스패시브','오의','아우터스킬','아티팩트','액티브 스킬'];
+const RESIST_ALWAYS_CATEGORIES = ['고유패시브','전용무기','클래스패시브'];
 function collectResistItems(c){
-  const always = [];
-  const cond = [];
-  (c.classes||[]).forEach(cls => {
-    (cls.resist||[]).forEach(r => cond.push({name:r.name, category:'클래스패시브', group:cls.id, cond:r.cond||null}));
-  });
-  if(c.uniquePassive && c.uniquePassive.resist){
-    c.uniquePassive.resist.forEach(r => always.push({name:r.name, category:'고유패시브', cond:r.cond||null}));
-  }
-  if(c.ultimate && c.ultimate.resist){
-    c.ultimate.resist.forEach(r => always.push({name:r.name, category:'오의', cond:r.cond||null}));
-  }
-  if(c.outerSkill && c.outerSkill.resist){
-    c.outerSkill.resist.forEach(r => always.push({name:r.name, category:'아우터스킬', cond:r.cond||null}));
-  }
-  (c.actives||[]).forEach(a => {
-    (a.resist||[]).forEach(r => cond.push({name:r.name, category:'액티브 스킬', group:a.name, cond:r.cond||null}));
-  });
-  (c.artifacts||[]).forEach(art => {
-    (art.resist||[]).forEach(r => cond.push({name:r.name, category:'아티팩트', group:art.name, cond:r.cond||null}));
-  });
+  const items = [];
+  const add = (list, category, src) => (list||[]).forEach(r => items.push({name:r.name, category, src, cond:r.cond||null}));
+  (c.classes||[]).forEach(cls => add(cls.resist, '클래스패시브', cls.id));
+  if(c.uniquePassive) add(c.uniquePassive.resist, '고유패시브', c.uniquePassive.name);
+  if(c.ultimate) add(c.ultimate.resist, '오의', c.ultimate.name);
+  if(c.outerSkill) add(c.outerSkill.resist, '아우터스킬', c.outerSkill.name);
+  (c.actives||[]).forEach(a => add(a.resist, '액티브 스킬', a.name));
+  (c.artifacts||[]).forEach(art => add(art.resist, '아티팩트', art.name));
   const wp = WEAPONS[c.weaponName];
-  if(wp && wp.resist){
-    wp.resist.forEach(r => always.push({name:r.name, category:'전용무기', cond:r.cond||null}));
-  }
+  if(wp) add(wp.resist, '전용무기', c.weaponName);
+  const always = items.filter(i => RESIST_ALWAYS_CATEGORIES.includes(i.category) && !i.cond);
+  const cond = items.filter(i => !always.includes(i));
   return {always, cond};
 }
-// "?" 상세 텍스트 — "왼쪽 탭 카테고리"(RESIST_CATEGORY_ORDER 순서) 단위로 묶는다.
-// 클래스패시브/아티팩트는 카테고리 안에 선택 가능한 항목이 여럿이라 `group`(클래스/아티팩트명)으로 한 번 더
-// 나누고, 그 안에서 "상시"(cond 없음, 선택만으로 바로 적용)/"조건부"(cond 문구별로 합쳐서)를 나열한다.
-// 액티브 스킬은 "사용 시"가 이미 트리거 자체라 상시/조건부 구분이 의미 없어, `group`(액티브명) 사용 시
-// 항목을 바로 나열하고 cond가 있으면 지속시간/범위 같은 보충 설명을 괄호로 덧붙인다(조건별 병렬 표기).
-function buildResistDetail(items){
-  const byCat = {};
-  items.forEach(it => { (byCat[it.category] = byCat[it.category]||[]).push(it); });
+// "?" 상세 — [상시]/[조건부] 아래에 출처(분류 "이름")별로 한 줄씩, 같은 출처·같은 조건은 한 줄에 모은다.
+function buildResistDetail(always, cond){
+  const lines = list => {
+    const groups = [];
+    RESIST_CATEGORY_ORDER.forEach(cat => list.filter(i => i.category===cat).forEach(i => {
+      const key = cat+'|'+i.src+'|'+(i.cond||'');
+      let g = groups.find(x => x.key===key);
+      if(!g){ g = {key, cat, src:i.src, cond:i.cond, names:[]}; groups.push(g); }
+      if(!g.names.includes(i.name)) g.names.push(i.name);
+    }));
+    return groups.map(g => `- ${g.cat} "${g.src}"${g.cond ? ` (${g.cond})` : ''}: ${g.names.join(', ')}`).join('\n');
+  };
   const blocks = [];
-  RESIST_CATEGORY_ORDER.forEach(cat => {
-    const list = byCat[cat];
-    if(!list || !list.length) return;
-    let block = `[${cat}]`;
-    if(cat === '액티브 스킬'){
-      const byKey = {};
-      list.forEach(i => {
-        const key = i.group+'|||'+(i.cond||'');
-        (byKey[key] = byKey[key] || {group:i.group, cond:i.cond, names:[]}).names.push(i.name);
-      });
-      Object.values(byKey).forEach(g => {
-        block += `\n${g.group} 사용 시: ${g.names.join(', ')} 저항` + (g.cond ? ` (${g.cond})` : '');
-      });
-    } else if(list.some(i=>i.group)){
-      const byGroup = {};
-      list.forEach(i => { (byGroup[i.group] = byGroup[i.group]||[]).push(i); });
-      Object.entries(byGroup).forEach(([groupName, groupItems]) => {
-        block += `\n- ${groupName}`;
-        const alwaysNames = groupItems.filter(i=>!i.cond).map(i=>i.name);
-        if(alwaysNames.length) block += `\n  상시: ${alwaysNames.join(', ')}`;
-        const byCond = {};
-        groupItems.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
-        Object.entries(byCond).forEach(([condText, names]) => { block += `\n  조건부(${condText}): ${names.join(', ')}`; });
-      });
-    } else {
-      const alwaysNames = list.filter(i=>!i.cond).map(i=>i.name);
-      if(alwaysNames.length) block += `\n상시: ${alwaysNames.join(', ')}`;
-      const byCond = {};
-      list.filter(i=>i.cond).forEach(i => { (byCond[i.cond] = byCond[i.cond]||[]).push(i.name); });
-      Object.entries(byCond).forEach(([condText, names]) => { block += `\n조건부(${condText}): ${names.join(', ')}`; });
-    }
-    blocks.push(block);
-  });
+  if(always.length) blocks.push('[상시]\n' + lines(always));
+  if(cond.length) blocks.push('[조건부]\n' + lines(cond));
   return blocks.join('\n\n');
 }
-// 캐릭터 카드 상단 요약의 저항 부분 — "고유 저항"/"조건부 저항"을 각자 한 줄로, 이름만 나열(그룹 내 중복 제거)하고
-// 그룹마다 따로 "?"를 붙인다(누르면 그 그룹의 출처·조건만 보인다). 반환: {line, boxes} 또는 null(저항 없음).
+// 요약 줄의 "면역/무시" 항목 — 저항이 하나라도 있으면 {part, box}, 없으면 null.
 function resistSummaryLine(){
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
   if(!always.length && !cond.length) return null;
-  const uniqNames = arr => [...new Set(arr.map(i=>i.name))].join(', ');
-  const parts = [], boxes = [];
-  [['고유 저항', always, 'leftResistAlways'], ['조건부 저항', cond, 'leftResistCond']].forEach(([label, list, key]) => {
-    if(!list.length) return;
-    const d = descButton(key, buildResistDetail(list));
-    parts.push(`<span class="kit-item">- <b>${label}</b> : ${uniqNames(list)} ${d.btn}</span>`);
-    boxes.push(d.box);
-  });
-  return { line: parts.join(''), boxes: boxes.join('') };
+  const d = descButton('leftResist', buildResistDetail(always, cond));
+  return { part: `<span class="kit-item"><b>면역/무시</b> ${d.btn}</span>`, box: d.box };
 }
 // 행동추가(추가턴/재행동/추가이동/추가 공격·스킬) — 저항/면역과 완전히 동일한 원리(캐릭터 kit 전체를 훑어
 // 종합, 방어구/악세사리/룬은 대상 아님)로 별도 4종 고정 카테고리를 추적한다. 저항(자유 명칭)과 달리 이 4개는
@@ -1110,7 +1043,7 @@ function extraActionSummaryLine(){
     parts.push(`<span class="kit-item"><b>${t}</b> ${d.btn}</span>`);
     boxes.push(d.box);
   });
-  return { line: '<span class="kit-label">- <b>조건 확인</b> :</span>' + parts.join(''), boxes: boxes.join('') };
+  return { parts, boxes: boxes.join('') };
 }
 // 슬라이더(성급/중첩/단계)를 마우스로 정밀 조작하기 어려운 문제 때문에 양옆에 ◀▶ 1스텝 버튼을 추가(2026-07-23).
 function clampStep(val, delta, min, max){ return Math.max(min, Math.min(max, val+delta)); }
@@ -1491,9 +1424,10 @@ function render(){
 
   html += `<div class="card full"><h2>${state.character}</h2><div class="row">`;
   html += `<span style="font-size:11px;color:var(--text-dim);">${c.weightClass} · ${c.weaponName}(${WEAPONS[c.weaponName].category})</span></div>`;
-  // 캐릭터 카드 상단 요약: - 고유 저항 / - 조건부 저항 / - 조건 확인(재행동·추가턴·TP 수급 등). 계산기_적용원칙.md 10-4장.
+  // 캐릭터 카드 상단 요약 한 줄: - 면역/무시 (?), 재행동 (?), 추가턴 (?), TP 수급 (?) — 가진 항목만. 계산기_적용원칙.md 10-4장.
   { const rs = resistSummaryLine(); const ea = extraActionSummaryLine();
-    html += `<div class="kit-box">${rs ? `<div class="kit-row kit-resist">${rs.line}</div>${rs.boxes}` : ''}${ea ? `<div class="kit-row">${ea.line}</div>${ea.boxes}` : ''}</div>`; }
+    const parts = (rs ? [rs.part] : []).concat(ea ? ea.parts : []);
+    if(parts.length) html += `<div class="kit-box"><div class="kit-row">- ${parts.join('<span class="kit-sep">,</span>')}</div>${rs ? rs.box : ''}${ea ? ea.boxes : ''}</div>`; }
 
   // 캐릭터별 저장 세팅 (최대 3슬롯) — 룬 돌려쓰다 예전 세팅이 깨져도 언제든 복원 가능하도록 (2026-07-24: 최대 세팅보다 위로 이동)
   html += `<div style="font-size:11px;font-weight:bold;color:var(--accent);margin-top:8px;">${state.character} 저장 세팅 (최대 3개)</div>`;
