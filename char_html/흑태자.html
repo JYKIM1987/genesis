@@ -928,7 +928,9 @@ function descButton(key, text, side){
   const stKey = side==='left' ? 'openDescLeft' : 'openDescRight';
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
-  return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${escapeHtml(text)}</div>`};
+  // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){
   const stKey = side==='left' ? 'openDescLeft' : 'openDescRight';
@@ -959,7 +961,7 @@ function collectResistItems(c){
 // "?" 상세 — 맨 위에 "상시 : 이름들" / "조건부 : 이름들"(없는 쪽은 생략), 바로 아래에 같은 순서로
 // "- 이름 : 출처(조건)" 한 줄씩. 같은 이름이 여러 출처에서 오면 출처를 쉼표로 이어 적는다. 둘 다 없으면 "없음".
 function buildResistDetail(always, cond){
-  if(!always.length && !cond.length) return '없음';
+  if(!always.length && !cond.length) return {html:'없음'};
   const order = list => RESIST_CATEGORY_ORDER.flatMap(cat => list.filter(i => i.category===cat));
   const names = list => [...new Set(order(list).map(i => i.name))];
   const head = [];
@@ -971,7 +973,8 @@ function buildResistDetail(always, cond){
     const srcs = [...new Set(order(list).filter(i => i.name===n).map(src))];
     rows.push(`- ${n} : ${srcs.join(', ')}`);
   }));
-  return head.join('\n') + '\n' + rows.join('\n');
+  // 요약(상시/조건부) 줄은 진하게.
+  return {html: head.map(h => `<b>${escapeHtml(h)}</b>`).join('\n') + '\n' + rows.map(escapeHtml).join('\n')};
 }
 // 요약 줄의 "면역/무시" 항목 — 항상 표시(저항이 없으면 "?"에 "없음").
 function resistSummaryLine(){
