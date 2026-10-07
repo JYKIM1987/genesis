@@ -138,6 +138,9 @@
   table.result-table td.always{ color:var(--always); }
   table.result-table td.cond{ color:var(--cond); }
   table.result-table tr.hlrow td:first-child{ color:var(--accent); font-weight:bold; }
+  /* 오른쪽 합계 표의 "?" 상세 — 누른 행 바로 아래 한 줄(전체 칸 병합)로 끼워 넣는다. */
+  table.result-table tr.desc-row td{ padding:0 0 4px; text-align:left; }
+  table.result-table tr.desc-row .desc-box{ margin-top:0; }
   .priority-box{
     background:var(--accent-bg); border:2px solid var(--accent); border-radius:8px;
     padding:8px 10px 4px; margin-bottom:12px;
@@ -2405,14 +2408,14 @@ function renderResults(){
       .replace(/__SKILLONLY_TAG__/g, '<b style="color:var(--skillonly);">(스킬한정·합산안됨)</b>')
       .replace(/__REFNOTE_TAG__/g, '<b style="color:var(--text-dim);">(참고용·합산안됨)</b>')
       .replace(/__STATFORMULA_TAG__/g, '<b style="color:var(--statformula);">(스탯기반·합산안됨)</b>');
-    return {btn:`<button class="info-btn" onclick="toggleDesc('right','${key}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${safeText}</div>`};
+    return {btn:`<button class="info-btn" onclick="toggleDesc('right','${key}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${safeText}</div>`, open:isOpen};
   }
 
   function tableFor(keys, title, priority, noTotal){
     const tblCls = priority ? 'result-table priority-table' : 'result-table';
     const totalTh = noTotal ? '' : '<th>합계</th>';
     let h = `<h3>${title}</h3><table class="${tblCls}"><thead><tr><th>스탯</th><th>마을</th><th>인게임</th><th>조건부</th>${totalTh}<th></th></tr></thead><tbody>`;
-    let boxes = '';
+    const colCount = noTotal ? 5 : 6;
     keys.forEach(k => {
       const v=bucket.village[k], a=bucket.always[k], cd=bucket.cond[k], tot=v+a+cd;
       const unit = k==='move' ? '' : '%';
@@ -2420,9 +2423,10 @@ function renderResults(){
       const cb = condDetailButton(k, priority ? 'priority' : 'full');
       const totalTd = noTotal ? '' : `<td class="total">${tot.toFixed(1)}${unit}</td>`;
       h += `<tr class="${rowCls}"><td>${STAT_LABEL[k]}</td><td class="village">${v.toFixed(1)}${unit}</td><td class="always">${a.toFixed(1)}${unit}</td><td class="cond">${cd.toFixed(1)}${unit}</td>${totalTd}<td>${cb.btn}</td></tr>`;
-      boxes += cb.box;
+      // 열린 "?"만 그 행 바로 아래에 상세 행을 끼운다(표 맨 아래로 몰리지 않게).
+      if(cb.open) h += `<tr class="desc-row"><td colspan="${colCount}">${cb.box}</td></tr>`;
     });
-    h += `</tbody></table>` + boxes;
+    h += `</tbody></table>`;
     return priority ? `<div class="priority-box">${h}</div>` : h;
   }
 
