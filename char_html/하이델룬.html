@@ -991,7 +991,12 @@ function buildResistDetail(always, cond){
     }));
     return groups.map(g => `- ${g.cat} "${g.src}"${g.cond ? ` (${g.cond})` : ''}: ${g.names.join(', ')}`).join('\n');
   };
-  const blocks = [];
+  // 맨 위에 이름만 모은 요약(상시/조건부), 그 아래에 출처별 세부사항.
+  const uniq = list => [...new Set(list.map(i => i.name))].join(', ');
+  const head = [];
+  if(always.length) head.push('상시 : ' + uniq(always));
+  if(cond.length) head.push('조건부 : ' + uniq(cond));
+  const blocks = [head.join('\n')];
   if(always.length) blocks.push('[상시]\n' + lines(always));
   if(cond.length) blocks.push('[조건부]\n' + lines(cond));
   return blocks.join('\n\n');
