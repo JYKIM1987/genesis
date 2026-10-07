@@ -947,32 +947,26 @@ function collectResistItems(c){
   const cond = items.filter(i => !always.includes(i));
   return {always, cond};
 }
-// "?" 상세 — [상시]/[조건부] 아래에 출처(분류 "이름")별로 한 줄씩, 같은 출처·같은 조건은 한 줄에 모은다.
+// "?" 상세 — 맨 위에 "상시 : 이름들" / "조건부 : 이름들"(없는 쪽은 생략), 바로 아래에 같은 순서로
+// "- 이름 : 출처(조건)" 한 줄씩. 같은 이름이 여러 출처에서 오면 출처를 쉼표로 이어 적는다. 둘 다 없으면 "없음".
 function buildResistDetail(always, cond){
-  const lines = list => {
-    const groups = [];
-    RESIST_CATEGORY_ORDER.forEach(cat => list.filter(i => i.category===cat).forEach(i => {
-      const key = cat+'|'+i.src+'|'+(i.cond||'');
-      let g = groups.find(x => x.key===key);
-      if(!g){ g = {key, cat, src:i.src, cond:i.cond, names:[]}; groups.push(g); }
-      if(!g.names.includes(i.name)) g.names.push(i.name);
-    }));
-    return groups.map(g => `- ${g.cat} "${g.src}"${g.cond ? ` (${g.cond})` : ''}: ${g.names.join(', ')}`).join('\n');
-  };
-  // 맨 위에 이름만 모은 요약(상시/조건부), 그 아래에 출처별 세부사항.
-  const uniq = list => [...new Set(list.map(i => i.name))].join(', ');
+  if(!always.length && !cond.length) return '없음';
+  const order = list => RESIST_CATEGORY_ORDER.flatMap(cat => list.filter(i => i.category===cat));
+  const names = list => [...new Set(order(list).map(i => i.name))];
   const head = [];
-  if(always.length) head.push('상시 : ' + uniq(always));
-  if(cond.length) head.push('조건부 : ' + uniq(cond));
-  const blocks = [head.join('\n')];
-  if(always.length) blocks.push('[상시]\n' + lines(always));
-  if(cond.length) blocks.push('[조건부]\n' + lines(cond));
-  return blocks.join('\n\n');
+  if(always.length) head.push('상시 : ' + names(always).join(', '));
+  if(cond.length) head.push('조건부 : ' + names(cond).join(', '));
+  const src = i => `${i.category} "${i.src}"${i.cond ? ` (${i.cond})` : ''}`;
+  const rows = [];
+  [always, cond].forEach(list => names(list).forEach(n => {
+    const srcs = [...new Set(order(list).filter(i => i.name===n).map(src))];
+    rows.push(`- ${n} : ${srcs.join(', ')}`);
+  }));
+  return head.join('\n') + '\n' + rows.join('\n');
 }
-// 요약 줄의 "면역/무시" 항목 — 저항이 하나라도 있으면 {part, box}, 없으면 null.
+// 요약 줄의 "면역/무시" 항목 — 항상 표시(저항이 없으면 "?"에 "없음").
 function resistSummaryLine(){
   const {always, cond} = collectResistItems(CHARACTERS[state.character]);
-  if(!always.length && !cond.length) return null;
   const d = descButton('leftResist', buildResistDetail(always, cond));
   return { part: `<span class="kit-item"><b>면역/무시</b> ${d.btn}</span>`, box: d.box };
 }
