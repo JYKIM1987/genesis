@@ -632,15 +632,14 @@ function renderNotice(){
   }
   box.hidden = false;
   // 한 캐릭터의 항목은 박스 하나에 모으고, 항목끼리는 줄만 나눈다(구분선 없음).
-  // [캐릭터] 표시는 줄마다 반복한다(add_custom SKILL.md 1장).
   const byChar = new Map();
   items.forEach(it => {
     if(!byChar.has(it.char)) byChar.set(it.char, []);
     byChar.get(it.char).push(it);
   });
   host.innerHTML = Array.from(byChar.entries()).map(([char, list]) =>
-    `<div class="notice-item">${list.map(it =>
-      `<div class="notice-entry"><span class="char">[${char}]</span>${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
+    `<div class="notice-item">${list.map((it, i) =>
+      `<div class="notice-entry">${i === 0 ? `<span class="char">[${char}]</span>` : ''}${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
     ).join('')}</div>`
   ).join('');
 }
