@@ -637,10 +637,14 @@ function renderNotice(){
     if(!byChar.has(it.char)) byChar.set(it.char, []);
     byChar.get(it.char).push(it);
   });
-  host.innerHTML = Array.from(byChar.entries()).map(([char, list]) =>
-    `<div class="notice-item">${list.map((it, i) =>
-      `<div class="notice-entry">${i === 0 ? `<span class="char">[${char}]</span>` : ''}${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
-    ).join('')}</div>`
+  // 항목이 하나면 "[캐릭터] 항목" 한 줄, 둘 이상이면 "[캐릭터]"를 첫 줄에 따로 두고 그 아래에 항목을 나열한다.
+  host.innerHTML = Array.from(byChar.entries()).map(([char, list]) => {
+    const entry = (it, withChar) => `<div class="notice-entry">${withChar ? `<span class="char">[${char}]</span>` : ''}${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`;
+    const body = list.length === 1
+      ? entry(list[0], true)
+      : `<div class="notice-entry"><span class="char">[${char}]</span></div>` + list.map(it => entry(it, false)).join('');
+    return `<div class="notice-item">${body}</div>`;
+  }
   ).join('');
 }
 
