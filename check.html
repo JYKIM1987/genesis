@@ -98,6 +98,7 @@
   .notice-item{ background:#e3d9f7; color:#5a4a9c; border-radius:6px; padding:8px 10px; margin-bottom:6px; font-size:12.5px; font-weight:bold; }
   .notice-item:last-child{ margin-bottom:0; }
   .notice-item .char{ margin-right:4px; }
+  .notice-item .notice-entry + .notice-entry{ border-top:1px dashed #b9a8e0; margin-top:6px; padding-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
@@ -630,8 +631,16 @@ function renderNotice(){
     return;
   }
   box.hidden = false;
-  host.innerHTML = items.map(it =>
-    `<div class="notice-item"><span class="char">[${it.char}]</span>${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
+  // 한 캐릭터의 항목은 박스 하나에 모으고, 항목끼리는 구분선으로 줄을 나눈다.
+  const byChar = new Map();
+  items.forEach(it => {
+    if(!byChar.has(it.char)) byChar.set(it.char, []);
+    byChar.get(it.char).push(it);
+  });
+  host.innerHTML = Array.from(byChar.entries()).map(([char, list]) =>
+    `<div class="notice-item">${list.map((it, i) =>
+      `<div class="notice-entry">${i === 0 ? `<span class="char">[${char}]</span>` : ''}${it.label}${it.cond ? `<span class="cond">${it.cond}</span>` : ''}</div>`
+    ).join('')}</div>`
   ).join('');
 }
 
