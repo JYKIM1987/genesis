@@ -60,37 +60,37 @@ window.EQUIPMENT_OVERRIDE = {
     ARM01: {name:'인도자', grade:'전설',
       set2:{hp:{v:15,zone:'village'},atk:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 공격력 +15%.',
       set4:{phys:{v:20,zone:'always'},crit:{v:20,zone:'always'}}, set4desc:'물리 관통/치명타 확률 +20%(상시). 공격 시 치명타 발생하면 보호막 획득(치명타 확률 1%당 최대 체력 0.2%, 해제불가).',
-      pieces:{투구:{name:'인도자의 가면',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'인도자의 망토',maxStar:1}, 장갑:{name:'인도자의 보호대',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'인도자의 부츠',maxStar:1}}
+      pieces:{투구:{name:'인도자의 가면',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'인도자의 망토',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'인도자의 보호대',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'인도자의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM02: {name:'검은 까마귀', grade:'전설',
       set2:{critDmg:{v:15,zone:'village'}}, set2desc:'치명타 피해량 +15%.',
       set4:{crit:{v:20,zone:'always'}}, set4desc:'치명타 확률 +20%.',
-      pieces:{투구:{name:'검은 까마귀 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'검은 까마귀 의복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'검은 까마귀 족쇄',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'검은 까마귀 장화',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:8,5:6,6:10}}}
+      pieces:{투구:{name:'검은 까마귀 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'검은 까마귀 의복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'검은 까마귀 족쇄',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'검은 까마귀 장화',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM03: {name:'명계의 전갈', grade:'전설',
       set2:{hp:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%.',
       set4:{phys:{v:20,zone:'always'}}, set4desc:'물리 관통 +20%.',
-      pieces:{투구:{name:'명계의 전갈 터번',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'명계의 전갈 의상',maxStar:1}, 장갑:{name:'명계의 전갈 토시',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'명계의 전갈 신발',maxStar:1}}
+      pieces:{투구:{name:'명계의 전갈 터번',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'명계의 전갈 의상',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'명계의 전갈 토시',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'명계의 전갈 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM04: {name:'전설의 괴도', grade:'전설',
       set2:{critDmg:{v:10,zone:'village'},crit:{v:15,zone:'village'}}, set2desc:'치명타 피해량 +10%, 치명타 확률 +15%.',
       set4:{hp:{v:10,zone:'always'},critDmg:{v:15,zone:'always'}}, set4desc:'최대 체력 +10%, 치명타 피해량 +15%(상시). 전투 중 치명타 적중 시 전투 후 "날카로운 시선"(다음 전투 공격 시 치명타 피해량 +10%, 발동 후 해제/해제불가) 획득.',
-      pieces:{투구:{name:'전설의 괴도 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'전설의 괴도 작업복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'전설의 괴도 장갑',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'전설의 괴도 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:8,5:6,6:10}}}
+      pieces:{투구:{name:'전설의 괴도 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'전설의 괴도 작업복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'전설의 괴도 장갑',maxStar:6, pieceStat:'crit', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'전설의 괴도 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM05: {name:'기백의 검사', grade:'전설',
       set2:{hp:{v:10,zone:'village'},phys:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 물리 관통 +10%.',
       set4:{critResChance:{v:10,zone:'always'},atk:{v:15,zone:'always',cond:'공격 시(쿨1)'},phys:{v:15,zone:'always',cond:'공격 시(쿨1)'}}, set4desc:'받는 치명타 확률 -10%(상시). 공격 시 공격력/물리 관통 +15%(쿨타임 1턴).',
-      pieces:{투구:{name:'기백의 검사 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'기백의 검사 경갑옷',maxStar:1}, 장갑:{name:'기백의 검사 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'기백의 검사 부츠',maxStar:1}}
+      pieces:{투구:{name:'기백의 검사 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'기백의 검사 경갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'기백의 검사 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'기백의 검사 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM06: {name:'시스템 이단자', grade:'전설',
       set2:{phys:{v:15,zone:'village'},crit:{v:15,zone:'village'}}, set2desc:'물리 관통 +15%, 치명타 확률 +15%.',
       set4:{atk:{v:30,zone:'always',cond:'적 공격 시'}}, set4desc:'적 공격 시 공격력 +30%. 턴당 1회 적에게 처치급 피해를 주면 2턴간 최대 체력 50% 보호막.',
-      pieces:{투구:{name:'시스템 이단자의 안대',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'시스템 이단자의 코트',maxStar:1}, 장갑:{name:'시스템 이단자의 의수',maxStar:6, pieceStat:'crit', pieceStars:{6:10}}, 신발:{name:'시스템 이단자의 신발',maxStar:1}}
+      pieces:{투구:{name:'시스템 이단자의 안대',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'시스템 이단자의 코트',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'시스템 이단자의 의수',maxStar:6, pieceStat:'crit', pieceStars:{6:10}}, 신발:{name:'시스템 이단자의 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM07: {name:'회색의 계승자', grade:'전설',
       set2:{hp:{v:15,zone:'village'},critResDmg:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 받는 치명타 피해량 감소 +15%.',
       set4:{atk:{v:20,zone:'always'},phys:{v:20,zone:'always'}}, set4desc:'공격력/물리 관통 +20%(상시). 조건부 "중재자의 수호" 보호막 별도 지급. 장갑(팔) 부위는 물리 관통 +10%(풀각, 사용자 확인).',
-      pieces:{투구:{name:'계승자의 목도리',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'계승자의 흑의',maxStar:1}, 장갑:{name:'계승자의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'계승자의 부츠',maxStar:1}}
+      pieces:{투구:{name:'계승자의 목도리',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'계승자의 흑의',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'계승자의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'계승자의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM08: {name:'일기당천', grade:'전설',
       set2:{phys:{v:20,zone:'village'}}, set2desc:'물리 관통 +20%.',
@@ -105,104 +105,104 @@ window.EQUIPMENT_OVERRIDE = {
     ARM10: {name:'어둠의 재상', grade:'전설',
       weightClassOnly:'라이트',
       set2:{mag:{v:15,zone:'village'}}, set2desc:'주문력 +15%.',
-      set4:{mag:{v:10,zone:'cond',cond:'스킬 시전 시'},magPen:{v:10,zone:'cond',cond:'스킬 시전 시'}}, set4desc:'스킬 시전 시 주문력/마법 관통 +10%. 추가로 자기 시전 스킬로 적 공격 후 "철수"(턴 종료 전 추가 이동) 획득(쿨타임 3턴, 스탯 아님). 장갑(팔) 부위는 마법 관통 +10%(풀각 기준). 투구/갑옷/신발 개별 성급 데이터는 없음. 라이트 클래스 전용.',
-      pieces:{투구:{name:'어둠의 재상관',maxStar:1}, 갑옷:{name:'어둠의 재상 로브',maxStar:1}, 장갑:{name:'어둠의 재상 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'어둠의 재상 부츠',maxStar:1}}
+      set4:{mag:{v:10,zone:'cond',cond:'스킬 시전 시'},magPen:{v:10,zone:'cond',cond:'스킬 시전 시'}}, set4desc:'스킬 시전 시 주문력/마법 관통 +10%. 추가로 자기 시전 스킬로 적 공격 후 "철수"(턴 종료 전 추가 이동) 획득(쿨타임 3턴, 스탯 아님). 장갑(팔) 부위는 마법 관통 +10%(풀각 기준). 라이트 클래스 전용.',
+      pieces:{투구:{name:'어둠의 재상관',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'어둠의 재상 로브',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'어둠의 재상 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'어둠의 재상 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM11: {name:'교황', grade:'전설',
       weightClassOnly:'라이트',
       set2:{}, set2desc:'받는 피해량 감소 +5%.',
       set4:{}, set4desc:'스킬 사용 시 60% 확률로 해당 스킬 쿨타임 1 감소(쿨타임 3턴, 스탯 아님).',
-      pieces:{투구:{name:'교황의 예관',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'교황의 성장',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'교황의 자비',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'교황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'교황의 예관',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'교황의 성장',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'교황의 자비',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'교황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM12: {name:'대현자', grade:'전설',
       weightClassOnly:'라이트',
       set2:{magPen:{v:15,zone:'village'}}, set2desc:'마법 관통 +15%.',
       set4:{}, set4desc:'범위 스킬 사용 시 스킬 피해량 +20%.',
-      pieces:{투구:{name:'대현자의 서클릿',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'대현자의 로브',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'대현자의 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'대현자의 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'대현자의 서클릿',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'대현자의 로브',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'대현자의 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'대현자의 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM13: {name:'매혹의 영주', grade:'전설',
       weightClassOnly:'라이트',
       set2:{critResChance:{v:10,zone:'village'},critResDmg:{v:10,zone:'village'}}, set2desc:'받는 치명타 확률 -10%, 받는 치명타 피해량 -10%.',
       set4:{hp:{v:15,zone:'always'},mag:{v:15,zone:'always'}}, set4desc:'최대 체력 +15%, 주문력 +15%.',
-      pieces:{투구:{name:'매혹의 영주 목걸이',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'매혹의 영주 비단옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'매혹의 영주 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'매혹의 영주 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'매혹의 영주 목걸이',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'매혹의 영주 비단옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'매혹의 영주 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'매혹의 영주 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM14: {name:'빛의 헌신', grade:'전설',
       weightClassOnly:'라이트',
       set2:{dmgReduction:{v:10,zone:'cond',cond:'최대 체력(HP 100%) 상태일 때'}}, set2desc:'치유 증가량의 25%만큼 주문력 증가(합산안됨). 최대 체력 상태면 받는 피해량 -10%(조건부).',
       set2StatFormulaNote:{statKey:'mag', label:'방어구 - 빛의 헌신 2셋', text:'치유 증가량의 25%만큼 주문력 증가'},
       set4:{healGive:{v:15,zone:'always'}}, set4desc:'치유량 증가 +15%(상시). 스킬 시전 후 25% 확률로 "집중"(행동 종료 시 1TP 회복, 스탯 아님) 획득(쿨타임 1턴).',
-      pieces:{투구:{name:'빛의 헌신 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'빛의 헌신 의복',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'빛의 헌신 팔토시',maxStar:6, pieceStat:'healGive', pieceStars:{6:10}}, 신발:{name:'빛의 헌신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'빛의 헌신 두건',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'빛의 헌신 의복',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'빛의 헌신 팔토시',maxStar:6, pieceStat:'healGive', pieceStars:{6:10}}, 신발:{name:'빛의 헌신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM15: {name:'자애의 치유사', grade:'전설',
       weightClassOnly:'라이트',
       set2:{critResDmg:{v:10,zone:'village'},healGive:{v:15,zone:'village'}}, set2desc:'치유량 증가 +15%, 받는 치명타 피해량 -10%.',
       set4:{hp:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'스킬로 아군에게 이로운 효과 부여 시(회복의 공명, 중첩무관)'},mag:{v:10,zone:'cond',cond:'스킬로 아군에게 이로운 효과 부여 시(회복의 공명, 중첩무관)'}}, set4desc:'최대 체력 +10%(상시), 침묵 면역. 스킬로 아군에게 이로운 효과 부여 시 "회복의 공명" 부여(공격력/주문력 +10%, 중첩과 무관하게 고정값, 공격/반격 후 중첩 감소).',
-      pieces:{투구:{name:'자애의 치유사 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'자애의 치유사 로브',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'자애의 치유사 토시',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'자애의 치유사 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'자애의 치유사 모자',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'자애의 치유사 로브',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'자애의 치유사 토시',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'자애의 치유사 신발',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM16: {name:'추기경', grade:'전설',
       weightClassOnly:'라이트',
       set2:{hp:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%.',
       set4:{mag:{v:10,zone:'always'}}, set4desc:'주문력 +10%(상시). 스킬 사용 시 33% 확률로 "집중"(행동 종료 시 1TP 획득, 스탯 아님) 획득(턴당 1회).',
-      pieces:{투구:{name:'추기경의 사제모',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'추기경의 수단',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'추기경의 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'추기경의 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'추기경의 사제모',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'추기경의 수단',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'추기경의 장갑',maxStar:6, pieceStat:'mag', pieceStars:{6:15}}, 신발:{name:'추기경의 구두',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM17: {name:'혜안의 군사', grade:'전설',
       weightClassOnly:'라이트',
       set2:{hp:{v:10,zone:'village'},crit:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 치명타 확률 +10%.',
       set4:{critDmg:{v:20,zone:'cond',cond:'스킬 시전 시'}}, set4desc:'스킬 시전 시 치명타 피해량 +20%.',
-      pieces:{투구:{name:'혜안의 군사 안경',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'혜안의 군사 천옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'혜안의 군사 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'혜안의 군사 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'혜안의 군사 안경',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'혜안의 군사 천옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'혜안의 군사 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'혜안의 군사 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM18: {name:'강격의 군주', grade:'전설',
       weightClassOnly:'헤비',
       set2:{def:{v:10,zone:'village'},hp:{v:10,zone:'village'}}, set2desc:'방어력 +10%, 최대 체력 +10%.',
       set4:{}, set4desc:'협공 피해량 +10%. 방어력의 30%만큼 공격력 증가(합산안됨).',
       set4StatFormulaNote:{statKey:'atk', label:'방어구 - 강격의 군주 4셋', text:'방어력의 30%만큼 공격력 증가'},
-      pieces:{투구:{name:'강격의 군주 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'강격의 군주 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'강격의 군주 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'강격의 군주 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'강격의 군주 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'강격의 군주 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'강격의 군주 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'강격의 군주 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM19: {name:'금제의 무인', grade:'전설',
       weightClassOnly:'헤비',
       set2:{hp:{v:10,zone:'village'},critResDmg:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 받는 치명타 피해량 -10%.',
       set4:{hp:{v:20,zone:'always'},def:{v:15,zone:'always'},res:{v:15,zone:'always'},physRes:{v:10,zone:'always'},magRes:{v:10,zone:'always'}}, set4desc:'최대 체력 +20%, 방어력/저항력 +15%, 물리/마법 관통 저항 +10%.',
-      pieces:{투구:{name:'금제의 무인 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'금제의 무인 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'금제의 무인 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'금제의 무인 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'금제의 무인 망토',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'금제의 무인 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'금제의 무인 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'금제의 무인 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM20: {name:'단죄의 심판자', grade:'전설',
       weightClassOnly:'헤비',
       set2:{hp:{v:10,zone:'village'}}, set2desc:'최대 체력 +10%, 반격 피해량 +15%.',
       set4:{hp:{v:10,zone:'always'}}, set4desc:'최대 체력 +10%(상시), 반격 피해량 +10%, 받는 피해 감소 +5%. 체력 50% 이하 시 받는 피해 추가 -10%(조건부).',
-      pieces:{투구:{name:'단죄의 심판자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'단죄의 심판자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'단죄의 심판자 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'단죄의 심판자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'단죄의 심판자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'단죄의 심판자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'단죄의 심판자 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'단죄의 심판자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM21: {name:'불멸의 정복자', grade:'전설',
       weightClassOnly:'헤비',
       set2:{phys:{v:10,zone:'village'},atk:{v:10,zone:'village'}}, set2desc:'물리 관통 +10%, 공격력 +10%.',
       set4:{hp:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'},physRes:{v:5,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'},magRes:{v:5,zone:'cond',cond:'공격 전/공격받기 전(저거넛, 최대 2중첩, 2턴 지속) — 표시값은 1스택 기준'}}, set4desc:'최대 체력 +10%(상시). 공격 전/공격받기 전 "저거넛" 획득: 공격력 +10%, 물리·마법 관통 저항 +5%(최대 2중첩, 2턴 지속, 해제불가 — 표시값은 1스택 기준).',
-      pieces:{투구:{name:'불멸의 정복자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'불멸의 정복자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'불멸의 정복자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'불멸의 정복자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'불멸의 정복자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'불멸의 정복자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'불멸의 정복자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'불멸의 정복자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM22: {name:'선혈의 사신', grade:'전설',
       weightClassOnly:'헤비',
       set2:{def:{v:15,zone:'village'}}, set2desc:'방어력 +15%.',
       set4:{}, set4desc:'반격 피해량 +20%. 반격 후 다음 공격 피해량 +20%(조건부).',
-      pieces:{투구:{name:'선혈의 사신 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'선혈의 사신 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'선혈의 사신 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'선혈의 사신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'선혈의 사신 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'선혈의 사신 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'선혈의 사신 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'선혈의 사신 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM23: {name:'역전의 지휘관', grade:'전설',
       weightClassOnly:'헤비',
       set2:{def:{v:13,zone:'village'},res:{v:13,zone:'village'}}, set2desc:'방어력/저항력 +13%.',
       set4:{healTake:{v:10,zone:'always'},shieldTake:{v:10,zone:'always'},atk:{v:10,zone:'cond',cond:'아군 스킬 대상이 되면(2턴 지속)'}}, set4desc:'받는 치유량 증가/받는 보호막 증가 +10%(상시). 아군 스킬 대상이 되면 2턴간 공격력 +10%.',
-      pieces:{투구:{name:'역전의 지휘관 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'역전의 지휘관 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'역전의 지휘관 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'역전의 지휘관 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'역전의 지휘관 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'역전의 지휘관 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'역전의 지휘관 건틀릿',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 신발:{name:'역전의 지휘관 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM24: {name:'인내의 수호자', grade:'전설',
       weightClassOnly:'헤비',
       set2:{hp:{v:20,zone:'village'}}, set2desc:'최대 체력 +20%.',
       set4:{}, set4desc:'받는 피해량 감소 +5%. 피해를 받으면 2턴간 받는 피해 -5%(최대 2중첩).',
-      pieces:{투구:{name:'인내의 수호자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'인내의 수호자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'인내의 수호자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'인내의 수호자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'인내의 수호자 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'인내의 수호자 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'인내의 수호자 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:15}}, 신발:{name:'인내의 수호자 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM25: {name:'드레드노트', grade:'전설',
       set2:{hp:{v:15,zone:'village'},phys:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 물리 관통 +15%.',
       set4:{atk:{v:20,zone:'always'},hp:{v:20,zone:'always'}}, set4desc:'공격력/최대 체력 +20%(상시). 공격으로 치명타 적중 시 대상에게 "철갑 파쇄"(방어력/저항력 -15%, 받는 참격 피해 +15%, 2턴 지속, 해제불가) 부여 — 적 방어력/저항력 감소는 내 스탯과 직접 연결되지 않고, 받는 참격 피해 증가는 무기 공격 타입(참격)에 한정된 효과라 둘 다 스탯 합계에 미반영.',
-      pieces:{투구:{name:'드레드노트 머플러',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'드레드노트 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'드레드노트 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'드레드노트 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'드레드노트 머플러',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'드레드노트 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'드레드노트 건틀릿',maxStar:6, pieceStat:'phys', pieceStars:{6:10}}, 신발:{name:'드레드노트 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
     ARM26: {name:'고결한 검황', grade:'전설',
       set2:{hp:{v:15,zone:'village'},critResChance:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 받는 치명타 확률 -15%.',
       set4:{crit:{v:20,zone:'always'},critDmg:{v:10,zone:'always'},dotDmgReduction:{v:30,zone:'always'}}, set4desc:'전투 시 속성 상성 무시. 공격 시 적이 받는 치명타 확률 +20%/받는 치명타 피해 +10%, 지속 피해 감소율 +30%.',
-      pieces:{투구:{name:'고결한 검황의 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{6:10}}, 갑옷:{name:'고결한 검황의 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{6:10}}, 장갑:{name:'고결한 검황의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'고결한 검황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{6:10}}}
+      pieces:{투구:{name:'고결한 검황의 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'고결한 검황의 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'고결한 검황의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'고결한 검황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
   },
 
