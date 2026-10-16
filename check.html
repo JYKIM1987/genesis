@@ -119,6 +119,8 @@
   .matchup-item .line.strong b, .matchup-item .line.strong .ally{ color:#1f5fd1; }
   .matchup-item .line.weak b, .matchup-item .line.weak .ally{ color:#d32f2f; }
   .matchup-item .line .ally.both{ color:#d97706; } /* 강·약 양쪽에 다 있는 아군 */
+  .matchup-item .legend{ margin-top:6px; font-size:11px; color:var(--text-dim); word-break:keep-all; }
+  .matchup-item .legend .both{ color:#d97706; font-weight:bold; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
   .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
@@ -700,7 +702,9 @@ function renderMatchup(){
     + Array.from(map.entries()).map(([ally, vs]) =>
         `<span class="ally${both(ally) ? ' both' : ''}">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
     + '</div>' : '';
-  host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', groups.strong)}${line('weak', '약상성', groups.weak)}</div>`;
+  const hasBoth = Array.from(groups.strong.keys()).some(both);
+  const legend = hasBoth ? '<div class="legend">※ <span class="both">주황색</span> : 강상성·약상성 양쪽에 모두 해당하는 아군</div>' : '';
+  host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', groups.strong)}${line('weak', '약상성', groups.weak)}${legend}</div>`;
 }
 
 // 출전시 주의사항 — 매칭 없이 그냥 "이 캐릭터가 픽됐다"는 사실만으로
