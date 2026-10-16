@@ -99,7 +99,7 @@
   .notice-item .notice-entry + .notice-entry{ margin-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
-  /* 상성 참고 노트 — 상대(적)별 카드에 "강 : / 약 :" 줄(강=초록, 약=빨강).
+  /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." 두 줄(강=파랑, 약=빨강).
      PC: 결과 영역 맨 위, 접이식(기본 접힘, 제목 클릭으로 펼침).
      모바일: 주의할 아군 탭 맨 밑, 항상 펼침(아래 미디어쿼리). */
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
@@ -113,12 +113,11 @@
   .matchup-box:not(.open) #matchupHost{ display:none; }
   #matchupHost{ display:grid; gap:8px; }
   .matchup-item{ background:var(--panel); border:1px solid #cfe6dc; border-radius:6px; padding:8px 10px; font-size:12.5px; }
-  .matchup-item .vs{ font-weight:900; color:var(--char-name); margin-bottom:3px; }
-  .matchup-item .line{ margin-top:2px; word-break:keep-all; }
+  .matchup-item .line{ word-break:keep-all; line-height:1.6; }
+  .matchup-item .line + .line{ margin-top:4px; }
   .matchup-item .line b{ font-weight:900; }
-  .matchup-item .line.strong b{ color:var(--ok); }
-  .matchup-item .line.weak b{ color:var(--warn); }
-  .matchup-item .by{ font-size:10.5px; color:var(--text-dim); white-space:nowrap; }
+  .matchup-item .line.strong b, .matchup-item .line.strong .ally{ color:#1f5fd1; }
+  .matchup-item .line.weak b, .matchup-item .line.weak .ally{ color:#d32f2f; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
   .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
@@ -263,7 +262,7 @@
 
   <div class="main">
     <div class="matchup-box" id="matchupBox" hidden>
-      <h2 onclick="this.parentElement.classList.toggle('open')"><span class="arrow">▶</span>📝 상성 참고 노트 <span class="h2-note">(by. 아델라이데)</span><span class="cnt" id="matchupCount"></span></h2>
+      <h2 onclick="this.parentElement.classList.toggle('open')"><span class="arrow">▶</span>📝 상성 참고 노트 <span class="h2-note">(by 아델라이데 (+네냐플 카페 참조))</span><span class="cnt" id="matchupCount"></span></h2>
       <div id="matchupHost"></div>
     </div>
 
@@ -572,27 +571,25 @@ const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버�
 // MATCHUP_NOTES — 상성 참고 노트. 사용자가 골라 적는 참고 메모(전체 상성표 아님).
 //   when:   이 캐릭터들이 방덱에 전부 선택돼 있어야 표시
 //   unless: 이 캐릭터 중 하나라도 선택돼 있으면 미표시(선택)
-//   strong / weak: 그 상대 카드의 "강 :" / "약 :" 줄에 들어갈 자유 문구
-//   by:     다른 사람에게서 온 문구의 출처 — 그 문구 뒤에만 붙는다.
-//           노트 기본 작성자(박스 제목의 "by. 아델라이데")가 직접 적은 건 by 없이 둔다.
-// when이 같은 노트는 한 카드로 합치고 문구는 쉼표로 이어 붙인다.
-const MATCHUP_BY_OJJANG = '오짱(네냐플 카페)';
+//   strong / weak: 내보낼 아군 — "강상성 :" / "약상성 :" 줄에 "아군 (상대, 상대)"로 표시
+// 같은 아군 문구는 한 묶음으로 합치고 괄호 안에 조건을 만족한 상대를 쉼표로 나열한다.
+// 출처는 박스 제목 한 곳에만 적는다(노트별 by 없음).
 const MATCHUP_NOTES = [
   // 카이 + 헬카이트(아군 조합) 상성 — 강: 철가면, 세타, 프레데릭, 벨제부르 / 약: 자비에르, 메르세데스
-  { when: ['철가면'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
-  { when: ['세타'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
-  { when: ['프레데릭'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
-  { when: ['벨제부르'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
-  { when: ['자비에르'], weak: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
-  { when: ['메르세데스'], weak: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['철가면'], strong: '카이 + 헬카이트', },
+  { when: ['세타'], strong: '카이 + 헬카이트', },
+  { when: ['프레데릭'], strong: '카이 + 헬카이트', },
+  { when: ['벨제부르'], strong: '카이 + 헬카이트', },
+  { when: ['자비에르'], weak: '카이 + 헬카이트', },
+  { when: ['메르세데스'], weak: '카이 + 헬카이트', },
   // 프레데릭(아군) 상성 — 강: 자비에르, 메르세데스, (아네모네 없는) 시라노 / 약: 헬카이트, 카이, 벨제부르, 아네모네
-  { when: ['자비에르'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['메르세데스'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['시라노'], unless: ['아네모네'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['헬카이트'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['카이'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['벨제부르'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
-  { when: ['아네모네'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['자비에르'], strong: '프레데릭', },
+  { when: ['메르세데스'], strong: '프레데릭', },
+  { when: ['시라노'], unless: ['아네모네'], strong: '프레데릭', },
+  { when: ['헬카이트'], weak: '프레데릭', },
+  { when: ['카이'], weak: '프레데릭', },
+  { when: ['벨제부르'], weak: '프레데릭', },
+  { when: ['아네모네'], weak: '프레데릭', },
   { when: ['아네모네'], weak: '시라노' },
 ];
 
@@ -671,37 +668,36 @@ function render(){
   renderRisk();
 }
 
-// 상성 참고 노트 — 조건을 만족한 노트를 상대(when)별 카드로 묶는다(동시 선택
-// 조건은 "카이 + 헬카이트"처럼 한 카드). 카드 순서는 picked 순서를 따르고, 동시
-// 선택 카드는 마지막 구성원 바로 뒤에 둔다. 해당 노트가 없으면 박스를 숨긴다.
+// 상성 참고 노트 — 조건을 만족한 노트를 아군(strong/weak 문구)별로 묶어
+// "강상성 : 아군 (상대, 상대), ..." / "약상성 : ..." 두 줄로 보여준다.
+// 아군 순서는 MATCHUP_NOTES 순서, 괄호 안 상대는 picked 순서. 해당 노트가 없으면 박스를 숨긴다.
 function renderMatchup(){
   const box = document.getElementById('matchupBox');
   const host = document.getElementById('matchupHost');
-  const cards = new Map();
+  const groups = { strong: new Map(), weak: new Map() };
   MATCHUP_NOTES.forEach(n => {
     if(!n.when.every(c => picked.includes(c))) return;
     if((n.unless || []).some(c => picked.includes(c))) return;
-    const key = n.when.slice().sort().join('/');
-    if(!cards.has(key)){
-      const order = Math.max(...n.when.map(c => picked.indexOf(c))) + (n.when.length > 1 ? 0.5 : 0);
-      cards.set(key, { title: n.when.join(' + '), order, strong: [], weak: [] });
-    }
-    const card = cards.get(key);
-    if(n.strong) card.strong.push({ text: n.strong, by: n.by });
-    if(n.weak) card.weak.push({ text: n.weak, by: n.by });
+    const vs = { name: n.when.join(' + '), order: Math.max(...n.when.map(c => picked.indexOf(c))) };
+    ['strong', 'weak'].forEach(k => {
+      if(!n[k]) return;
+      if(!groups[k].has(n[k])) groups[k].set(n[k], []);
+      groups[k].get(n[k]).push(vs);
+    });
   });
-  if(cards.size === 0){
+  const total = groups.strong.size + groups.weak.size;
+  if(total === 0){
     box.hidden = true;
     host.innerHTML = '';
     return;
   }
   box.hidden = false;
-  document.getElementById('matchupCount').textContent = `${cards.size}건`;
-  const item = it => it.text + (it.by ? ` <span class="by">by ${it.by}</span>` : '');
-  const line = (cls, mark, list) => list.length ? `<div class="line ${cls}"><b>${mark}</b> : ${list.map(item).join(', ')}</div>` : '';
-  host.innerHTML = Array.from(cards.values()).sort((x, y) => x.order - y.order).map(c =>
-    `<div class="matchup-item"><div class="vs">${c.title}</div>`
-    + line('strong', '강', c.strong) + line('weak', '약', c.weak) + '</div>').join('');
+  document.getElementById('matchupCount').textContent = `${total}건`;
+  const line = (cls, mark, map) => map.size ? `<div class="line ${cls}"><b>${mark}</b> : `
+    + Array.from(map.entries()).map(([ally, vs]) =>
+        `<span class="ally">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
+    + '</div>' : '';
+  host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', groups.strong)}${line('weak', '약상성', groups.weak)}</div>`;
 }
 
 // 출전시 주의사항 — 매칭 없이 그냥 "이 캐릭터가 픽됐다"는 사실만으로
