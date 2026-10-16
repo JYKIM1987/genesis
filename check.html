@@ -118,6 +118,7 @@
   .matchup-item .line b{ font-weight:900; }
   .matchup-item .line.strong b, .matchup-item .line.strong .ally{ color:#1f5fd1; }
   .matchup-item .line.weak b, .matchup-item .line.weak .ally{ color:#d32f2f; }
+  .matchup-item .line .ally.both{ color:#d97706; } /* 강·약 양쪽에 다 있는 아군 */
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
   .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
@@ -693,9 +694,11 @@ function renderMatchup(){
   }
   box.hidden = false;
   document.getElementById('matchupCount').textContent = `${total}건`;
+  // 강상성·약상성 양쪽에 다 있는 아군은 두 줄 모두에 적되 이름만 중간색(.both)으로.
+  const both = ally => groups.strong.has(ally) && groups.weak.has(ally);
   const line = (cls, mark, map) => map.size ? `<div class="line ${cls}"><b>${mark}</b> : `
     + Array.from(map.entries()).map(([ally, vs]) =>
-        `<span class="ally">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
+        `<span class="ally${both(ally) ? ' both' : ''}">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
     + '</div>' : '';
   host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', groups.strong)}${line('weak', '약상성', groups.weak)}</div>`;
 }
