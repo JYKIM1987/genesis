@@ -175,8 +175,10 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
-  /* 캐릭터 메모 — PC는 오른쪽 합계 맨 아래, 모바일(768px 이하)은 설정저장 카드 아래에 붙는다(placeMemo 참고). */
-  .memo-box{ margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
+  /* 캐릭터 메모 — PC용(오른쪽 합계 맨 아래)과 모바일용(설정저장 탭 맨 아래 별도 카드) 두 칸이 같은 내용을 공유하고,
+     어느 쪽을 보일지는 아래 768px 미디어쿼리(CSS)로만 정한다(placeMemo 참고). */
+  .memo-box.pc{ margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
+  .col-left > .card.memo-card{ display:none; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
   .memo-box textarea{
     width:100%; box-sizing:border-box; min-height:110px; resize:vertical;
@@ -214,6 +216,9 @@
     body.mv-save .col-left > .card:not(:first-child), body.mv-save .col-right{ display:none; }
     body.mv-char .col-left > .card:first-child, body.mv-char .col-right{ display:none; }
     body.mv-stat .col-left{ display:none; }
+    /* 메모: 모바일에선 설정저장 탭에만 별도 카드로 보이고, 오른쪽 합계 아래 PC용 칸은 숨긴다. */
+    .memo-box.pc{ display:none; }
+    body.mv-save .col-left > .card.memo-card{ display:block; }
   }
 </style>
 </head>
@@ -906,10 +911,10 @@ function loadAutosave(charName){
 /* ================= 캐릭터 메모 (localStorage, 캐릭터당 1개) =================
    세팅 저장 3슬롯·자동저장(state)과는 별개 키라 슬롯 불러오기/덮어쓰기/초기화에 영향받지 않는다. 입력할 때마다
    바로 저장돼 창을 닫았다 열어도 남는다. stat.html의 이름으로 서버 저장/일괄저장이 이 키도 함께 다룬다.
-   textarea는 한 번만 만들어 두고 render() 때마다 자리만 옮겨 붙인다 — innerHTML로 다시 만들면 입력 중 커서·스크롤이 날아간다. */
+   PC용(#results 맨 아래)·모바일용(#memoCardLeft) 칸을 한 번씩만 만들어 두고 render() 때마다 제자리에 다시 붙인다 —
+   innerHTML로 다시 만들면 입력 중 커서·스크롤이 날아간다. 두 칸은 입력 시 서로 값을 맞추고, 보이는 쪽은 CSS가 정한다. */
 const MEMO_KEY = 'genesisStatCalcMemo';
-const MEMO_MOBILE_MQ = window.matchMedia('(max-width: 768px)');
-let memoBox = null;
+let memoBoxes = null;
 function loadMemo(charName){
   try { return (JSON.parse(localStorage.getItem(MEMO_KEY)||'{}'))[charName] || ''; } catch(e){ return ''; }
 }
@@ -921,18 +926,26 @@ function saveMemo(charName, text){
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
 function placeMemo(){
-  if(!memoBox){
-    memoBox = document.createElement('div');
-    memoBox.className = 'memo-box';
-    memoBox.innerHTML = `<div class="memo-title">${escapeHtml(state.character)} 메모</div><textarea placeholder="자유롭게 메모하세요. 입력하는 즉시 이 기기에 자동 저장되며, 저장 세팅(3슬롯)과는 별개입니다."></textarea>`;
-    const ta = memoBox.querySelector('textarea');
-    ta.value = loadMemo(state.character);
-    ta.addEventListener('input', () => saveMemo(state.character, ta.value));
+  if(!memoBoxes){
+    const text = loadMemo(state.character);
+    memoBoxes = ['pc','mobile'].map(kind => {
+      const box = document.createElement('div');
+      box.className = 'memo-box ' + kind;
+      box.innerHTML = `<div class="memo-title">${escapeHtml(state.character)} 메모</div><textarea placeholder="자유롭게 메모하세요. 입력하는 즉시 이 기기에 자동 저장되며, 저장 세팅(3슬롯)과는 별개입니다."></textarea>`;
+      box.querySelector('textarea').value = text;
+      return box;
+    });
+    const tas = memoBoxes.map(b => b.querySelector('textarea'));
+    tas.forEach(ta => ta.addEventListener('input', () => {
+      tas.forEach(o => { if(o !== ta) o.value = ta.value; });
+      saveMemo(state.character, ta.value);
+    }));
   }
-  const target = MEMO_MOBILE_MQ.matches ? document.getElementById('memoSlotLeft') : document.getElementById('results');
-  if(target && memoBox.parentNode !== target) target.appendChild(memoBox);
+  [['results', memoBoxes[0]], ['memoCardLeft', memoBoxes[1]]].forEach(([id, box]) => {
+    const target = document.getElementById(id);
+    if(target && box.parentNode !== target) target.appendChild(box);
+  });
 }
-MEMO_MOBILE_MQ.addEventListener('change', placeMemo);
 
 // 페이지를 새로 열었을 때 이전에 자동 저장된 선택이 있으면 기본값 대신 그걸로 복원한다. 반드시 AUTOSAVE_KEY/
 // loadAutosave 정의 뒤에 둔다 — 그 앞에서 부르면 const 초기화 전이라 조용히 실패(null)하고, 이어지는 첫 render()의
@@ -1548,7 +1561,6 @@ function render(){
   });
   html += `</div>`;
   html += `<div class="note" style="margin-top:4px;">이 브라우저(이 기기)에만 저장됩니다(localStorage). 다른 기기·다른 브라우저로 옮기면 저장된 세팅은 보이지 않습니다. "불러오기"는 캐릭터·클래스·룬 등 현재 화면의 모든 선택을 그 시점 상태로 되돌립니다.</div>`;
-  html += `<div id="memoSlotLeft"></div>`; // 모바일에서 메모가 붙는 자리(placeMemo)
 
   // MAX 세팅 버튼 + 안내 배너 (2026-07-24: 클릭 직후에만 표시, 클릭 후 어떤 항목이든 수동으로 손대면 우연히
   // 값이 같아져도 사라지도록 함 — activeMaxMode는 render() 최상단의 잠금 플래그 로직으로 관리된다)
@@ -1572,6 +1584,7 @@ function render(){
     html += `<div class="harness-extra">조건부를 포함한 가장 높은 관통저항 세팅입니다. 적으로 만났을 때 관통저항 최대치를 가늠하기 위해 만들어 두었습니다. 상세 수치는 오른쪽 관통저항 합계 파트 <span class="info-btn-static">?</span> 를 클릭하여 확인해 주세요.</div>`;
   }
   html += `</div>`;
+  html += `<div class="card full memo-card" id="memoCardLeft"></div>`; // 모바일 설정저장 탭 맨 아래 메모 카드(placeMemo)
 
   // 클래스패시브 (전부 노출)
   html += `<div class="card"><h2>클래스패시브 <span class="tag">택1</span></h2>`;
