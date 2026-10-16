@@ -103,6 +103,7 @@
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
   .matchup-box[hidden]{ display:none; }
   .matchup-box h2{ font-size:20px; margin:0 0 12px; color:#2e6b55; font-weight:900; }
+  .matchup-box h2 .h2-note{ font-size:12px; font-weight:normal; color:var(--text-dim); }
   #matchupHost{ display:grid; gap:8px; }
   .matchup-item{ background:var(--panel); border:1px solid #cfe6dc; border-radius:6px; padding:8px 10px; font-size:12.5px; }
   .matchup-item .vs{ font-weight:900; color:var(--char-name); margin-bottom:3px; }
@@ -266,7 +267,7 @@
     </div>
 
     <div class="matchup-box" id="matchupBox" hidden>
-      <h2>📝 상성 참고 노트</h2>
+      <h2>📝 상성 참고 노트 <span class="h2-note">(by. 아델라이데)</span></h2>
       <div id="matchupHost"></div>
     </div>
   </div>
@@ -559,7 +560,8 @@ const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버�
 //   when:   이 캐릭터들이 방덱에 전부 선택돼 있어야 표시
 //   unless: 이 캐릭터 중 하나라도 선택돼 있으면 미표시(선택)
 //   strong / weak: 그 상대 카드의 "강 :" / "약 :" 줄에 들어갈 자유 문구
-//   by:     출처 — 카드 전체가 아니라 그 문구 뒤에만 붙는다
+//   by:     다른 사람에게서 온 문구의 출처 — 그 문구 뒤에만 붙는다.
+//           노트 기본 작성자(박스 제목의 "by. 아델라이데")가 직접 적은 건 by 없이 둔다.
 // when이 같은 노트는 한 카드로 합치고 문구는 쉼표로 이어 붙인다.
 const MATCHUP_BY_OJJANG = '오짱(네냐플 카페)';
 const MATCHUP_NOTES = [
@@ -578,6 +580,7 @@ const MATCHUP_NOTES = [
   { when: ['카이'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
   { when: ['벨제부르'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
   { when: ['아네모네'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['아네모네'], weak: '시라노' },
 ];
 
 const MAX_PICK = 4;
