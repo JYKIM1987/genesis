@@ -563,8 +563,14 @@ const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버�
 // when이 같은 노트는 한 카드로 합치고 문구는 쉼표로 이어 붙인다.
 const MATCHUP_BY_OJJANG = '오짱(네냐플 카페)';
 const MATCHUP_NOTES = [
-  { when: ['카이', '헬카이트'], strong: '철가면, 세타, 프레데릭, 벨제부르', weak: '자비에르, 메르세데스', by: MATCHUP_BY_OJJANG },
-  // 프레데릭 상성 — 강: 자비에르, 메르세데스, (아네모네 없는) 시라노 / 약: 헬카이트, 카이, 벨제부르, 아네모네
+  // 카이 + 헬카이트(아군 조합) 상성 — 강: 철가면, 세타, 프레데릭, 벨제부르 / 약: 자비에르, 메르세데스
+  { when: ['철가면'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['세타'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['프레데릭'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['벨제부르'], strong: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['자비에르'], weak: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  { when: ['메르세데스'], weak: '카이 + 헬카이트', by: MATCHUP_BY_OJJANG },
+  // 프레데릭(아군) 상성 — 강: 자비에르, 메르세데스, (아네모네 없는) 시라노 / 약: 헬카이트, 카이, 벨제부르, 아네모네
   { when: ['자비에르'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
   { when: ['메르세데스'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
   { when: ['시라노'], unless: ['아네모네'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
