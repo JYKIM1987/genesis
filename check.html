@@ -99,7 +99,7 @@
   .notice-item .notice-entry + .notice-entry{ margin-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
-  /* 상성 참고 노트 — 매트릭스 밑. 상대(적)별 카드에 "강 : / 약 :" 줄(강=초록, 약=빨강). */
+  /* 상성 참고 노트 — 주의할 아군 밑. 상대(적)별 카드에 "강 : / 약 :" 줄(강=초록, 약=빨강). */
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
   .matchup-box[hidden]{ display:none; }
   .matchup-box h2{ font-size:20px; margin:0 0 12px; color:#2e6b55; font-weight:900; }
@@ -167,7 +167,7 @@
     body.tab-risk .matrix-box{ display:none; }
     body.tab-matrix .ally-box{ display:none; }
     body.tab-matrix .notice-box{ display:none !important; } /* 출전시 주의사항은 주의할 아군 탭에서만 */
-    body.tab-risk .matchup-box{ display:none !important; } /* 상성 참고 노트는 적저항 요약 탭에서만 */
+    body.tab-matrix .matchup-box{ display:none !important; } /* 상성 참고 노트는 주의할 아군 탭에서만 */
 
     /* 결과 탭 상단에 붙는 선택 요약 바 — 탭하면 공격할 방덱 탭으로 이동 */
     .mo-pickbar{ display:flex; align-items:center; gap:8px; width:100%; position:sticky; top:0; z-index:20;
@@ -261,14 +261,14 @@
       </div>
     </div>
 
-    <div class="matrix-box">
-      <h2>고유저항 매트릭스</h2>
-      <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div></div>
-    </div>
-
     <div class="matchup-box" id="matchupBox" hidden>
       <h2>📝 상성 참고 노트 <span class="h2-note">(by. 아델라이데)</span></h2>
       <div id="matchupHost"></div>
+    </div>
+
+    <div class="matrix-box">
+      <h2>고유저항 매트릭스</h2>
+      <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div></div>
     </div>
   </div>
 </div>
