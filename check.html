@@ -11,7 +11,7 @@
     --warn:#b5482f; --warn-bg:#fbeae5; --ok:#3f7d4a; --ok-bg:#eaf5ec; --ally:#2f5fa8;
     --title:#c0392b;
     --char-name:#c8580a;
-    /* 목업 A(틴트 패널) 채택 — 큰 박스마다 저채도 색조로 은은하게 구분 */
+    /* 큰 박스마다 저채도 색조로 은은하게 구분 */
     --sidebar-tint:#fafafa;
     --ally-tint:#fff4f3; --ally-border:#e7b9b4;
     --matrix-tint:#f6f7f9; --matrix-border:#dfe1e6;
@@ -36,8 +36,7 @@
   .site-notice-more{ background:none; border:0; padding:0; margin-left:4px; font:inherit; color:var(--text-dim); text-decoration:underline; cursor:pointer; }
 
   /* 사이드바는 뷰포트 높이에 맞춰 늘어나고(body 상하 패딩 16px씩 제외),
-     그 안에서 char-list만 남는 공간을 다 채운 뒤 넘칠 때만 스크롤된다 —
-     칸수가 넉넉해도 무조건 400px에서 스크롤이 생기던 예전 동작 수정. */
+     그 안에서 char-list만 남는 공간을 다 채운 뒤 넘칠 때만 스크롤된다. */
   .sidebar{
     flex:0 0 200px; background:var(--sidebar-tint); border:1px solid var(--border); border-radius:8px; padding:10px;
     position:sticky; top:16px; box-shadow:0 1px 3px rgba(0,0,0,.05);
@@ -90,8 +89,7 @@
   .empty-hint{ color:var(--text-dim); font-size:12.5px; padding:20px; text-align:center; }
 
   /* 출전시 주의사항 박스 — PINNED_ROW_NAMES(강조저항)와 custom 항목을
-     매칭 없이 그대로 보여준다. 예전에 매트릭스 안 pin-row가 쓰던 보라색
-     팔레트(#5a4a9c/#e3d9f7)를 그대로 옮겨왔다. */
+     매칭 없이 그대로 보여준다. */
   .notice-box{ background:#f4f1fb; border:1.5px solid #cabbe9; border-radius:10px; padding:16px; margin-bottom:16px; }
   .notice-box[hidden]{ display:none; }
   .notice-box h2{ font-size:20px; margin:0 0 12px; color:#5a4a9c; font-weight:900; }
@@ -100,6 +98,19 @@
   .notice-item .char{ margin-right:4px; }
   .notice-item .notice-entry + .notice-entry{ margin-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
+
+  /* 상성 참고 노트 — 매트릭스 밑. 상대(적)별 카드에 "강 : / 약 :" 줄(강=초록, 약=빨강). */
+  .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
+  .matchup-box[hidden]{ display:none; }
+  .matchup-box h2{ font-size:20px; margin:0 0 12px; color:#2e6b55; font-weight:900; }
+  #matchupHost{ display:grid; gap:8px; }
+  .matchup-item{ background:var(--panel); border:1px solid #cfe6dc; border-radius:6px; padding:8px 10px; font-size:12.5px; }
+  .matchup-item .vs{ font-weight:900; color:var(--char-name); margin-bottom:3px; }
+  .matchup-item .line{ margin-top:2px; word-break:keep-all; }
+  .matchup-item .line b{ font-weight:900; }
+  .matchup-item .line.strong b{ color:var(--ok); }
+  .matchup-item .line.weak b{ color:var(--warn); }
+  .matchup-item .by{ font-size:10.5px; color:var(--text-dim); white-space:nowrap; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
   .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
@@ -155,6 +166,7 @@
     body.tab-risk .matrix-box{ display:none; }
     body.tab-matrix .ally-box{ display:none; }
     body.tab-matrix .notice-box{ display:none !important; } /* 출전시 주의사항은 주의할 아군 탭에서만 */
+    body.tab-risk .matchup-box{ display:none !important; } /* 상성 참고 노트는 적저항 요약 탭에서만 */
 
     /* 결과 탭 상단에 붙는 선택 요약 바 — 탭하면 공격할 방덱 탭으로 이동 */
     .mo-pickbar{ display:flex; align-items:center; gap:8px; width:100%; position:sticky; top:0; z-index:20;
@@ -184,11 +196,13 @@
     .sidebar label.picked{ background:var(--title); border-color:var(--title); color:#fff; }
     .sidebar .count{ display:none; }
 
-    .notice-box, .ally-box{ padding:12px; margin-bottom:12px; }
-    .notice-box h2, .ally-box h2{ font-size:17px; margin-bottom:10px; }
+    .notice-box, .ally-box, .matchup-box{ padding:12px; margin-bottom:12px; }
+    .notice-box h2, .ally-box h2, .matchup-box h2{ font-size:17px; margin-bottom:10px; }
     .ally-box h2 .h2-note{ display:block; margin-top:2px; }
     .notice-item{ font-size:14px; padding:9px 10px; }
     .notice-item .cond{ font-size:12.5px; }
+    .matchup-item{ font-size:14px; padding:9px 10px; }
+    .matchup-item .by{ font-size:12px; }
 
     .matrix-box{ padding:10px; }
     .matrix-box h2{ font-size:16px; }
@@ -250,6 +264,11 @@
       <h2>고유저항 매트릭스</h2>
       <div id="matrixHost"><div class="empty-hint"><span class="pc-only">좌측에서</span><span class="mo-only">공격할 방덱 탭에서</span> 적을 선택하세요</div></div>
     </div>
+
+    <div class="matchup-box" id="matchupBox" hidden>
+      <h2>📝 상성 참고 노트</h2>
+      <div id="matchupHost"></div>
+    </div>
   </div>
 </div>
 
@@ -294,6 +313,7 @@ renderSiteNotice();
 //             캐릭터가 픽되기만 하면 상단 "출전시 주의사항" 박스에 그대로
 //             표시되는 자유 메모(예: 베라모드 "혼절"). add_check/mod_check은
 //             이 필드를 건드리지 않는다.
+//   customFirst: (선택) true면 "출전시 주의사항"에서 custom을 강조저항보다 먼저 표시.
 // 매칭(겹치는 부분 찾기)은 여기 저장하지 않고 아래 render() 시점에 항상
 // 그 자리에서 계산한다 — 그래야 mod_check으로 inflict 항목 하나를 지우면
 // 이후 캐릭터가 추가돼도 그 조합이 다시는 안 뜬다(원자값 자체가 없으니까).
@@ -522,7 +542,7 @@ const CHECK_DATA = {
 // 않는다 — 오직 mod_check(사용자가 직접 알려준 사실)만 추가/삭제한다.
 // characters에 적힌 이름이 전부 선택된 4명 안에 있으면 매트릭스에
 // 저항 행과 완전히 동일한 모양으로 표시된다(수동 항목이라고 따로
-// 다르게 꾸미지 않음 — 확정 원칙).
+// 다르게 꾸미지 않음).
 //   { characters: ['이름1','이름2'], name: '행 이름(상태이상 이름과 동일한 자리)', cond: '조건 설명' }
 // ============================================================
 const MANUAL_NOTES = [
@@ -534,6 +554,25 @@ const MANUAL_NOTES = [
 // 이 배열에 이름만 등록하면 renderNotice()가 고유저항 매트릭스가 아니라
 // 상단 "출전시 주의사항" 박스에 골라내서 보여준다(매트릭스에는 안 뜸).
 const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버프 면역'];
+
+// MATCHUP_NOTES — 상성 참고 노트. 사용자가 골라 적는 참고 메모(전체 상성표 아님).
+//   when:   이 캐릭터들이 방덱에 전부 선택돼 있어야 표시
+//   unless: 이 캐릭터 중 하나라도 선택돼 있으면 미표시(선택)
+//   strong / weak: 그 상대 카드의 "강 :" / "약 :" 줄에 들어갈 자유 문구
+//   by:     출처 — 카드 전체가 아니라 그 문구 뒤에만 붙는다
+// when이 같은 노트는 한 카드로 합치고 문구는 쉼표로 이어 붙인다.
+const MATCHUP_BY_OJJANG = '오짱(네냐플 카페)';
+const MATCHUP_NOTES = [
+  { when: ['카이', '헬카이트'], strong: '철가면, 세타, 프레데릭, 벨제부르', weak: '자비에르, 메르세데스', by: MATCHUP_BY_OJJANG },
+  // 프레데릭 상성 — 강: 자비에르, 메르세데스, (아네모네 없는) 시라노 / 약: 헬카이트, 카이, 벨제부르, 아네모네
+  { when: ['자비에르'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['메르세데스'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['시라노'], unless: ['아네모네'], strong: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['헬카이트'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['카이'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['벨제부르'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+  { when: ['아네모네'], weak: '프레데릭', by: MATCHUP_BY_OJJANG },
+];
 
 const MAX_PICK = 4;
 let picked = [];
@@ -604,9 +643,42 @@ function filterChars(q){
 }
 
 function render(){
+  renderMatchup();
   renderNotice();
   renderMatrix();
   renderRisk();
+}
+
+// 상성 참고 노트 — 조건을 만족한 노트를 상대(when)별 카드로 묶는다(동시 선택
+// 조건은 "카이 + 헬카이트"처럼 한 카드). 카드 순서는 picked 순서를 따르고, 동시
+// 선택 카드는 마지막 구성원 바로 뒤에 둔다. 해당 노트가 없으면 박스를 숨긴다.
+function renderMatchup(){
+  const box = document.getElementById('matchupBox');
+  const host = document.getElementById('matchupHost');
+  const cards = new Map();
+  MATCHUP_NOTES.forEach(n => {
+    if(!n.when.every(c => picked.includes(c))) return;
+    if((n.unless || []).some(c => picked.includes(c))) return;
+    const key = n.when.slice().sort().join('/');
+    if(!cards.has(key)){
+      const order = Math.max(...n.when.map(c => picked.indexOf(c))) + (n.when.length > 1 ? 0.5 : 0);
+      cards.set(key, { title: n.when.join(' + '), order, strong: [], weak: [] });
+    }
+    const card = cards.get(key);
+    if(n.strong) card.strong.push({ text: n.strong, by: n.by });
+    if(n.weak) card.weak.push({ text: n.weak, by: n.by });
+  });
+  if(cards.size === 0){
+    box.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  box.hidden = false;
+  const item = it => it.text + (it.by ? ` <span class="by">by ${it.by}</span>` : '');
+  const line = (cls, mark, list) => list.length ? `<div class="line ${cls}"><b>${mark}</b> : ${list.map(item).join(', ')}</div>` : '';
+  host.innerHTML = Array.from(cards.values()).sort((x, y) => x.order - y.order).map(c =>
+    `<div class="matchup-item"><div class="vs">${c.title}</div>`
+    + line('strong', '강', c.strong) + line('weak', '약', c.weak) + '</div>').join('');
 }
 
 // 출전시 주의사항 — 매칭 없이 그냥 "이 캐릭터가 픽됐다"는 사실만으로
@@ -625,8 +697,7 @@ function renderNotice(){
       .filter(r => PINNED_ROW_NAMES.includes(r.name) && entryActive(r))
       .map(r => ({ char: name, label: r.name, cond: r.cond }));
     const custom = (data.custom || []).map(c => ({ char: name, label: c.name, cond: c.cond }));
-    // 기본은 강조저항 → custom 순. 사용자가 캐릭터별로 지정한 경우에만
-    // customFirst: true로 custom을 위로 올린다(전 캐릭터 일괄 변경 금지).
+    // 기본은 강조저항 → custom 순. 캐릭터에 customFirst: true가 있으면 custom을 먼저.
     items.push(...(data.customFirst ? [...custom, ...pinned] : [...pinned, ...custom]));
   });
   if(items.length === 0){
@@ -654,7 +725,7 @@ function renderNotice(){
 
 // resist 항목에 requires(다른 캐릭터가 같이 선택돼야 발효되는 조건)가
 // 있으면 그 캐릭터들이 전부 현재 picked 안에 있을 때만 활성으로 본다.
-// requires가 없으면 항상 활성(기존 동작 그대로).
+// requires가 없으면 항상 활성.
 function entryActive(entry){
   return !entry.requires || entry.requires.every(c => picked.includes(c));
 }
@@ -664,7 +735,6 @@ function entryActive(entry){
 // 2순위: 다른 픽된 캐릭터의 resist 항목에 grantsTo(다른 캐릭터에게 저항을
 // 전이하는 고유패시브 등)가 있고 그 대상이 enemy면, 그 전이 조건(cond)으로
 // 판정한다(예: 아네모네 고유패시브가 같은 팰컨 소속인 시라노에게도 전이).
-// grantsTo가 없으면 기존 동작과 완전히 동일 — 다른 모든 캐릭터엔 영향 없음.
 // 이름 비교는 띄어쓰기를 무시한다 — gmap.gg 태그 칩은 '행동제어'처럼 붙여
 // 쓰고 저항 이름은 '행동 제어'처럼 띄어 쓴 경우가 있기 때문.
 function sameName(a, b){
@@ -821,8 +891,7 @@ function renderRisk(){
   }
   // 아군 후보는 전체 캐릭터 목록이다 — 적 팀과 내 팀은 서로 다른 사람의 로스터라
   // 같은 캐릭터가 적으로 픽됐다고 해서 내가 그 캐릭터를 아군으로 못 쓰는 게 아니다.
-  // 그래서 picked(적 4인)로 후보를 걸러내지 않는다(이전엔 걸러내서, 적으로 고른
-  // 캐릭터는 아군 후보에서 아예 사라지는 버그가 있었다).
+  // 그래서 picked(적 4인)로 후보를 걸러내지 않는다.
   const allyCandidates = Object.keys(CHECK_DATA);
   let anyMatch = false;
   let html = '<div class="risk-accordion">';
