@@ -157,7 +157,7 @@
   <input type="text" id="serverName" placeholder="이름" maxlength="30">
   <button id="serverSaveBtn" onclick="serverSave()">이름으로 서버에 저장</button>
   <button id="serverLoadBtn" onclick="serverLoad()">이름으로 불러오기</button>
-  <span class="bulk-hint">전 캐릭터의 현재 세팅(자동저장·저장 슬롯)을 입력한 이름으로 서버에 저장/불러옵니다. 캐시가 지워졌을 때 복구용이며, 다른 사람 이름으로 불러오면 그 사람 세팅을 볼 수 있습니다.</span>
+  <span class="bulk-hint">전 캐릭터의 현재 세팅(자동저장·저장 슬롯)과 메모를 입력한 이름으로 서버에 저장/불러옵니다. 캐시가 지워졌을 때 복구용이며, 다른 사람 이름으로 불러오면 그 사람 세팅을 볼 수 있습니다.</span>
 </div>
 </div>
 <div class="frame-wrap" id="frameWrap"><div class="empty">캐릭터를 선택하세요</div></div>
@@ -240,19 +240,22 @@ INNER_BREAK_NAMES.forEach(addCharButton);
    읽어서 복원한다. 저장된 빌드가 하나도 없는 캐릭터는 원본 그대로(빈 상태) 내려받는다. */
 const AUTOSAVE_KEY = 'genesisStatCalcAutosave';
 const SAVE_KEY = 'genesisStatCalcSaves';
+const MEMO_KEY = 'genesisStatCalcMemo'; // 캐릭터 메모(세팅 저장과 별개, 캐릭터당 1개)
 
 function buildEmbedSeedScript(name){
-  let autosaveState = null, savedSlots = null;
+  let autosaveState = null, savedSlots = null, memo = null;
   try { autosaveState = (JSON.parse(localStorage.getItem(AUTOSAVE_KEY)||'{}'))[name] || null; } catch(e){}
   try { savedSlots = (JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'))[name] || null; } catch(e){}
-  if(!autosaveState && !savedSlots) return '';
+  try { memo = (JSON.parse(localStorage.getItem(MEMO_KEY)||'{}'))[name] || null; } catch(e){}
+  if(!autosaveState && !savedSlots && !memo) return '';
   // 문자열 안에 스크립트 종료 태그가 그대로 나오면 바깥 스크립트가 조기 종료되므로 '<'를 이스케이프.
   const nameJson = JSON.stringify(name);
   const autoJson = JSON.stringify(autosaveState).replace(/</g, '\\u003c');
   const savesJson = JSON.stringify(savedSlots).replace(/</g, '\\u003c');
+  const memoJson = JSON.stringify(memo).replace(/</g, '\\u003c');
   return `<script>(function(){
   try{
-    var name=${nameJson}, autoState=${autoJson}, saveState=${savesJson};
+    var name=${nameJson}, autoState=${autoJson}, saveState=${savesJson}, memo=${memoJson};
     if(autoState!==null){
       var a=JSON.parse(localStorage.getItem(${JSON.stringify(AUTOSAVE_KEY)})||'{}');
       a[name]=autoState; localStorage.setItem(${JSON.stringify(AUTOSAVE_KEY)}, JSON.stringify(a));
@@ -260,6 +263,10 @@ function buildEmbedSeedScript(name){
     if(saveState!==null){
       var s=JSON.parse(localStorage.getItem(${JSON.stringify(SAVE_KEY)})||'{}');
       s[name]=saveState; localStorage.setItem(${JSON.stringify(SAVE_KEY)}, JSON.stringify(s));
+    }
+    if(memo!==null){
+      var m=JSON.parse(localStorage.getItem(${JSON.stringify(MEMO_KEY)})||'{}');
+      m[name]=memo; localStorage.setItem(${JSON.stringify(MEMO_KEY)}, JSON.stringify(m));
     }
   }catch(e){}
 })();<\/script>\n`;
@@ -343,10 +350,11 @@ function serverGetName(){
 async function serverSave(){
   const name = serverGetName();
   if(!name) return;
-  let autosave = {}, saves = {};
+  let autosave = {}, saves = {}, memo = {};
   try { autosave = JSON.parse(localStorage.getItem(AUTOSAVE_KEY)||'{}'); } catch(e){}
   try { saves = JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); } catch(e){}
-  if(Object.keys(autosave).length === 0 && Object.keys(saves).length === 0){
+  try { memo = JSON.parse(localStorage.getItem(MEMO_KEY)||'{}'); } catch(e){}
+  if(Object.keys(autosave).length === 0 && Object.keys(saves).length === 0 && Object.keys(memo).length === 0){
     alert('이 기기에 저장된 세팅이 없습니다.'); return;
   }
   if(!confirm(`'${name}' 이름으로 서버에 저장합니다.\n같은 이름으로 저장된 기존 세팅은 덮어씌워집니다.`)) return;
@@ -355,7 +363,7 @@ async function serverSave(){
     // Content-Type을 지정하지 않아 text/plain으로 보내야 CORS 사전요청 없이 Apps Script에 바로 닿는다.
     const res = await fetch(SHEET_URL, {
       method: 'POST',
-      body: JSON.stringify({ name, data: JSON.stringify({ v: 1, autosave, saves }) })
+      body: JSON.stringify({ name, data: JSON.stringify({ v: 1, autosave, saves, memo }) })
     });
     const r = await res.json();
     if(!r.ok) throw new Error(r.error || '알 수 없는 오류');
@@ -380,6 +388,8 @@ async function serverLoad(){
     if(!confirm(`'${name}' 세팅(${serverFmtTime(r.savedAt)} 저장)을 불러옵니다.\n이 기기에 있던 전 캐릭터 세팅은 이 내용으로 교체됩니다.`)) return;
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(d.autosave || {}));
     localStorage.setItem(SAVE_KEY, JSON.stringify(d.saves || {}));
+    // 메모 기능 이전에 저장된 데이터엔 memo가 없다 — 그땐 이 기기의 메모를 지우지 않고 그대로 둔다.
+    if(d.memo) localStorage.setItem(MEMO_KEY, JSON.stringify(d.memo));
     // 지금 보고 있는 캐릭터 계산기를 다시 열어 불러온 세팅이 바로 보이게 한다.
     const cur = localStorage.getItem(LAST_KEY);
     if(cur && buttonsByName[cur]) selectChar(cur);
