@@ -54,7 +54,8 @@
     height:100%; overflow-y:auto; padding-right:6px;
   }
   .col-left .card.full{ grid-column: 1 / -1; }
-  .col-right{ flex:0 0 380px; height:100%; }
+  .col-right{ flex:0 0 380px; height:100%; display:flex; flex-direction:column; gap:10px; min-height:0; }
+  .col-right > .results{ flex:1 1 auto; min-height:0; }
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:7px;
     padding:10px 12px; min-width:0;
@@ -194,6 +195,15 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
+  .memo-box{ flex:0 0 auto; }
+  .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
+  .memo-box textarea{
+    width:100%; box-sizing:border-box; min-height:110px; resize:vertical;
+    font:inherit; font-size:12px; line-height:1.5; padding:6px 8px;
+    background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:5px;
+  }
+  .memo-box textarea:focus{ outline:none; border-color:var(--accent); }
   @media (max-width: 980px){
     /* 좁은 화면에서는 독립 스크롤 2단 대신 기존처럼 페이지 전체가 한 번에 스크롤되는 단순 구조로 되돌린다. */
     body{ height:auto; overflow:visible; display:block; }
@@ -201,8 +211,9 @@
     h1, .sub{ flex:none; }
     .layout{ flex-direction:column; height:auto; }
     .col-left{ height:auto; overflow-y:visible; padding-right:0; grid-template-columns:1fr; }
-    .col-right{ width:100%; height:auto; }
+    .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
+    .memo-box{ margin-top:10px; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -237,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
 
@@ -830,6 +842,34 @@ function loadAutosave(charName){
     return all[charName] || null;
   } catch(e){ return null; }
 }
+/* ================= 캐릭터 메모 (localStorage, 캐릭터당 1개) =================
+   세팅 저장 3슬롯·자동저장(state)과는 별개 키라 슬롯 불러오기/덮어쓰기/초기화에 영향받지 않는다. 입력할 때마다
+   바로 저장돼 창을 닫았다 열어도 남는다. stat.html의 이름으로 서버 저장/일괄저장이 이 키도 함께 다룬다.
+   메모 박스(#memoCard)는 render()가 다시 그리지 않는 고정 요소(합계 박스 #results 바로 아래)라, 처음 한 번만
+   채워 두면 입력 중 커서·스크롤이 날아가지 않는다. */
+const MEMO_KEY = 'genesisStatCalcMemo';
+let memoReady = false;
+function loadMemo(charName){
+  try { return (JSON.parse(localStorage.getItem(MEMO_KEY)||'{}'))[charName] || ''; } catch(e){ return ''; }
+}
+function saveMemo(charName, text){
+  try {
+    const all = JSON.parse(localStorage.getItem(MEMO_KEY)||'{}');
+    if(text) all[charName] = text; else delete all[charName];
+    localStorage.setItem(MEMO_KEY, JSON.stringify(all));
+  } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
+}
+function placeMemo(){
+  if(memoReady) return;
+  const box = document.getElementById('memoCard');
+  if(!box) return;
+  box.innerHTML = `<div class="memo-title">${escapeHtml(state.character)} 메모</div><textarea placeholder="자유롭게 메모하세요. 입력하는 즉시 이 기기에 자동 저장되며, 저장 세팅(3슬롯)과는 별개입니다."></textarea>`;
+  const ta = box.querySelector('textarea');
+  ta.value = loadMemo(state.character);
+  ta.addEventListener('input', () => saveMemo(state.character, ta.value));
+  memoReady = true;
+}
+
 // 페이지를 새로 열었을 때 이전에 자동 저장된 선택이 있으면 기본값 대신 그걸로 복원한다. 반드시 AUTOSAVE_KEY/
 // loadAutosave 정의 뒤에 둔다 — 그 앞에서 부르면 const 초기화 전이라 조용히 실패(null)하고, 이어지는 첫 render()의
 // 자동 저장이 저장돼 있던 선택을 기본값으로 덮어써 "껐다 켜면 항상 초기화"가 된다. 기본값(initState) 위에 저장값을
@@ -1841,6 +1881,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeMemo();
   updateMaxBarUI();
   saveAutosave();
 }
