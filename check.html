@@ -463,6 +463,7 @@ const CHECK_DATA = {
     ]
   },
   '흑태자': {
+    customFirst: true,
     resist: [
       { name: '전체 디버프 면역', cond: '"궁극 그리마" 사용시 다음 턴 시작 시까지 모든 디버프에 면역' }
     ],
@@ -620,14 +621,13 @@ function renderNotice(){
   picked.forEach(name => {
     const data = CHECK_DATA[name];
     if(!data) return;
-    (data.resist || []).forEach(r => {
-      if(PINNED_ROW_NAMES.includes(r.name) && entryActive(r)){
-        items.push({ char: name, label: r.name, cond: r.cond });
-      }
-    });
-    (data.custom || []).forEach(c => {
-      items.push({ char: name, label: c.name, cond: c.cond });
-    });
+    const pinned = (data.resist || [])
+      .filter(r => PINNED_ROW_NAMES.includes(r.name) && entryActive(r))
+      .map(r => ({ char: name, label: r.name, cond: r.cond }));
+    const custom = (data.custom || []).map(c => ({ char: name, label: c.name, cond: c.cond }));
+    // 기본은 강조저항 → custom 순. 사용자가 캐릭터별로 지정한 경우에만
+    // customFirst: true로 custom을 위로 올린다(전 캐릭터 일괄 변경 금지).
+    items.push(...(data.customFirst ? [...custom, ...pinned] : [...pinned, ...custom]));
   });
   if(items.length === 0){
     box.hidden = true;
