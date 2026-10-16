@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -313,7 +316,7 @@ const WEAPONS = {
       6: { mag: {v: 15, zone: 'village'}, hp: {v: 15, zone: 'village'}, critResChance: {v: 20, zone: 'always'} }
     },
     desc: '★6(최고 성급) 기준: 주문력/최대 체력 +15%(마을).\n전용 스킬 「찬란한 마력」: 스킬 사용 전 획득, 받는 치명타 확률 -20%(상시, 위 표 반영). 사거리 +1. 공격 받기 전 걸린 디버프 지속시간 -1(스탯 아님). 부여되는 「찬란한 마력」 버프 자체는 주문력/마법 관통 +10%(아래 3항목 참고). TP가 2 이하면 행동 종료 시 「집중」으로 TP 1 획득(최대 4중첩) — 집중 자체는 TP 회복 메커니즘이라 스탯 아님.',
-    note: '[변경점]\n\n★2: 주문력/최대 체력 11% (+1%), 받는 치명타 확률 -12% (-2%p), 사거리 +1(신규)\n\n★3: 주문력/최대 체력 12% (+1%), 받는 치명타 확률 -14% (-2%p), 찬란한 마력 계수 5%→7.5%, 「집중」 메커니즘 신규(TP 1 이하 시 발동, 스탯 아님)\n\n★4: 주문력/최대 체력 13% (+1%), 받는 치명타 확률 -16% (-2%p), 찬란한 마력 계수 7.5%→10%\n\n★5: 주문력/최대 체력 14% (+1%), 받는 치명타 확률 -18% (-2%p), 공격 받기 전 걸린 디버프 지속시간 -1(신규, 스탯 아님)\n\n★6: 주문력/최대 체력 15% (+1%), 받는 치명타 확률 -20% (-2%p), 「집중」 발동 기준 TP 1→2 이하, 최대 중첩 3→4',
+    note: '[변경점]\n\n★2: 주문력/최대 체력 11% (+1%), 받는 치명타 확률 -12% (-2%p), **사거리 +1 추가**\n\n★3: 주문력/최대 체력 12% (+1%), 받는 치명타 확률 -14% (-2%p), 찬란한 마력 계수 5%→7.5%, **「집중」 추가 — TP 1 이하면 행동 종료 시 TP 1 획득**\n\n★4: 주문력/최대 체력 13% (+1%), 받는 치명타 확률 -16% (-2%p), 찬란한 마력 계수 7.5%→10%\n\n★5: 주문력/최대 체력 14% (+1%), 받는 치명타 확률 -18% (-2%p), **공격받기 전 걸린 디버프 지속시간 -1 추가**\n\n★6: 주문력/최대 체력 15% (+1%), 받는 치명타 확률 -20% (-2%p), 「집중」 발동 기준 TP 2 이하 (1→2), 최대 중첩 4 (+1)',
     stack: {
       label: '찬란한 마력 중첩',
       shortName: '찬란한 마력',
@@ -1152,7 +1155,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){

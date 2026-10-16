@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -318,8 +321,8 @@ const WEAPONS = {
       6:{ atk:{v:20,zone:'village'}, crit:{v:20,zone:'village'},
           critDmg:{v:20,zone:'cond',cond:'전용 스킬 발동(적 공격 후) — 무작위 대상 2명에게 「킬 오더」 부여 시, 그 대상 상대로 2턴간'} }
     },
-    desc: '전용 추가능력치(마을, 조건 없음): 공격력 +10~20%(★1~6), 치명타 확률 +10~20%(★1~6).\n전용 스킬 「애프터쇼크」(인게임·조건부, 적 공격 후 자동 발동): 무작위 대상(★1~4 1명, ★5~6 2명)에게 「킬 오더」를 걸어 그 대상이 받는 치명타 피해량 +10~20%(★1~6, 2턴 지속 — 죽음에 이르는 피해를 당하면 상대는 TP 1을 얻고 해제)를 부여하고, 스스로 「애프터쇼크」 효과(캐릭터 턴 종료 시 사거리 내 체력이 가장 낮은 적에게 공격력의 50~80%(★1~6) 추가 피해, 탄환 소모 없음, 그 적을 처치하면 한 번 더 발동, 1턴 지속·해제 불가)를 얻는다 — 이 추가 피해 자체는 스킬 데미지 공식이라 미추적.\n게임 시작 시 탄환 수 최대치 +1(★1~2)/+2(★3~6) — 미추적.\n일반 스킬 「킬 오더」(다른 캐릭터가 이 무기 장착 시 대체 적용 — 적 공격 후 무작위 1명에게 킬 오더만 부여, 애프터쇼크 없음, 쿨타임 3→1턴)는 하이델룬 본인에게는 무관.',
-    note: '[변경점]\n\n★2: 공격력/치명타 확률 12% (+2%), 킬 오더 치명타 피해량 12% (+2%), 애프터쇼크 55% (+5%)\n\n★3: 공격력/치명타 확률 14% (+2%), 킬 오더 치명타 피해량 14% (+2%), 애프터쇼크 60% (+5%), 게임 시작 시 탄환 최대치 +1→+2\n\n★4: 공격력/치명타 확률 16% (+2%), 킬 오더 치명타 피해량 16% (+2%), 애프터쇼크 65% (+5%)\n\n★5: 공격력/치명타 확률 18% (+2%), 킬 오더 치명타 피해량 18% (+2%), 애프터쇼크 70% (+5%), 킬 오더 적용 대상 1명→2명\n\n★6: 공격력/치명타 확률 20% (+2%), 킬 오더 치명타 피해량 20% (+2%), 애프터쇼크 80% (+10%)'
+    desc: '★6(최고 성급) 기준\n· 추가 능력치(마을, 조건 없음): 공격력/치명타 확률 +20%\n\n전용 스킬 「애프터쇼크」(하이델룬 전용, 인게임·조건부, 적 공격 후 자동 발동)\n· 무작위 대상 2명에게 「킬 오더」 부여: 그 대상이 받는 치명타 피해량 +20%(2턴 지속 — 죽음에 이르는 피해를 당하면 상대는 TP 1을 얻고 해제)\n· 스스로 「애프터쇼크」 획득(1턴 지속, 해제 불가): 캐릭터 턴 종료 시 사거리 내 체력이 가장 낮은 적에게 공격력의 80% 추가 피해(탄환 소모 없음, 그 적을 처치하면 한 번 더 발동) — 스킬 데미지 공식이라 미추적\n· 게임 시작 시 탄환 수 최대치 +2 — 미추적\n\n일반 스킬 「킬 오더」(다른 캐릭터가 장착 시 대체 적용 — 적 공격 후 무작위 1명에게 킬 오더만 부여, 애프터쇼크 없음)는 하이델룬 본인과 무관',
+    note: '[변경점]\n\n★2: 공격력/치명타 확률 12% (+2%), 킬 오더 치명타 피해량 12% (+2%), 애프터쇼크 55% (+5%)\n\n★3: 공격력/치명타 확률 14% (+2%), 킬 오더 치명타 피해량 14% (+2%), 애프터쇼크 60% (+5%), 게임 시작 시 탄환 최대치 +2 (+1)\n\n★4: 공격력/치명타 확률 16% (+2%), 킬 오더 치명타 피해량 16% (+2%), 애프터쇼크 65% (+5%)\n\n★5: 공격력/치명타 확률 18% (+2%), 킬 오더 치명타 피해량 18% (+2%), 애프터쇼크 70% (+5%), 킬 오더 적용 대상 2명 (+1명)\n\n★6: 공격력/치명타 확률 20% (+2%), 킬 오더 치명타 피해량 20% (+2%), 애프터쇼크 80% (+10%)'
   }
 };
 
@@ -1001,7 +1004,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){

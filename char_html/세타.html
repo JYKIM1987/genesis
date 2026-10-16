@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -296,7 +299,7 @@ const WEAPONS = {
            aoeDmgIncrease:{v:10,zone:'always'}, aoeDmgReduction:{v:10,zone:'always'} }
     },
     desc: '★6(최고 성급) 기준\n· 공격력/물리 관통 +15% (마을, 위 표 반영)\n· 범위 피해 +10% / 받는 범위 피해 -10% (상시, 위 표 반영)\n\n전용 스킬 「출력 증폭」(세타 전용)\n· 스킬 사용 전 "출력 증폭 6" 획득: 중첩당 공격력/물리 관통 +15% (2턴 지속, 최대 2중첩, 해제 불가) — 아래 중첩 슬라이더로 반영\n· "자원 회수 2"(해제 불가): 플레이어 사망 시 "강화 장갑판" 중첩 증가 + 공격력의 80%만큼 체력 회복 + TP 1 회복 — 절대 회복량·트리거형이라 위 표와 무관\n· "자원 보급 2"(해제 불가): 스킬 사용 후 TP 2 이하면 턴당 한 번 "집중"(행동 종료 시 TP 1 획득) 획득 / 공격받은 후 체력 40% 이하면 공격력의 100%만큼 회복(쿨타임 3, 절대 회복량)\n· "강화 장갑판"(공격받으면 받는 피해 -30%, 공격받은 후 중첩 감소, 최대 3중첩, 해제 불가) 자체는 고유패시브 "아머드 슈트" 쪽에 반영\n\n일반 스킬 「출력 증폭」: 다른 캐릭터가 이 무기 장착 시 사용(스킬 사용 전 출력 증폭 1[공격력/물리 관통 +5%, 2턴, 최대 2중첩] 획득) — 세타와 무관',
-    note: '[변경점]\n\n★2: 공격력/물리 관통 11% (+1%p), 출력 증폭 중첩당 7% (+2%p), "자원 회수 1" 신규\n\n★3: 공격력/물리 관통 12% (+1%p), 출력 증폭 중첩당 9% (+2%p), "자원 보급 1" 신규\n\n★4: 공격력/물리 관통 13% (+1%p), 출력 증폭 중첩당 11% (+2%p)\n\n★5: 공격력/물리 관통 14% (+1%p), 출력 증폭 중첩당 13% (+2%p), 범위 피해 +10% 신규, 자원 회수 1→2(추가 TP 1 회복)\n\n★6: 공격력/물리 관통 15% (+1%p), 출력 증폭 중첩당 15% (+2%p), 받는 범위 피해 -10% 신규, 자원 보급 1→2(공격받은 후 체력 40% 이하면 공격력 100% 회복 추가)',
+    note: '[변경점]\n\n★2: 공격력/물리 관통 11% (+1%p), 출력 증폭 중첩당 7% (+2%p), **"자원 회수 1" 추가**\n\n★3: 공격력/물리 관통 12% (+1%p), 출력 증폭 중첩당 9% (+2%p), **"자원 보급 1" 추가**\n\n★4: 공격력/물리 관통 13% (+1%p), 출력 증폭 중첩당 11% (+2%p)\n\n★5: 공격력/물리 관통 14% (+1%p), 출력 증폭 중첩당 13% (+2%p), **범위 피해 +10% 추가**, 자원 회수 1→2(**TP 1 회복 추가**)\n\n★6: 공격력/물리 관통 15% (+1%p), 출력 증폭 중첩당 15% (+2%p), **받는 범위 피해 -10% 추가**, 자원 보급 1→2(**공격받은 후 체력 40% 이하면 공격력의 100% 회복 추가**)',
     stack: {
       label: '"출력 증폭" 중첩', shortName: '출력 증폭',
       perStackByStar: {
@@ -1043,7 +1046,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){

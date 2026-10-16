@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -312,8 +315,8 @@ const WEAPONS = {
       5:{phys:{v:18,zone:'village'}, crit:{v:18,zone:'village'}},
       6:{phys:{v:20,zone:'village'}, crit:{v:20,zone:'village'}}
     },
-    desc:'전용 추가 능력치(마을, 조건 없음): 물리 관통/치명타 확률 +10%~+20%(성급별, ★1 10%~★6 20%).\n전용 스킬 「여명의 심판」(인게임·조건부): 공격 또는 반격으로 피해를 줬다면 50% 확률로(★3부터는 치명타였다면 100% 확률로) 주변 5바퀴 내 무작위 적 2~4명(성급별)에게 공격력의 50~60%만큼 저항력을 무시해 광휘 마법 피해를 주고 "군열" 효과 부여(광휘 저항 -10%, 단일 공격 스킬 피해량 -10%, 2턴 지속, 최대 3중첩) — 저항력 감소·주는 피해 감소류 적 디버프라 이 계산기 스탯과 무관, 미추적. 확률형 발동 피해 자체도 미추적.\n일반 스킬 「여명의 전격」(철가면이 아닌 다른 캐릭터가 이 무기를 장착했을 때 적용되는 대체 효과 — 철가면 본인에게는 미적용): 전투 공격 후 피해를 줬다면 50% 확률로 주변 3바퀴 내 무작위 적 1~2명에게 공격력의 50~60%만큼 저항력을 무시해 전격 마법 피해. 부가 효과 없음, 미추적.',
-    note:'[변경점]\n\n★2: 물리 관통/치명타 확률 12% (+2%p), 전용 스킬 쿨타임 2턴 → 1턴\n\n★3: 물리 관통/치명타 확률 14% (+2%p), 전용 스킬 치명타 시 100% 확정 발동 (신규), 대상 2명 → 3명\n\n★4: 물리 관통/치명타 확률 16% (+2%p), 전용 스킬 피해 계수 50% → 60%\n\n★5: 물리 관통/치명타 확률 18% (+2%p), 전용 스킬 반격 사거리 +1\n\n★6: 물리 관통/치명타 확률 20% (+2%p), 전용 스킬 대상 3명 → 4명, 일반 스킬 피해 계수 50% → 60%'
+    desc:'★6(최고 성급) 기준\n· 추가 능력치(마을, 조건 없음): 물리 관통/치명타 확률 +20%\n\n전용 스킬 「여명의 심판」(철가면 전용, 인게임·조건부)\n· 공격 또는 반격으로 피해를 줬다면 50% 확률로(치명타였다면 100% 확률로) 주변 5바퀴 내 무작위 적 4명에게 공격력의 60%만큼 저항력을 무시해 광휘 마법 피해(쿨타임 1턴). 반격 사거리 +1\n· 피해를 입은 적에게 "군열"(광휘 저항 -10%, 단일 공격 스킬 피해량 -10%, 2턴 지속, 최대 3중첩) 부여\n· 적 디버프·확률형 피해라 이 계산기 스탯과 무관, 미추적\n\n일반 스킬 「여명의 전격」(다른 캐릭터가 장착 시 대체 적용 — 철가면 본인 미적용)\n· 전투 공격 후 피해를 줬다면 50% 확률로 주변 3바퀴 내 무작위 적에게 공격력의 60%만큼 저항력을 무시해 전격 마법 피해. 미추적',
+    note:'[변경점]\n\n★2: 물리 관통/치명타 확률 12% (+2%p), 전용 스킬 쿨타임 1턴 (-1턴)\n\n★3: 물리 관통/치명타 확률 14% (+2%p), **전용 스킬 치명타였다면 100% 확정 발동 추가**, 대상 3명 (+1명)\n\n★4: 물리 관통/치명타 확률 16% (+2%p), 전용 스킬 피해 계수 60% (+10%p)\n\n★5: 물리 관통/치명타 확률 18% (+2%p), **전용 스킬 반격 사거리 +1 추가**\n\n★6: 물리 관통/치명타 확률 20% (+2%p), 전용 스킬 대상 4명 (+1명), 일반 스킬 피해 계수 60% (+10%p)'
   }
 };
 
@@ -988,7 +991,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){

@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -294,7 +297,7 @@ const WEAPONS = {
       6: { mag:{v:15,zone:'village'}, hp:{v:15,zone:'village'}, healGive:{v:30,zone:'cond',cond:'보호막을 보유하고 있을 때'}, dmgIncrease:{v:30,zone:'cond',cond:'보호막을 보유하고 있을 때'}, move:{v:2,zone:'cond',cond:'보호막을 보유하고 있을 때'} }
     },
     desc: '★6(최고 성급) 기준\n· 추가 능력치(마을, 상시): 주문력/최대 체력 +15%\n\n전용 스킬 「구원의 기도」(메르세데스 프레데릭 전용)\n· 보호막을 가지고 있다면 치유량과 주는 피해 +30%, 이동력 +2\n· 자신이 부여한 보호막이 갱신되거나 해제될 때 "구원의 기도 6" 효과를 얻습니다.\n· "구원의 기도 6"(최대 5중첩, 해제 불가): 중첩당 받는 치명타 확률/받는 치명타 피해량 -10%. 아군이 공격당한 후 주문력의 100%만큼 체력을 회복시키고 이 효과 중첩 감소.\n\n일반 스킬 「연민의 품」(다른 캐릭터가 이 무기 장착 시)\n· 보호막을 가지고 있다면 치유량과 주는 피해 +30%',
-    note: '[변경점]\n\n★2: 주문력/최대 체력 11% (+1%p), 보호막 보유 시 치유량/주는 피해 10% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 6% (+1%p), 구원의 기도 회복량 주문력의 60% (+10%p)\n\n★3: 주문력/최대 체력 12% (+1%p), 보호막 보유 시 치유량/주는 피해 15% (+5%p), 보호막 보유 시 이동력 +1 (신규), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 7% (+1%p), 구원의 기도 회복량 주문력의 70% (+10%p)\n\n★4: 주문력/최대 체력 13% (+1%p), 보호막 보유 시 치유량/주는 피해 20% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 8% (+1%p), 구원의 기도 회복량 주문력의 80% (+10%p)\n\n★5: 주문력/최대 체력 14% (+1%p), 보호막 보유 시 치유량/주는 피해 25% (+5%p), 보호막 보유 시 이동력 +2 (+1), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 9% (+1%p), 구원의 기도 회복량 주문력의 90% (+10%p)\n\n★6: 주문력/최대 체력 15% (+1%p), 보호막 보유 시 치유량/주는 피해 30% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 10% (+1%p), 구원의 기도 회복량 주문력의 100% (+10%p)',
+    note: '[변경점]\n\n★2: 주문력/최대 체력 11% (+1%p), 보호막 보유 시 치유량/주는 피해 10% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 6% (+1%p), 구원의 기도 회복량 주문력의 60% (+10%p)\n\n★3: 주문력/최대 체력 12% (+1%p), 보호막 보유 시 치유량/주는 피해 15% (+5%p), **보호막 보유 시 이동력 +1 추가**, 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 7% (+1%p), 구원의 기도 회복량 주문력의 70% (+10%p)\n\n★4: 주문력/최대 체력 13% (+1%p), 보호막 보유 시 치유량/주는 피해 20% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 8% (+1%p), 구원의 기도 회복량 주문력의 80% (+10%p)\n\n★5: 주문력/최대 체력 14% (+1%p), 보호막 보유 시 치유량/주는 피해 25% (+5%p), 보호막 보유 시 이동력 +2 (+1), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 9% (+1%p), 구원의 기도 회복량 주문력의 90% (+10%p)\n\n★6: 주문력/최대 체력 15% (+1%p), 보호막 보유 시 치유량/주는 피해 30% (+5%p), 구원의 기도 중첩당 받는 치명타 확률/받는 치명타 피해량 감소 10% (+1%p), 구원의 기도 회복량 주문력의 100% (+10%p)',
     stack: {
       label: '"구원의 기도" 중첩', shortName: '구원의 기도',
       perStackByStar: {
@@ -1022,7 +1025,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){

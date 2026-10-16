@@ -49,6 +49,8 @@
   .harness-extra{ background:var(--panel2); border:1px solid var(--accent); border-radius:5px; padding:6px 8px; margin-bottom:6px; font-size:10.5px; color:var(--text); line-height:1.5; }
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
+  /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
+  html, .col-left, .results{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
@@ -103,6 +105,7 @@
     padding:6px 8px; margin-top:4px; font-size:11px; color:var(--text); white-space:pre-line;
   }
   .desc-box.open{ display:block; }
+  .desc-box b{ color:var(--accent); }
   .slider-wrap{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
   input[type=range]{ width:70px; accent-color:var(--accent); }
   .step-btn{
@@ -312,8 +315,8 @@ const WEAPONS = {
       5:{crit:{v:9,zone:'village'}, hp:{v:19,zone:'village'}, counterDmgIncrease:{v:20,zone:'always'}, atk:{v:20,zone:'always'}},
       6:{crit:{v:10,zone:'village'}, hp:{v:20,zone:'village'}, counterDmgIncrease:{v:25,zone:'always'}, atk:{v:25,zone:'always'}}
     },
-    desc: '전용 추가능력치(마을): 치명타 확률 +5%(★1)~+10%(★6). 최대 체력 +15%(★1)~+20%(★6).\n전용 스킬 "혼돈의 붕괴"(캐릭터 전용): 반격 피해량 +10%(★1)~+25%(★6). "반격 피해량의 50~100%만큼 공격력 증가"는 반격 피해량 수치에서 계산된 실제 증가분(+5%~+25%)으로 위 표에 반영.\n공격/반격/협공 후 적중 대상 중 무작위 1명에게 치명타 확률로 공격력의 30~60%만큼 암흑/전격 물리 고정 피해를 주고 주변(1바퀴~2칸)에 최대 2회 연쇄. ★3부터 피격 대상에게 카오스 스카(전격/암흑저항 -10%, 2턴, 최대 3중첩) 부여(적 디버프). ★2부터 무한 출력(스킬 시전 시 치명타 확률로 TP 1 획득) 보유. ★5부터 반격 사정거리 +1.\n일반 스킬 "혼돈의 부름"은 이 무기를 벨제부르 외 캐릭터가 장착했을 때 대체 적용되는 별도 효과라 벨제부르 계산에는 미반영.',
-    note: '[변경점]\n\n★2: 치명타확률 6% (+1%), 최대 체력 16% (+1%), 반격 피해량 증가 15% (+5%), 반격 피해량 기반 공격력 증가 11.25% (+6.25%). 무한 출력 신규 획득.\n\n★3: 치명타확률 7% (+1%), 최대 체력 17% (+1%). 반격 프록 피해 30%→40% 증가. 카오스 스카 신규 부여.\n\n★4: 치명타확률 8% (+1%), 최대 체력 18% (+1%), 반격 피해량 증가 20% (+5%), 반격 피해량 기반 공격력 증가 20% (+8.75%).\n\n★5: 치명타확률 9% (+1%), 최대 체력 19% (+1%). 반격 사정거리 +1 신규.\n\n★6: 치명타확률 10% (+1%), 최대 체력 20% (+1%), 반격 피해량 증가 25% (+5%), 반격 피해량 기반 공격력 증가 25% (+5%). 반격 프록 피해 40%→60% 증가.'
+    desc: '★6(최고 성급) 기준\n· 추가 능력치(마을): 치명타 확률 +10%, 최대 체력 +20%\n\n전용 스킬 「혼돈의 붕괴」(벨제부르 전용)\n· 반격 피해량 +25%. 반격 피해량의 100%만큼 공격력 증가(+25%) — 둘 다 위 표 반영\n· 공격/반격/협공 후 적중 대상 중 무작위 1명에게 치명타 확률로 공격력의 60%만큼 암흑/전격 물리 고정 피해, 주변으로 최대 2회 연쇄\n· 피격 대상에게 "카오스 스카"(전격/암흑 저항 -10%, 2턴, 최대 3중첩) 부여 — 적 디버프\n· "무한 출력": 스킬 시전 시 치명타 확률로 TP 1 획득\n· 반격 사정거리 +1\n\n일반 스킬 「혼돈의 부름」은 다른 캐릭터가 이 무기 장착 시 대체 적용 — 벨제부르 계산에는 미반영',
+    note: '[변경점]\n\n★2: 치명타확률 6% (+1%), 최대 체력 16% (+1%), 반격 피해량 증가 15% (+5%), 반격 피해량 기반 공격력 증가 11.25% (+6.25%), **"무한 출력" 추가 — 스킬 시전 시 치명타 확률로 TP 1 획득**\n\n★3: 치명타확률 7% (+1%), 최대 체력 17% (+1%), 반격 프록 피해 공격력의 40% (+10%p), **"카오스 스카" 부여 추가 — 전격/암흑 저항 -10%(2턴, 최대 3중첩)**\n\n★4: 치명타확률 8% (+1%), 최대 체력 18% (+1%), 반격 피해량 증가 20% (+5%), 반격 피해량 기반 공격력 증가 20% (+8.75%).\n\n★5: 치명타확률 9% (+1%), 최대 체력 19% (+1%), **반격 사정거리 +1 추가**\n\n★6: 치명타확률 10% (+1%), 최대 체력 20% (+1%), 반격 피해량 증가 25% (+5%), 반격 피해량 기반 공격력 증가 25% (+5%), 반격 프록 피해 공격력의 60% (+20%p)'
   }
 };
 
@@ -940,7 +943,8 @@ function descButton(key, text, side){
   const isOpen = state[stKey] === key;
   const safeKey = String(key).replace(/'/g,"\\'");
   // text 대신 {html}을 넘기면 이미 이스케이프된 HTML을 그대로 넣는다(일부 줄 강조용).
-  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text);
+  // 일반 텍스트 안의 **…**는 굵게 표시한다([변경점]에서 새로 붙는 옵션 강조용).
+  const body = (text && typeof text === 'object') ? text.html : escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   return {btn:`<button class="info-btn" onclick="toggleDesc('${side}','${safeKey}')">?</button>`, box:`<div class="desc-box${isOpen?' open':''}">${body}</div>`};
 }
 function toggleDesc(side, key){
