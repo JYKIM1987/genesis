@@ -112,6 +112,12 @@
   .step-btn:hover{ background:var(--accent-bg); border-color:var(--accent); }
   .star-val{ min-width:16px; text-align:center; color:var(--accent); font-weight:bold; font-size:11px; }
   .star-val.stage-awaken{ color:var(--danger); }
+  /* 악세사리 성급 슬라이더 — 눈금은 항상 1~6각, 자료가 있는 성급만 진하게, 현재 성급은 강조 */
+  .acc-star{ display:inline-flex; flex-direction:column; }
+  .acc-star input[type=range]{ width:96px; margin:0; }
+  .acc-star-ticks{ display:flex; justify-content:space-between; padding:0 4px; font-size:9px; line-height:1; color:var(--border); }
+  .acc-star-ticks .on{ color:var(--text-dim); }
+  .acc-star-ticks .cur{ color:var(--accent); font-weight:bold; }
   .note{ font-size:10px; color:var(--cond); }
   .checklimit{ font-size:11px; color:var(--text-dim); margin-bottom:5px; }
   .checklimit.over{ color:var(--danger); font-weight:bold; }
@@ -794,7 +800,7 @@ function initState(){
   state.uniqueToggle2 = true; // stages.options[i].toggle2 — 같은 단계에 독립적으로 켜고 끄는 두 번째 토글이 있을 때만 사용
   state.classToggle = true; // 클래스패시브에 toggle이 있는 경우(예: 하이델룬 루트해커) 기본적으로 켜진 상태로 시작
   state.armor = { 투구:{set:'없음',star:6}, 갑옷:{set:'없음',star:6}, 장갑:{set:'없음',star:6}, 신발:{set:'없음',star:6} };
-  state.accessory = '없음'; state.accessoryStar = 1; state.accessoryStack = 0;
+  state.accessory = '없음'; state.accessoryStar = 1; state.accessoryStack = 0; state.accessoryModes = null;
   state.runeSlots = ['없음','없음','없음','없음','없음','없음'];
   state.activeMaxMode = null;
   state.maxModeLocked = false;
@@ -1321,7 +1327,7 @@ function renderAccessorySummary(){
   }
   addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
   if(acc.skill){
-    const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
+    const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack, state.accessoryModes);
     addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
   }
   const keys = ALL_STATS.filter(k => bucket.village[k] || bucket.always[k] || bucket.cond[k]);
@@ -1354,8 +1360,54 @@ function sortedAccessoryNames(){
 // 중첩 수만큼 곱한다(계산기_적용원칙.md 5장 "중첩 수치는 1중첩당" 원칙). stack 인자를 생략하면 최대 중첩 기준
 // (드롭다운 미리보기·MAX 세팅용). statByStar에 해당 성급이 없으면 ★1 → 빈 객체 순으로 폴백.
 function accMaxStack(acc){ return (acc && acc.skill && acc.skill.stack) ? acc.skill.stack.maxStack : 0; }
-function accSkillStatAt(acc, star, stack){
-  if(!acc || !acc.skill || !acc.skill.statByStar) return {};
+// 악세사리 성급 — starStats에 실제로 있는 성급만 고를 수 있다(일부 성급만 확보된 악세는 1·4각처럼 띄엄띄엄).
+function accStars(acc){ return Object.keys(acc.starStats).map(Number).sort((a,b) => a-b); }
+function accStepStar(acc, star, dir){
+  const s = accStars(acc);
+  const next = dir > 0 ? s.find(x => x > star) : s.filter(x => x < star).pop();
+  return next == null ? star : next;
+}
+function accSnapStar(acc, star){
+  return accStars(acc).reduce((b, x) => (Math.abs(x-star) < Math.abs(b-star) ? x : b));
+}
+// 악세사리 스킬 modes — 같은 스킬 안에서 동시에 켜질 수 없는 효과들(예: 타로카드 8번 "관망"/"장악").
+// state.accessoryModes는 modes와 같은 길이의 배열이고 0이 아닌 칸은 최대 하나다(토글형은 1, 중첩형은 중첩 수).
+function accModeFull(m){ return m.stack ? m.stack.maxStack : 1; }
+function accDefaultModes(acc){ return acc.skill.modes.map((m, i) => i === 0 ? accModeFull(m) : 0); }
+function accModesStatAt(acc, star, modes){
+  const out = {};
+  acc.skill.modes.forEach((m, i) => {
+    const n = modes[i] || 0;
+    if(!n) return;
+    const base = (m.statByStar && m.statByStar[star]) || {};
+    for(const [k,e] of Object.entries(base)){
+      if(!e) continue;
+      out[k] = m.stack ? Object.assign({}, e, {v:+(e.v*n).toFixed(2), cond:(e.cond||'')+(e.cond?' — ':'')+n+'중첩'}) : e;
+    }
+  });
+  return out;
+}
+// MAX 세팅용 — statKey를 가장 크게 만드는 mode 하나를 최대치로 켠다.
+function accBestModes(acc, star, statKey){
+  let best = accDefaultModes(acc), bestV = -Infinity;
+  acc.skill.modes.forEach((m, i) => {
+    const arr = acc.skill.modes.map((x, j) => j === i ? accModeFull(x) : 0);
+    const e = accModesStatAt(acc, star, arr)[statKey];
+    const v = e ? e.v : 0;
+    if(v > bestV){ bestV = v; best = arr; }
+  });
+  return best;
+}
+function setAccMode(i, v){
+  const acc = ACCESSORIES[state.accessory];
+  state.accessoryModes = acc.skill.modes.map((_, j) => j === i ? v : 0);
+  render();
+}
+function accSkillStatAt(acc, star, stack, modes){
+  if(!acc || !acc.skill) return {};
+  if(acc.skill.fromStar && star < acc.skill.fromStar) return {};
+  if(acc.skill.modes) return accModesStatAt(acc, star, modes || accDefaultModes(acc));
+  if(!acc.skill.statByStar) return {};
   const base = acc.skill.statByStar[star] || acc.skill.statByStar[1] || {};
   if(!acc.skill.stack) return base;
   const n = (stack==null) ? acc.skill.stack.maxStack : Math.max(0, Math.min(stack, acc.skill.stack.maxStack));
@@ -1467,6 +1519,9 @@ function optLine(name, statObj, zoneForBadge, desc, note, extraClass, skillStat)
 }
 
 function render(){
+  if(state.accessory !== '없음' && ACCESSORIES[state.accessory] && !ACCESSORIES[state.accessory].starStats[state.accessoryStar]){
+    state.accessoryStar = accSnapStar(ACCESSORIES[state.accessory], state.accessoryStar);
+  }
   // 2026-07-24: MAX 세팅 음영/배너는 "값이 우연히 일치"가 아니라 "방금 MAX 버튼을 눌렀고 그 뒤로 아무 것도
   // 손대지 않았음"에만 의존한다. maxSetup/maxSetupBest는 render() 호출 직전에 state.maxModeLocked=true를 세워두고,
   // 그 외의 모든 onchange는 곧바로 render()를 부르므로 — 여기서 잠금 플래그가 없으면(=MAX 버튼이 아닌 다른 경로로
@@ -1833,7 +1888,11 @@ function render(){
   html += `<div class="note" style="margin:4px 0;">드롭다운의 【 】 안은 6각(또는 해당 아이템 최대 성급) 기준 치명타/물리관통/마법관통 미리보기입니다. 목록 순서: 유일템(★) → 상위템 → 일반(전설) → 영웅.</div>`;
   if(state.accessory!=='없음'){
     const acc = ACCESSORIES[state.accessory];
-    if(acc.maxStar>1) html += `<span class="slider-wrap">★<button class="step-btn" ${acc.fixedStar?'disabled':''} onclick="state.accessoryStar=clampStep(state.accessoryStar,-1,1,${acc.maxStar}); render();">◀</button><input type="range" min="1" max="${acc.maxStar}" value="${state.accessoryStar}" ${acc.fixedStar?'disabled':''} oninput="state.accessoryStar=+this.value; render();"><button class="step-btn" ${acc.fixedStar?'disabled':''} onclick="state.accessoryStar=clampStep(state.accessoryStar,1,1,${acc.maxStar}); render();">▶</button><span class="star-val">${state.accessoryStar}</span></span>`;
+    if(acc.maxStar>1){
+      const stars = accStars(acc), cur = state.accessoryStar, dis = acc.fixedStar ? 'disabled' : '';
+      const ticks = [1,2,3,4,5,6].map(x => `<span class="${x===cur ? 'cur' : (stars.includes(x) ? 'on' : '')}">${x}</span>`).join('');
+      html += `<span class="slider-wrap">★<button class="step-btn" ${dis} onclick="state.accessoryStar=accStepStar(ACCESSORIES[state.accessory],state.accessoryStar,-1); render();">◀</button><span class="acc-star"><input type="range" min="1" max="6" value="${cur}" ${dis} oninput="state.accessoryStar=accSnapStar(ACCESSORIES[state.accessory],+this.value); render();"><span class="acc-star-ticks">${ticks}</span></span><button class="step-btn" ${dis} onclick="state.accessoryStar=accStepStar(ACCESSORIES[state.accessory],state.accessoryStar,1); render();">▶</button><span class="star-val">${cur}각</span></span>`;
+    }
   }
   if(state.accessory!=='없음'){
     const acc = ACCESSORIES[state.accessory];
@@ -1844,8 +1903,10 @@ function render(){
     // 2026-07-24: 악세사리는 설명이 단순해 "?" 팝업 없이 성급에 맞는 값을 바로 보여준다(깡스탯은 이걸로 충분).
     html += `<div class="opt-line"><div class="opt-top"><span class="name">추가능력치</span>${zoneBadge('village')}</div>
       <div class="opt-bottom">${statStrObj(stat)}</div></div>`;
-    if(acc.skill){
-      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
+    if(acc.skill && acc.skill.fromStar && state.accessoryStar < acc.skill.fromStar){
+      html += `<div class="opt-line"><div class="opt-top"><span class="name">스킬: ${acc.skill.name}</span></div><div class="opt-bottom"><span class="dim0">★${acc.skill.fromStar}부터 추가</span></div></div>`;
+    } else if(acc.skill){
+      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack, state.accessoryModes);
       const dtext = accessoryDescForStar(acc.skill.desc, acc.skill.statByStar, state.accessoryStar, acc.maxStar);
       // 배지는 실제 스킬 스탯의 zone을 따른다(상시 효과면 "인게임", 조건부가 하나라도 있으면 "인게임·조건부").
       const zs = Object.values(skillStat).map(e=>e&&e.zone).filter(Boolean);
@@ -1855,6 +1916,19 @@ function render(){
         const mx = acc.skill.stack.maxStack;
         const cur = (state.accessoryStack==null) ? mx : state.accessoryStack;
         html += `<div class="opt-bottom"><span class="slider-wrap">${acc.skill.stack.label||'중첩'}<button class="step-btn" onclick="state.accessoryStack=clampStep(${cur},-1,0,${mx}); render();">◀</button><input type="range" min="0" max="${mx}" value="${cur}" oninput="state.accessoryStack=+this.value; render();"><button class="step-btn" onclick="state.accessoryStack=clampStep(${cur},1,0,${mx}); render();">▶</button><span class="star-val">${cur}</span></span></div>`;
+      }
+      if(acc.skill.modes){
+        // 하나를 켜면 나머지는 꺼진다(setAccMode) — 토글형은 체크박스, 중첩형은 0~최대 슬라이더.
+        const cur = state.accessoryModes || accDefaultModes(acc);
+        acc.skill.modes.forEach((m, i) => {
+          const n = cur[i] || 0;
+          if(m.stack){
+            const mx = m.stack.maxStack;
+            html += `<div class="opt-bottom"><span class="slider-wrap">${m.label}<button class="step-btn" onclick="setAccMode(${i},clampStep(${n},-1,0,${mx}));">◀</button><input type="range" min="0" max="${mx}" value="${n}" oninput="setAccMode(${i},+this.value);"><button class="step-btn" onclick="setAccMode(${i},clampStep(${n},1,0,${mx}));">▶</button><span class="star-val">${n}</span></span></div>`;
+          } else {
+            html += `<div class="opt-bottom"><label class="slider-wrap"><input type="checkbox" ${n?'checked':''} onchange="setAccMode(${i},this.checked?1:0);">${m.label}</label></div>`;
+          }
+        });
       }
     } else if(acc.desc && (/\(★\d/.test(acc.desc) || Object.values(stat).some(e=>e && e.zone==='cond'))){
       // skill 블록 없이 desc 자체에 성급별로 달라지는 조건부 효과가 있는 항목(예: 수호의 반지, 용 비늘 각반) —
@@ -1934,7 +2008,7 @@ function onArmorFullSet(sname){
   });
   render();
 }
-function onAccessoryChange(val){ state.accessory = val; state.accessoryStar = val==='없음'?1:(ACCESSORIES[val].maxStar||1); state.accessoryStack = val==='없음'?0:accMaxStack(ACCESSORIES[val]); render(); }
+function onAccessoryChange(val){ state.accessory = val; state.accessoryStar = val==='없음'?1:(ACCESSORIES[val].maxStar||1); state.accessoryStack = val==='없음'?0:accMaxStack(ACCESSORIES[val]); state.accessoryModes = (val!=='없음' && ACCESSORIES[val].skill && ACCESSORIES[val].skill.modes) ? accDefaultModes(ACCESSORIES[val]) : null; render(); }
 function onRuneSlotChange(idx, val){ state.runeSlots[idx] = val; render(); }
 function onArtifactChange(val){
   state.artifact = val;
@@ -2124,6 +2198,7 @@ function computeMaxSelections(statKey, baseState){
     s.accessory = fixed.accessory;
     s.accessoryStar = ACCESSORIES[fixed.accessory].maxStar;
     s.accessoryStack = accMaxStack(ACCESSORIES[fixed.accessory]);
+    { const fa = ACCESSORIES[fixed.accessory]; s.accessoryModes = (fa.skill && fa.skill.modes) ? accBestModes(fa, s.accessoryStar, statKey) : null; }
   } else {
     let bestAcc=null, bestAccVal=0, bestAccStar=1;
     Object.keys(ACCESSORIES).forEach(name=>{
@@ -2132,10 +2207,10 @@ function computeMaxSelections(statKey, baseState){
       const st = acc.starStats[star]||{};
       let v = (st[statKey]&&st[statKey].v)||0;
       if(acc.extraAlways && acc.extraAlways[star] && acc.extraAlways[star][statKey]) v += acc.extraAlways[star][statKey];
-      if(acc.skill){ const skillStat = accSkillStatAt(acc, star); if(skillStat[statKey] && skillStat[statKey].v) v += skillStat[statKey].v; }
+      if(acc.skill){ const skillStat = accSkillStatAt(acc, star, undefined, acc.skill.modes ? accBestModes(acc, star, statKey) : null); if(skillStat[statKey] && skillStat[statKey].v) v += skillStat[statKey].v; }
       if(v>bestAccVal){ bestAccVal=v; bestAcc=name; bestAccStar=star; }
     });
-    if(bestAcc){ s.accessory=bestAcc; s.accessoryStar=bestAccStar; s.accessoryStack=accMaxStack(ACCESSORIES[bestAcc]); }
+    if(bestAcc){ s.accessory=bestAcc; s.accessoryStar=bestAccStar; s.accessoryStack=accMaxStack(ACCESSORIES[bestAcc]); s.accessoryModes = ACCESSORIES[bestAcc].skill && ACCESSORIES[bestAcc].skill.modes ? accBestModes(ACCESSORIES[bestAcc], bestAccStar, statKey) : null; }
     // 기여하는 악세사리가 없으면 현재 선택 유지(강제로 "없음" 처리하지 않음)
   }
 
@@ -2315,7 +2390,7 @@ function computeTotals(){
     }
     addStatObj(bucket, stat, '악세사리 - '+acc.name, condLog);
     if(acc.skill){
-      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack);
+      const skillStat = accSkillStatAt(acc, state.accessoryStar, state.accessoryStack, state.accessoryModes);
       addStatObj(bucket, skillStat, '악세사리 - '+acc.name+' (스킬)', condLog);
     }
   }
