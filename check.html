@@ -162,7 +162,7 @@
     .mo-only{ display:inline; }
     h1{ font-size:20px; }
     .sub{ font-size:12.5px; }
-    .wrap{ flex-direction:column; gap:12px; }
+    .wrap{ flex-direction:column; gap:12px; align-items:stretch; } /* 세로로 쌓을 땐 결과 영역도 화면 폭을 꽉 채움 */
     /* 하단 고정 탭 3개(공격할 방덱 / 주의할 아군 / 적저항 요약) 중 하나만
        보여준다 — body의 tab-pick / tab-risk / tab-matrix 클래스로 전환.
        html,body height:100%를 풀어야 body 하단 패딩이 실제 스크롤 끝에 붙어서
