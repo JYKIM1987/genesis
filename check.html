@@ -99,7 +99,7 @@
   .notice-item .notice-entry + .notice-entry{ margin-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
-  /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." 두 줄(강=파랑, 약=빨강).
+  /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." / "혼합 : ..." 세 줄(강=파랑, 약=빨강, 혼합=검정).
      PC: 결과 영역 맨 위, 접이식(기본 접힘, 제목 클릭으로 펼침).
      모바일: 주의할 아군 탭 맨 밑, 항상 펼침(아래 미디어쿼리). */
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
@@ -118,9 +118,9 @@
   .matchup-item .line b{ font-weight:900; }
   .matchup-item .line.strong b, .matchup-item .line.strong .ally{ color:#1f5fd1; }
   .matchup-item .line.weak b, .matchup-item .line.weak .ally{ color:#d32f2f; }
-  .matchup-item .line .ally.both{ color:#d97706; } /* 강·약 양쪽에 다 있는 아군 */
-  .matchup-item .legend{ margin-top:6px; font-size:11px; color:var(--text-dim); word-break:keep-all; }
-  .matchup-item .legend .both{ color:#d97706; font-weight:bold; }
+  /* 혼합(강·약 양쪽) — 라벨·아군은 검정, 괄호 안 "강 : …" 파랑 / "약 : …" 빨강 */
+  .matchup-item .line.mixed .s{ color:#1f5fd1; }
+  .matchup-item .line.mixed .w{ color:#d32f2f; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
   .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
@@ -218,7 +218,6 @@
     .notice-item{ font-size:14px; padding:9px 10px; }
     .notice-item .cond{ font-size:12.5px; }
     .matchup-item{ font-size:14px; padding:9px 10px; }
-    .matchup-item .by{ font-size:12px; }
 
     .matrix-box{ padding:10px; }
     .matrix-box h2{ font-size:16px; }
@@ -680,7 +679,7 @@ function render(){
 }
 
 // 상성 참고 노트 — 조건을 만족한 노트를 아군(strong/weak 문구)별로 묶어
-// "강상성 : 아군 (상대, 상대), ..." / "약상성 : ..." 두 줄로 보여준다.
+// "강상성 : 아군 (상대, 상대), ..." / "약상성 : ..." / "혼합 : 아군 (강 : …, 약 : …)" 세 줄로 보여준다.
 // 아군 순서는 MATCHUP_NOTES 순서, 괄호 안 상대는 picked 순서. 해당 노트가 없으면 박스를 숨긴다.
 function renderMatchup(){
   const box = document.getElementById('matchupBox');
@@ -696,7 +695,9 @@ function renderMatchup(){
       groups[k].get(n[k]).push(vs);
     });
   });
-  const total = groups.strong.size + groups.weak.size;
+  // 강·약 양쪽에 다 있는 아군은 강상성/약상성 줄에서 빼고 "혼합" 줄로만 보낸다.
+  const mixed = Array.from(groups.strong.keys()).filter(a => groups.weak.has(a));
+  const total = groups.strong.size + groups.weak.size - mixed.length;
   if(total === 0){
     box.hidden = true;
     host.innerHTML = '';
@@ -704,15 +705,14 @@ function renderMatchup(){
   }
   box.hidden = false;
   document.getElementById('matchupCount').textContent = `${total}건`;
-  // 강상성·약상성 양쪽에 다 있는 아군은 두 줄 모두에 적되 이름만 중간색(.both)으로.
-  const both = ally => groups.strong.has(ally) && groups.weak.has(ally);
-  const line = (cls, mark, map) => map.size ? `<div class="line ${cls}"><b>${mark}</b> : `
-    + Array.from(map.entries()).map(([ally, vs]) =>
-        `<span class="ally${both(ally) ? ' both' : ''}">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
-    + '</div>' : '';
-  const hasBoth = Array.from(groups.strong.keys()).some(both);
-  const legend = hasBoth ? '<div class="legend">※ <span class="both">주황색</span> : 강상성·약상성 양쪽에 모두 해당하는 아군</div>' : '';
-  host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', groups.strong)}${line('weak', '약상성', groups.weak)}${legend}</div>`;
+  const names = vs => vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ');
+  const line = (cls, mark, items) => items.length ? `<div class="line ${cls}"><b>${mark}</b> : ${items.join(', ')}</div>` : '';
+  const strong = Array.from(groups.strong.entries()).filter(([a]) => !mixed.includes(a))
+    .map(([a, vs]) => `<span class="ally">${a}</span> (${names(vs)})`);
+  const weak = Array.from(groups.weak.entries()).filter(([a]) => !mixed.includes(a))
+    .map(([a, vs]) => `<span class="ally">${a}</span> (${names(vs)})`);
+  const mix = mixed.map(a => `<span class="ally">${a}</span> (<span class="s">강 : ${names(groups.strong.get(a))}</span>, <span class="w">약 : ${names(groups.weak.get(a))}</span>)`);
+  host.innerHTML = `<div class="matchup-item">${line('strong', '강상성', strong)}${line('weak', '약상성', weak)}${line('mixed', '혼합', mix)}</div>`;
 }
 
 // 출전시 주의사항 — 매칭 없이 그냥 "이 캐릭터가 픽됐다"는 사실만으로
