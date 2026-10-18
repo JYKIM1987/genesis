@@ -99,7 +99,7 @@
   .notice-item .notice-entry + .notice-entry{ margin-top:6px; }
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
-  /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." / "혼합 : ..." 세 줄(강=파랑, 약=빨강, 혼합=검정).
+  /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." / "혼합 : ..." 세 줄(강=파랑, 약=빨강, 혼합=아군 주황).
      PC: 결과 영역 맨 위, 접이식(기본 접힘, 제목 클릭으로 펼침).
      모바일: 주의할 아군 탭 맨 밑, 항상 펼침(아래 미디어쿼리). */
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
@@ -118,7 +118,8 @@
   .matchup-item .line b{ font-weight:900; }
   .matchup-item .line.strong b, .matchup-item .line.strong .ally{ color:#1f5fd1; }
   .matchup-item .line.weak b, .matchup-item .line.weak .ally{ color:#d32f2f; }
-  /* 혼합(강·약 양쪽) — 라벨·아군은 검정, 괄호 안 "강 : …" 파랑 / "약 : …" 빨강 */
+  /* 혼합(강·약 양쪽) — 라벨은 검정, 아군은 주황, 괄호 안 "강 : …" 파랑 / "약 : …" 빨강 */
+  .matchup-item .line.mixed .ally{ color:#d97706; }
   .matchup-item .line.mixed .s{ color:#1f5fd1; }
   .matchup-item .line.mixed .w{ color:#d32f2f; }
 
