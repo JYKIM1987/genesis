@@ -575,7 +575,7 @@ const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버�
 //   when:   이 캐릭터들이 방덱에 전부 선택돼 있어야 표시
 //   unless: 이 캐릭터 중 하나라도 선택돼 있으면 미표시(선택)
 //   strong / weak: 내보낼 아군 — "강상성 :" / "약상성 :" 줄에 "아군 (상대, 상대)"로 표시
-//   memo:   아군 이름 바로 뒤에 붙는 짧은 메모 — "헬카이트(족쇄 면역) (아네모네)"(선택)
+//   memo:   괄호 안 상대 이름 뒤에 붙는 짧은 메모 — "헬카이트 (아네모네-족쇄면역)"(선택)
 // 같은 아군 문구는 한 묶음으로 합치고 괄호 안에 조건을 만족한 상대를 쉼표로 나열한다.
 // 출처는 박스 제목 한 곳에만 적는다(노트별 by 없음).
 const MATCHUP_NOTES = [
@@ -596,7 +596,7 @@ const MATCHUP_NOTES = [
   { when: ['아네모네'], weak: '프레데릭' },
   { when: ['아네모네'], weak: '시라노' },
   // 헬카이트(아군) 상성 — 강: 아네모네
-  { when: ['아네모네'], strong: '헬카이트', memo: '족쇄 면역' },
+  { when: ['아네모네'], strong: '헬카이트', memo: '족쇄면역' },
 ];
 
 const MAX_PICK = 4;
@@ -681,16 +681,14 @@ function renderMatchup(){
   const box = document.getElementById('matchupBox');
   const host = document.getElementById('matchupHost');
   const groups = { strong: new Map(), weak: new Map() };
-  const memos = new Map(); // 'strong|아군' → 메모(아군 이름 바로 뒤 괄호)
   MATCHUP_NOTES.forEach(n => {
     if(!n.when.every(c => picked.includes(c))) return;
     if((n.unless || []).some(c => picked.includes(c))) return;
-    const vs = { name: n.when.join(' + '), order: Math.max(...n.when.map(c => picked.indexOf(c))) };
+    const vs = { name: n.when.join(' + ') + (n.memo ? '-' + n.memo : ''), order: Math.max(...n.when.map(c => picked.indexOf(c))) };
     ['strong', 'weak'].forEach(k => {
       if(!n[k]) return;
       if(!groups[k].has(n[k])) groups[k].set(n[k], []);
       groups[k].get(n[k]).push(vs);
-      if(n.memo) memos.set(k + '|' + n[k], n.memo);
     });
   });
   const total = groups.strong.size + groups.weak.size;
@@ -705,7 +703,7 @@ function renderMatchup(){
   const both = ally => groups.strong.has(ally) && groups.weak.has(ally);
   const line = (cls, mark, map) => map.size ? `<div class="line ${cls}"><b>${mark}</b> : `
     + Array.from(map.entries()).map(([ally, vs]) =>
-        `<span class="ally${both(ally) ? ' both' : ''}">${ally}${memos.has(cls + '|' + ally) ? `(${memos.get(cls + '|' + ally)})` : ''}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
+        `<span class="ally${both(ally) ? ' both' : ''}">${ally}</span> (${vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ')})`).join(', ')
     + '</div>' : '';
   const hasBoth = Array.from(groups.strong.keys()).some(both);
   const legend = hasBoth ? '<div class="legend">※ <span class="both">주황색</span> : 강상성·약상성 양쪽에 모두 해당하는 아군</div>' : '';
