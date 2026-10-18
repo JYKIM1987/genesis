@@ -575,10 +575,9 @@ const PINNED_ROW_NAMES = ['대상지정불가(고유패시브)', '전체 디버�
 //   when:   이 캐릭터들이 방덱에 전부 선택돼 있어야 표시
 //   unless: 이 캐릭터 중 하나라도 선택돼 있으면 미표시(선택)
 //   strong / weak: 내보낼 아군 — "강상성 :" / "약상성 :" 줄에 "아군 (상대, 상대)"로 표시
-//   memo:   괄호 안 상대 이름 뒤에 붙는 짧은 메모 — "헬카이트 (아네모네;족쇄면역)"(선택)
 // 같은 아군 문구는 한 묶음으로 합치고 괄호 안에 조건을 만족한 상대를 쉼표로 나열한다.
 // 출처는 박스 제목 한 곳에만 적는다(노트별 by 없음).
-// 캐릭터 대 캐릭터 노트를 추가하면 반대 방향(강↔약, 아군↔상대, 메모 동일)도 항상 함께 넣는다.
+// 캐릭터 대 캐릭터 노트를 추가하면 반대 방향(강↔약, 아군↔상대)도 항상 함께 넣는다.
 const MATCHUP_NOTES = [
   // 카이 + 헬카이트(아군 조합) 상성 — 강: 철가면, 세타, 프레데릭, 벨제부르 / 약: 자비에르, 메르세데스
   { when: ['철가면'], strong: '카이 + 헬카이트' },
@@ -596,13 +595,13 @@ const MATCHUP_NOTES = [
   { when: ['벨제부르'], weak: '프레데릭' },
   { when: ['아네모네'], weak: '프레데릭' },
   { when: ['아네모네'], weak: '시라노' },
-  // 헬카이트(아군) 상성 — 강: 아네모네
-  { when: ['아네모네'], strong: '헬카이트', memo: '족쇄면역' },
-  // 알테어(아군) 상성 — 강: 아네모네
-  { when: ['아네모네'], strong: '알테어', memo: '족쇄' },
+  // 헬카이트(아군) 상성 — 강: 아네모네(족쇄면역)
+  { when: ['아네모네'], strong: '헬카이트' },
+  // 알테어(아군) 상성 — 강: 아네모네(족쇄)
+  { when: ['아네모네'], strong: '알테어' },
   // 아네모네(아군) 상성 — 약: 헬카이트(족쇄면역), 알테어(족쇄) — 위 두 줄의 반대
-  { when: ['헬카이트'], weak: '아네모네', memo: '족쇄면역' },
-  { when: ['알테어'], weak: '아네모네', memo: '족쇄' },
+  { when: ['헬카이트'], weak: '아네모네' },
+  { when: ['알테어'], weak: '아네모네' },
 ];
 
 const MAX_PICK = 4;
@@ -690,7 +689,7 @@ function renderMatchup(){
   MATCHUP_NOTES.forEach(n => {
     if(!n.when.every(c => picked.includes(c))) return;
     if((n.unless || []).some(c => picked.includes(c))) return;
-    const vs = { name: n.when.join(' + ') + (n.memo ? ';' + n.memo : ''), order: Math.max(...n.when.map(c => picked.indexOf(c))) };
+    const vs = { name: n.when.join(' + '), order: Math.max(...n.when.map(c => picked.indexOf(c))) };
     ['strong', 'weak'].forEach(k => {
       if(!n[k]) return;
       if(!groups[k].has(n[k])) groups[k].set(n[k], []);
