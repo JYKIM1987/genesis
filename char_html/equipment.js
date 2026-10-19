@@ -204,6 +204,12 @@ window.EQUIPMENT_OVERRIDE = {
       set4:{crit:{v:20,zone:'always'},critDmg:{v:10,zone:'always'},dotDmgReduction:{v:30,zone:'always'}}, set4desc:'전투 시 속성 상성 무시. 공격 시 적이 받는 치명타 확률 +20%/받는 치명타 피해 +10%, 지속 피해 감소율 +30%.',
       pieces:{투구:{name:'고결한 검황의 투구',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'고결한 검황의 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'고결한 검황의 장갑',maxStar:6, pieceStat:'phys', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 신발:{name:'고결한 검황의 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
     },
+    ARM27: {name:'VA 브륀힐드', grade:'전설',
+      weightClassOnly:'라이트',
+      set2:{hp:{v:15,zone:'village'},magPen:{v:15,zone:'village'}}, set2desc:'최대 체력 +15%, 마법 관통 +15%.',
+      set4:{mag:{v:20,zone:'always'},critResDmg:{v:20,zone:'always'},dmgReduction:{v:15,zone:'cond',cond:'공격 받을 시, 인접한 대상 기준 최대치 — 거리가 1칸 멀어질 때마다 5%씩 감소'},dmgIncrease:{v:15,zone:'cond',cond:'공격 시 대상이 받는 피해 증가, 인접한 대상 기준 최대치 — 거리가 1칸 멀어질 때마다 5%씩 감소'}}, set4desc:'주문력/받는 치명타 피해 감소 +20%(상시). 공격 받을 시 받는 피해 -15%, 공격 시 대상이 받는 피해 +15%. 이 효과는 인접한 대상에게 최대치로 적용되며, 거리가 1칸 멀어질 때마다 5%씩 수치 감소(최대 15%).',
+      pieces:{투구:{name:'VA 브륀힐드 날개',maxStar:6, pieceStat:'critResDmg', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 갑옷:{name:'VA 브륀힐드 갑옷',maxStar:6, pieceStat:'hp', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}, 장갑:{name:'VA 브륀힐드 장갑',maxStar:6, pieceStat:'magPen', pieceStars:{6:10}}, 신발:{name:'VA 브륀힐드 부츠',maxStar:6, pieceStat:'critResChance', pieceStars:{1:0,2:2,3:4,4:6,5:8,6:10}}}
+    },
   },
 
   // ── 악세사리 ────────────────────────────────────────────────────
