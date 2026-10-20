@@ -185,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -204,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -238,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -516,6 +527,50 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+베타
+
+1. 캐릭터 기믹
+- 집착:
+  - 게임 시작 시 가장 가까운 적 한 명이 "집착 대상"이 돼요.
+  - 대상이 베타 5칸 안에 있으면 베타가 받는 피해의 30%를 대신 받아요.
+  - 대상이 죽으면 그 팀에서 공격력이 가장 높은 적에게 넘어가고, 베타는 재행동 2중첩(쿨타임 1)을 얻어요.
+  - 바인드 오브 옵세션(액티브)을 쓰면 3칸 안의 적을 옆으로 끌어와 집착 대상을 걸고 1턴 동안 조종해요. 조종이 끝나면 영구 이동 불가가 남아요.
+- 락 온:
+  - 오의·블랑 공격으로 걸려요.
+  - 걸린 적이 베타 3칸 안에서 턴을 끝내면 터져요. 인접이면 주문력 130%, 아니면 100% 피해예요.
+  - 터질 때 광선 침식이 1중첩씩 쌓여요.
+- 광선 침식 → 광자 잔류:
+  - 광선 침식은 1중첩당 받는 치명타 피해 +15%예요.
+  - 3중첩이 되면 주문력 80%의 저항 무시 피해를 받고 광자 잔류로 바뀌어요. 광자 잔류는 받는 치명타 피해 +45%, TP 회복력 -1이에요.
+  - 체인 플라즈마·아크 캐논(액티브)을 쓰면 맞은 적 모두에게 광선 침식을 바로 쌓아요.
+  - 영원의 굴레(아티팩트)를 끼면 기본 공격·반격으로도 광선 침식을 쌓을 수 있어요. 공격 전 2칸 오라 안의 적은 추가 이동·추가 행동·클래스 패시브가 막히고 버프 지속 시간이 2턴 줄어요.
+- 부활 → 광애:
+  - 첫 죽음에 체력 100%로 부활하면서 디버프와 추방이 모두 풀려요.
+  - 이어서 2턴 동안 광애예요. 주는 피해 +30%, 받는 피해 +10%이고 AI가 조작해요. 끝나면 체력 40% 회복, 주문력 +30%예요.
+  - 부활하면 일편단심의 광기도 얻어요. 스킬 소모 TP -1이고, 집착 대상을 때리면 대상이 받는 피해 +20%에 확정 치명타예요.
+- 사랑/질투(권능):
+  - 게임 시작 시 둘 중 하나를 얻어요. 사랑은 버프 해제 면역에 공격 후 버프 지속 +1, 질투는 공격 후 대상의 버프 1개를 빼앗아요(쿨타임 1).
+  - 시즈 진영 아군 수만큼 오만(최대 3중첩)을 얻어요. 적에게 피해를 준 수만큼 위엄(최대 5중첩)이 쌓이고, 행동 제어를 받으면 중첩 수×10% 확률로 풀어요(쿨타임 1).
+- 이동: 지형을 넘고, 적의 통제 영역과 이동 방해를 무시해요.
+
+2. 클래스
+- 헤러틱: 인접한 적에게 맞아도 주문력이 반으로 줄지 않아요. 적에게 붙어 있어도 손해가 없으니, 락 온 피해가 가장 큰 인접 130% 구간에 계속 머무를 수 있어요.
+- 아크 엑시큐터: 3칸 이상 떨어진 대상은 받는 피해 +35%이고, 락 온은 3칸 이내에서 터져요. 정확히 3칸이 둘 다 만족하는 거리예요. 공격 후 철수(추가 이동)로 그 거리를 다시 맞출 수 있고, 아크 캐논도 멀리 있는 적에게 피해가 줄지 않아요.
+- 플라즈마티스트: 재행동 획득 불가를 무시해요. 집착 대상을 잡았을 때 받는 재행동 2중첩을 상대 디버프로 막을 수 없어요.
+
+3. 상대할 때
+- 배치 단계에서 집착 대상이 될 캐릭터를 고르고, 전투가 시작되면 베타와 5칸 이상 떨어뜨리세요. 베타와 가장 가까이 배치되는 우리 편이 집착 대상이 되고, 5칸 안에 있으면 우리가 베타를 때린 피해의 30%를 우리 집착 대상이 대신 맞아요.
+- 우리 집착 대상이 죽지 않게 지키세요. 대상이 죽으면 베타가 재행동 2중첩을 얻고, 다음 집착 대상은 우리 쪽 공격력 1위 캐릭터가 돼요. 부활한 베타는 집착 대상을 확정 치명타로 때려요.
+- 바인드 오브 옵세션 베타 3칸 안에는 핵심 캐릭터를 두지 마세요. 끌려가 1턴 조종당하고, 그 뒤로는 끝까지 움직이지 못해요.
+- 베타 3칸 안에서 턴을 끝내지 마세요. 락 온이 터지고 침식이 쌓여요. 3번 쌓이면 치명타에 아주 약해지고 TP 회복도 줄어요. 영원의 굴레 베타는 반격으로도 침식을 걸고 2칸 안에서는 재행동·추가 이동·클래스 패시브가 막히니, 약한 공격으로 여러 번 치지 말고 한 번에 크게 넣으세요.
+- 행동 제어는 베타가 피해를 많이 주기 전에 쓰세요. 위엄이 쌓일수록 풀릴 확률이 올라가요. 사랑 베타는 버프 해제가 안 통하고, 질투 베타는 우리 버프를 빼앗아 가요.
+- 최소 두 번 잡아야 해요. 부활 후 광애 2턴은 받는 피해가 +10%예요. 끝나면 체력 40% 회복에 주문력 +30%로 더 세지니까 광애 안에 끝내세요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -917,6 +972,23 @@ function saveMemo(charName, text){
     if(text) all[charName] = text; else delete all[charName];
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
+}
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.hidden = false;
+  box.dataset.ready = '1';
 }
 function placeMemo(){
   if(memoReady) return;
@@ -2009,6 +2081,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
