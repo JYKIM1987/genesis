@@ -308,6 +308,8 @@ window.EQUIPMENT_OVERRIDE = {
     '올시간': ['RUNE21','RUNE21','RUNE21','RUNE21','RUNE21','RUNE21'],
     '올계승': ['RUNE22','RUNE22','RUNE22','RUNE22','RUNE22','RUNE22'],
     '올빛': ['RUNE23','RUNE23','RUNE23','RUNE23','RUNE23','RUNE23'],
+    '올카이': ['RUNE24','RUNE24','RUNE24','RUNE24','RUNE24','RUNE24'],
+    '올베타': ['RUNE25','RUNE25','RUNE25','RUNE25','RUNE25','RUNE25'],
   },
 
   // ── 구조 상수 ────────────────────────────────────────────────────
