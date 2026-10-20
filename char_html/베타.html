@@ -272,7 +272,8 @@ const HL_STATS = ['crit','phys','magPen','atk','mag'];
 // 유지) → 치명타확률 → 받는 피해감소 → 물리관통/마법관통 중 이 캐릭터의 주 데미지 타입 하나만(이자벨 리피네는 전
 // 스킬이 물리 고정 피해라 물리관통 채택) → 물리관통저항 → 마법관통저항. 다른 결과 표에서도 이 배열에 있는 스탯 행은
 // 동일하게 굵게(.hlrow) 강조된다.
-const HL_ROW_STATS = ['hp', 'atk', 'mag', 'crit', 'dmgReduction', 'magPen', 'physRes', 'magRes'];
+// 베타는 전 스킬이 주문력 계수라 공격력은 주요 스탯에서 뺀다(물리관통을 뺀 것과 같은 이유, 2026-10-21 사용자 요청).
+const HL_ROW_STATS = ['hp', 'mag', 'crit', 'dmgReduction', 'magPen', 'physRes', 'magRes'];
 const STAT_LABEL = {
   hp:'최대 체력', atk:'공격력', mag:'주문력', def:'방어력', res:'저항력',
   move:'이동력', crit:'치명타확률', critDmg:'치명타 피해량',
