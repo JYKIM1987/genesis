@@ -380,45 +380,45 @@ const CHARACTERS = {
             stack: { perStack:{ dmgIncrease:5, dmgReduction:5 }, maxStack: 3 },
             toggle: { label:'"광애" 보유 중(부활 후 2턴)', shortName:'광애', stat:{ dmgIncrease:{v:20,zone:'cond',cond:'"광애 3" 보유 중(부활 후 2턴, AI 제어)'}, dmgReduction:{v:-18,zone:'cond',cond:'"광애 3" 보유 중 — 받는 피해 +18%'} }, desc:'"짓밟힌 장미"로 부활하면 2턴 동안 "광애". 주는 피해 +20%, 받는 피해 +18%, AI가 조작.' },
             toggle2: { label:'"광애" 만료 후', shortName:'광애 만료', stat:{ mag:{v:23,zone:'cond',cond:'"광애 3" 효과 만료 시 주문력 증가'} }, desc:'"광애"가 끝나면 최대 체력의 25% 회복, 주문력 +23%.' },
-            radio: { label:'권능 — 게임 시작 시 하나 부여', options:[
-              { name:'사랑', stat:{ hp:{v:30,zone:'always'}, atk:{v:30,zone:'always'}, mag:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, physRes:{v:15,zone:'always'}, magRes:{v:15,zone:'always'} } },
-              { name:'질투', stat:{ mag:{v:30,zone:'always'}, hp:{v:30,zone:'always'}, magPen:{v:25,zone:'always'} } }
+            radio: { label:'권능 — 게임 시작 시 무작위로 하나 부여', options:[
+              { name:'사랑', stat:{ hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, atk:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, def:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, res:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, physRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, magRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'} } },
+              { name:'질투', stat:{ mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, magPen:{v:25,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'} } }
             ] } },
           { name: '6각',
             stat: { mag:{v:35,zone:'always'}, dmgReduction:{v:23,zone:'cond',cond:'집착 대상이 5칸 이내에 있을 때(받는 피해의 23%를 나눠 받음, "집착증")'} },
             stack: { perStack:{ dmgIncrease:5, dmgReduction:5 }, maxStack: 3 },
             toggle: { label:'"광애" 보유 중(부활 후 2턴)', shortName:'광애', stat:{ dmgIncrease:{v:25,zone:'cond',cond:'"광애 4" 보유 중(부활 후 2턴, AI 제어)'}, dmgReduction:{v:-18,zone:'cond',cond:'"광애 4" 보유 중 — 받는 피해 +18%'} }, desc:'"짓밟힌 장미"로 부활하면 2턴 동안 "광애". 주는 피해 +25%, 받는 피해 +18%, AI가 조작.' },
             toggle2: { label:'"광애" 만료 후', shortName:'광애 만료', stat:{ mag:{v:23,zone:'cond',cond:'"광애 4" 효과 만료 시 주문력 증가'} }, desc:'"광애"가 끝나면 최대 체력의 30% 회복, 주문력 +23%.' },
-            radio: { label:'권능 — 게임 시작 시 하나 부여', options:[
-              { name:'사랑', stat:{ hp:{v:30,zone:'always'}, atk:{v:30,zone:'always'}, mag:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, physRes:{v:15,zone:'always'}, magRes:{v:15,zone:'always'} } },
-              { name:'질투', stat:{ mag:{v:30,zone:'always'}, hp:{v:30,zone:'always'}, magPen:{v:25,zone:'always'} } }
+            radio: { label:'권능 — 게임 시작 시 무작위로 하나 부여', options:[
+              { name:'사랑', stat:{ hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, atk:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, def:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, res:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, physRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, magRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'} } },
+              { name:'질투', stat:{ mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, magPen:{v:25,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'} } }
             ] } },
           { name: '2초',
             stat: { mag:{v:40,zone:'always'}, hp:{v:10,zone:'always'}, dmgReduction:{v:25,zone:'cond',cond:'집착 대상이 5칸 이내에 있을 때(받는 피해의 25%를 나눠 받음, "집착증")'}, dmgIncrease:{v:20,zone:'cond',cond:'"일편단심의 광기"(부활 후 영구) 보유 중 집착 대상 공격 시(대상이 받는 피해 증가)'} },
             stack: { perStack:{ dmgIncrease:5, dmgReduction:5 }, maxStack: 3 },
             toggle: { label:'"광애" 보유 중(부활 후 2턴)', shortName:'광애', stat:{ dmgIncrease:{v:25,zone:'cond',cond:'"광애 5" 보유 중(부활 후 2턴, AI 제어)'}, dmgReduction:{v:-15,zone:'cond',cond:'"광애 5" 보유 중 — 받는 피해 +15%'} }, desc:'"짓밟힌 장미"로 부활하면 2턴 동안 "광애". 주는 피해 +25%, 받는 피해 +15%, AI가 조작.' },
             toggle2: { label:'"광애" 만료 후', shortName:'광애 만료', stat:{ mag:{v:26,zone:'cond',cond:'"광애 5" 효과 만료 시 주문력 증가'} }, desc:'"광애"가 끝나면 최대 체력의 30% 회복, 주문력 +26%.' },
-            radio: { label:'권능 — 게임 시작 시 하나 부여', options:[
-              { name:'사랑', stat:{ hp:{v:30,zone:'always'}, atk:{v:30,zone:'always'}, mag:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, physRes:{v:15,zone:'always'}, magRes:{v:15,zone:'always'} } },
-              { name:'질투', stat:{ mag:{v:30,zone:'always'}, hp:{v:30,zone:'always'}, magPen:{v:25,zone:'always'} } }
+            radio: { label:'권능 — 게임 시작 시 무작위로 하나 부여', options:[
+              { name:'사랑', stat:{ hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, atk:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, def:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, res:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, physRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, magRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'} } },
+              { name:'질투', stat:{ mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, magPen:{v:25,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'} } }
             ] } },
           { name: '4초',
             stat: { mag:{v:45,zone:'always'}, hp:{v:20,zone:'always'}, dmgReduction:{v:27,zone:'cond',cond:'집착 대상이 5칸 이내에 있을 때(받는 피해의 27%를 나눠 받음, "집착증")'}, dmgIncrease:{v:20,zone:'cond',cond:'"일편단심의 광기"(부활 후 영구) 보유 중 집착 대상 공격 시(대상이 받는 피해 증가)'} },
             stack: { perStack:{ dmgIncrease:5, dmgReduction:5 }, maxStack: 3 },
             toggle: { label:'"광애" 보유 중(부활 후 2턴)', shortName:'광애', stat:{ dmgIncrease:{v:30,zone:'cond',cond:'"광애 6" 보유 중(부활 후 2턴, AI 제어)'}, dmgReduction:{v:-15,zone:'cond',cond:'"광애 6" 보유 중 — 받는 피해 +15%'} }, desc:'"짓밟힌 장미"로 부활하면 2턴 동안 "광애". 주는 피해 +30%, 받는 피해 +15%, AI가 조작.' },
             toggle2: { label:'"광애" 만료 후', shortName:'광애 만료', stat:{ mag:{v:26,zone:'cond',cond:'"광애 6" 효과 만료 시 주문력 증가'} }, desc:'"광애"가 끝나면 최대 체력의 35% 회복, 주문력 +26%.' },
-            radio: { label:'권능 — 게임 시작 시 하나 부여', options:[
-              { name:'사랑', stat:{ hp:{v:30,zone:'always'}, atk:{v:30,zone:'always'}, mag:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, physRes:{v:15,zone:'always'}, magRes:{v:15,zone:'always'} } },
-              { name:'질투', stat:{ mag:{v:30,zone:'always'}, hp:{v:30,zone:'always'}, magPen:{v:25,zone:'always'} } }
+            radio: { label:'권능 — 게임 시작 시 무작위로 하나 부여', options:[
+              { name:'사랑', stat:{ hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, atk:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, def:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, res:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, physRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, magRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'} } },
+              { name:'질투', stat:{ mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, magPen:{v:25,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'} } }
             ] } },
           { name: '6초',
             stat: { mag:{v:50,zone:'always'}, hp:{v:30,zone:'always'}, dmgReduction:{v:30,zone:'cond',cond:'집착 대상이 5칸 이내에 있을 때(받는 피해의 30%를 나눠 받음, "집착증")'}, dmgIncrease:{v:20,zone:'cond',cond:'"일편단심의 광기"(부활 후 영구) 보유 중 집착 대상 공격 시(대상이 받는 피해 증가)'} },
             stack: { perStack:{ dmgIncrease:5, dmgReduction:5 }, maxStack: 3 },
             toggle: { label:'"광애" 보유 중(부활 후 2턴)', shortName:'광애', stat:{ dmgIncrease:{v:30,zone:'cond',cond:'"광애 7" 보유 중(부활 후 2턴, AI 제어)'}, dmgReduction:{v:-10,zone:'cond',cond:'"광애 7" 보유 중 — 받는 피해 +10%'} }, desc:'"짓밟힌 장미"로 부활하면 2턴 동안 "광애". 주는 피해 +30%, 받는 피해 +10%, AI가 조작.' },
             toggle2: { label:'"광애" 만료 후', shortName:'광애 만료', stat:{ mag:{v:30,zone:'cond',cond:'"광애 7" 효과 만료 시 주문력 증가'} }, desc:'"광애"가 끝나면 최대 체력의 40% 회복, 주문력 +30%.' },
-            radio: { label:'권능 — 게임 시작 시 하나 부여', options:[
-              { name:'사랑', stat:{ hp:{v:30,zone:'always'}, atk:{v:30,zone:'always'}, mag:{v:30,zone:'always'}, def:{v:30,zone:'always'}, res:{v:30,zone:'always'}, physRes:{v:15,zone:'always'}, magRes:{v:15,zone:'always'} } },
-              { name:'질투', stat:{ mag:{v:30,zone:'always'}, hp:{v:30,zone:'always'}, magPen:{v:25,zone:'always'} } }
+            radio: { label:'권능 — 게임 시작 시 무작위로 하나 부여', options:[
+              { name:'사랑', stat:{ hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, atk:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, def:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, res:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, physRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'}, magRes:{v:15,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "사랑" 부여 시'} } },
+              { name:'질투', stat:{ mag:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, hp:{v:30,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'}, magPen:{v:25,zone:'cond',cond:'게임 시작 시 "사랑"/"질투" 중 무작위 1개 — "질투" 부여 시'} } }
             ] } }
         ]
       },
