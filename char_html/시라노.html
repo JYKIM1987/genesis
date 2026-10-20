@@ -169,25 +169,6 @@
     font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
     border-top:1px dashed var(--border);
   }
-  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
-  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
-  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
-  .ai-eval .ai-disclaimer{
-    font-size:11px; font-weight:bold; color:var(--danger);
-    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
-    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
-  }
-  .ai-eval .tagline{
-    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
-    border-radius:5px; padding:6px 9px; margin-bottom:10px;
-  }
-  .ai-eval .eval-block{ margin-bottom:9px; }
-  .ai-eval .eval-block .label{
-    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
-    letter-spacing:.03em; margin-bottom:4px;
-  }
-  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
-  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
   select[disabled]{ opacity:.4; }
   .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
   .save-slot{
@@ -204,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -223,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -257,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -473,6 +465,44 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+시라노
+
+1. 캐릭터 기믹
+- 잃은 체력 → 힘:
+  - 잃은 체력 비율의 80%만큼 공격력·치명타 확률이 올라요.
+  - 영혼 갈망(전용 무기)으로 턴 시작마다 남은 체력 5%를 스스로 잃어요.
+- 처치 → 추가 행동: 적 플레이어나 소환수를 처치하거나 대형 몬스터를 때리면 추가 행동과 TP 1을 얻어요(쿨타임 1).
+- 임계재생 3 / 헌신의 의지:
+  - 공격받아 체력이 75% 아래면 공격력 60%만큼 회복해요(쿨타임 1).
+  - 게임 중 한 번, 죽을 피해를 받으면 체력 100%로 부활하고 TP 2를 얻어요.
+  - 쿨타임 제어를 무시하고, 정신 지배에 면역이에요.
+- 엑토플라즘(아우터스킬):
+  - 원하는 칸으로 이동하고 재행동을 얻어요(재행동 획득 불가 무시). 원래 자리에 체력을 절반 나눈 사념체가 2턴 남고, 받는 피해 40%를 서로 나눠요.
+  - 다음 턴에 사념흡수·사념귀환으로 회수하면 사념체의 체력과 버프를 흡수하고 디버프·추방이 풀리며 재행동을 얻어요. 자동 회수되면 추가 턴을 얻어요.
+  - 쓸 때 디버프가 풀리고, TP가 1 이하면 TP를 채워요. 턴이 끝날 때 보호막이 없으면 잃은 체력 50%의 보호막을 얻어요. 침묵 중에도 쓸 수 있고 쿨타임 제어·감소를 받지 않아요.
+  - 회색의 잔영(아티팩트)을 끼면 그 보호막을 받을 때 디버프가 1개 더 풀려요.
+- 소울 드레인 / 파멸의 부름(전용 무기):
+  - 스킬을 쓴 뒤나 턴 시작 시 TP가 1 이하면, 그 턴 기본 공격이 적 TP 1을 훔치고 쇠약화를 거는 소울 드레인으로 바뀌어요.
+  - 스킬을 쓰거나 처치하면 파멸의 도래가 쌓이고, 최대 중첩이면 공격 후 파멸의 부름(받는 피해 +20%, 받는 치유 -50%)을 걸어요.
+- 아수라파천무(오의): 주변 3바퀴를 때리고 3턴 동안 파멸의 기세를 얻어요. 공격·반격 후 대상에게 공격력 40%의 방어 무시 추가 피해를 줘요.
+
+2. 클래스
+- 그랜드마스터: 공격하거나 공격받은 뒤 쌓이는 절정의 호흡이 턴 종료 시 체력을 회복해 주고, 회복량은 잃은 체력 비율에 따라 최대 두 배가 돼요. 체력을 잃을수록 세지는 시라노가 낮은 체력을 버티기 쉬워요.
+
+3. 상대할 때
+- 두 번 잡아야 해요. 첫 죽음에 체력 100%와 TP 2로 부활해요.
+- 체력을 어중간하게 깎아 두지 마세요. 잃은 체력이 많을수록 공격력·치명타 확률이 올라가요. 깎기 시작했으면 그 턴에 끝내세요.
+- 체력 낮은 우리 편과 소환수를 시라노 근처에 두지 마세요. 처치할 때마다 추가 행동과 TP를 얻어요.
+- 엑토플라즘 사념체는 회수되기 전에 부수세요. 회수되면 사념체 체력과 버프를 흡수하고 디버프도 모두 풀려요.
+- 쿨타임 제어·정신 지배는 통하지 않고, 엑토플라즘은 침묵으로도 못 막아요. TP를 깎아도 소울 드레인으로 우리 TP를 도로 훔쳐 가니 체력을 노리세요.
+- 오의를 쓴 뒤 3턴은 약한 공격으로 건드리지 마세요. 반격할 때마다 방어 무시 추가 피해가 붙어요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -826,7 +856,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -875,6 +907,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -898,7 +949,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -1966,6 +2017,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2395,40 +2447,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
-// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
-function renderAIEval(){
-  return `<div class="ai-eval">
-    <h3>🤖 AI 평가</h3>
-    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
-    <div class="tagline">체력이 낮아질수록 강해지는 딜탱형 아우터원 — 클래스 선택으로 탱커/딜러/컨트롤러를 오가고, 소환수로 전장 유틸까지 겸비</div>
-    <div class="eval-block">
-      <div class="label">강점</div>
-      <ul>
-        <li>✓ 고유패시브 「회색 망토의 기사」가 공격력 +40%(상시)에 더해 잃은 체력 비율만큼 공격력/치명타 확률을 추가로 끌어올리는 구조라, 위기에 몰릴수록 오히려 화력이 붙습니다. 여기에 게임 중 1회 100% 체력으로 부활하는 "임계재생 3"까지 갖추고 있어, 상대의 확정 킬 계획을 한 번은 스스로 무산시킬 수 있는 저항력 있는 이너브레이크형 딜탱입니다.</li>
-        <li>✓ 클래스 3종의 역할이 뚜렷하게 갈립니다 — 그랜드마스터는 스탯 전방위 상승 + 인접 적 숫자에 비례해 받는 피해를 더 줄이는 근접 탱커형, 소드마스터는 전투 공격 시 공격력/치명타 확률과 함께 받는 피해까지 절반으로 깎는 공격 특화형, 어비스블레이드는 공격 전 범위 내 적의 공격력/주문력을 깎는 디버프 컨트롤형이라, 상대 조합에 맞춰 역할 자체를 바꿀 수 있습니다.</li>
-        <li>✓ 아우터스킬 「엑토플라즘」이 시전자와 동일 능력치의 분신을 세워 피해 35%를 나눠 받게 하고, 이후 원할 때 회수해 흡수한 체력/버프를 되찾아오는 구조라 순수 딜러 특성상 부족하기 쉬운 생존·유틸을 스스로 보완합니다.</li>
-        <li>✓ 오의 「아수라파천무」가 3바퀴 광역 물리 피해를 주면서 물리 흡혈 + 방어 무시 암흑 피해가 붙는 "파멸의 기세" 버프까지 얻어, 다수 교전에서 화력과 회복을 동시에 챙기는 광역 캐리형 스킬입니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">약점 / 주의점</div>
-      <ul>
-        <li>⚠ 고유패시브의 핵심 스케일링(잃은 체력 비율만큼 공격력/치명타 확률 증가)은 명시적 상한이 없는 연속 스케일링이라 이 계산기의 고정 합계에는 반영되지 않습니다 — 화면에 보이는 수치는 체력이 가득 찬 상태 기준이라, 실제 위기 상황의 잠재 화력은 계산기 표시보다 더 높습니다.</li>
-        <li>⚠ 소드마스터의 받는 피해 -50%는 "전투 공격 시"에만 붙는 조건부라, 자신이 공격하지 못하고 얻어맞기만 하는 턴(행동 제어에 걸리거나 원거리 견제에 노출되는 상황)에는 이 방어층이 통째로 빠집니다.</li>
-        <li>⚠ 그랜드마스터의 받는 피해 추가 감소는 3칸 이내 적 숫자에 비례해 커지는 구조라, 적에게 둘러싸여야 진가를 발휘합니다 — 근접전에는 강하지만 원거리 위주로 거리를 벌리는 상대에게는 이 감소분을 살리기 어렵습니다.</li>
-        <li>⚠ 아우터스킬 소환수 자체의 공격 패턴은 raw_data에 수치가 없어(소환자와 "동일 능력치"라고만 명시) 이 계산기가 추적하지 않으며, 「혼돈의 장막」의 무작위 디버프 복사 같은 확률·연쇄형 효과도 대표값을 정하기 어려워 미반영으로 남아 있습니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">상성 관계</div>
-      <ul>
-        <li>△ 1티어 공략 대상인 세타와 맞붙는 경우, 세타의 강점은 선공 시 「포격 드론 소환」으로 초반부터 진형을 무너뜨리는 데 있는데(후공 시 막을 수단이 마땅치 않은 게 문제), 시라노의 아우터스킬 「엑토플라즘」은 지정 타일에 2턴간 분신을 세워 피해 35%를 나눠 받고 그 타일 자체를 점유할 수 있어 초반 드론 공세를 몸으로 받아내거나 진입로를 막는 용도로 활용할 여지가 있습니다 — 다만 드론 자체의 공격 패턴이 raw_data에 없어 실제 상쇄 폭까지는 확언할 수 없는 제한된 정보 기반 추론입니다.</li>
-      </ul>
-    </div>
-  </div>`;
-}
-
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
@@ -2563,8 +2581,6 @@ function renderResults(){
   }
 
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
-
-  html += renderAIEval();
 
   document.getElementById('results').innerHTML = html;
 }

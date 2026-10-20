@@ -169,25 +169,6 @@
     font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
     border-top:1px dashed var(--border);
   }
-  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
-  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
-  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
-  .ai-eval .ai-disclaimer{
-    font-size:11px; font-weight:bold; color:var(--danger);
-    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
-    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
-  }
-  .ai-eval .tagline{
-    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
-    border-radius:5px; padding:6px 9px; margin-bottom:10px;
-  }
-  .ai-eval .eval-block{ margin-bottom:9px; }
-  .ai-eval .eval-block .label{
-    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
-    letter-spacing:.03em; margin-bottom:4px;
-  }
-  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
-  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
   select[disabled]{ opacity:.4; }
   .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
   .save-slot{
@@ -204,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -223,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -257,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -497,6 +489,42 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+하이델룬
+
+1. 캐릭터 기믹
+- 엔트로피 고스트(생존):
+  - 체력이 50% 이상일 때 죽을 피해를 한 번에 받으면 체력 1로 버티고 1턴 동안 엔트로피 고스트가 돼요(쿨타임 2).
+  - 추방당해도 대신 엔트로피 고스트가 돼요.
+  - 엔트로피 고스트 동안은 스킬·효과의 대상이 되지 않고, 재행동 획득 불가를 무시하고, 추방·위상 도약 상태의 적도 때릴 수 있어요.
+  - 아우터스킬 엔트로피 고스트를 쓰면 최대 체력 10%를 내고 직접 이 상태가 돼요. 침묵 중에도 쓸 수 있고, 쓸 때 자기 디버프를 모두 지우고 TP 1을 얻어요.
+- 디버프를 힘으로:
+  - 디버프가 있거나 엔트로피 고스트 상태면 공격력·치명타 확률이 +30%예요.
+  - 행동 제어를 받으면 시퀀스 브레이크(2턴)를 얻어요. 그 안에 스킬을 쓰면 추가 행동을 얻어요.
+  - 스킬 제어·쿨다운 효과를 받으면 쿨타임이 가장 긴 스킬 2개의 쿨타임이 초기화돼요.
+- 애프터쇼크(전용 무기):
+  - 적을 공격한 뒤 무작위 적 2명에게 킬 오더를 걸어요. 킬 오더는 받는 치명타 피해 +20%예요.
+  - 턴이 끝날 때 사거리 안에서 체력이 가장 낮은 적에게 공격력 80% 추가 피해를 줘요. 그 적을 처치하면 한 번 더 쏴요.
+- 언리얼 블랙홀(오의):
+  - 남은 체력의 50%를 내고, 대상 주변 3바퀴 안의 적에게 피해를 주고 중심으로 끌어당겨요.
+  - 이 공격에만 공격력·치명타 확률·물리 관통이 +50%예요.
+
+2. 클래스
+- 카오스블링거: 적의 디버프 1개당 주는 피해가 +15%예요. 애프터쇼크로 건 킬 오더도 디버프라 그만큼 더 세게 때려요.
+- L.T.K: 적을 처치하면 TP 1과 완벽한 사격을 다시 얻어요. 애프터쇼크가 턴 끝에 체력 낮은 적을 마무리하니 다시 얻을 기회가 많아요.
+
+3. 상대할 때
+- 체력을 먼저 50% 아래로 깎은 뒤 마무리하세요. 체력이 50% 이상이면 한 방에 죽을 피해를 받아도 체력 1로 버텨요. 버틴 뒤 쿨타임 2턴 안에 다시 치면 돼요.
+- 추방으로 빼려 하지 마세요. 추방은 엔트로피 고스트로 바뀌고, 그 1턴 동안은 우리 스킬·효과의 대상이 되지 않아요.
+- 행동 제어·스킬 제어는 아끼세요. 제어가 풀린 뒤 스킬 한 번에 추가 행동을 얻고, 스킬 제어·쿨다운은 쿨타임 초기화로 돌려줘요.
+- 킬 오더가 걸린 우리 편은 체력이 낮으면 하이델룬 사거리 밖으로 빼세요. 턴 끝 애프터쇼크가 체력이 가장 낮은 적을 노리고, 처치하면 한 번 더 쏴요.
+- 언리얼 블랙홀 앞에서는 뭉치지 마세요. 3바퀴 안의 적을 한데 끌어당겨요. 오의를 쓰면 하이델룬 체력이 절반이 되니 그 다음 턴에 몰아치세요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -850,7 +878,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -899,6 +929,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -922,7 +971,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -1999,6 +2048,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2428,39 +2478,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
-// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
-function renderAIEval(){
-  return `<div class="ai-eval">
-    <h3>🤖 AI 평가</h3>
-    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
-    <div class="tagline">치명타 리스크를 스스로 보정하는 밸런스형 이너브레이크 — 클래스 선택에 따라 딜러/카운터/지휘관을 오가는 하이브리드</div>
-    <div class="eval-block">
-      <div class="label">강점</div>
-      <ul>
-        <li>✓ 고유패시브 「로우엔의 영주」가 치명타 확률과 방어력/저항력을 동시에(6초 기준 +40%) 끌어올려, 순수 딜러형 캐릭터와 달리 공격/생존 스탯을 함께 챙기는 밸런스형 구조를 가집니다. 2초부터 열리는 "만회의 일격" 토글은 치명타를 놓친 다음 공격에서 치명타 확률/피해량/받는 치명타 확률 감소를 한꺼번에 몰아줘, 치명타 실패라는 리스크 자체를 스스로 보정하는 이중 안전장치로 작동합니다.</li>
-        <li>✓ 클래스 3종의 역할이 뚜렷합니다 — 베르딕트나이트는 적 공격 후 자동 회복 + 처형형 추가 턴으로 생존형 딜러, 아크리퍼는 치명타 확률/피해량을 순수하게 밀어주고 피격 시 받는 피해까지 줄여주는 화력형, 커맨드나이트는 함성 스킬로 아군 전체에 공격력/받는 피해 감소를 나눠주는 지휘관형이라, 파티 구성에 맞춰 역할을 바꿀 수 있습니다.</li>
-        <li>✓ "영민의 유산" 중첩이 아군 사망을 트리거로 공격력/체력/관통 저항을 스스로 강화하는 구조라, 아군이 무너지는 장기전·열세 상황일수록 오히려 버티는 힘이 강해지는 캐릭터입니다.</li>
-        <li>✓ 오의 「이극쌍연무」가 단일 대상 고배율 피해 + 후방 광역 추가 피해를 동시에 넣으면서 적중 대상에게 "무력 봉쇄"(공격/반격 불가)까지 걸어, 적 핵심 딜러 한 명을 화력 손실 없이 봉쇄하는 용도로도 쓸 수 있습니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">약점 / 주의점</div>
-      <ul>
-        <li>⚠ "영민의 유산"과 "만회의 일격" 모두 2초 발현부터 열리는 효과라, 3~6각성 구간에서는 치명타/방어력/저항력 고정 스탯만 있는 상대적으로 밋밋한 고유패시브에 머뭅니다 — 낮은 초 투자로는 이 캐릭터의 핵심 정체성(리스크 보정)을 살리기 어렵습니다.</li>
-        <li>⚠ 베르딕트나이트/아크리퍼의 "위상 해석"/"위상 간파"(적 버프·디버프 개수에 비례한 추가 피해)는 상대가 버프·디버프를 거의 걸지 않는 구성이면 사실상 발동하지 않아, 마주치는 상대에 따라 실질 화력 편차가 큽니다.</li>
-        <li>⚠ 액티브 대부분(연섬/무쌍관파/천파만인격 등)이 순수 물리 피해 위주로 이 계산기가 추적하는 스탯과 무관해, 실전 화력은 클래스/고유패시브/아티팩트 선택 쪽에서 대부분 갈립니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">상성 관계</div>
-      <ul>
-        <li>△ 1티어 공략 대상인 철가면과 맞붙으면, 철가면이 게임 시작부터 클래스 상시 상태("왕의 위엄"·"쌍극" 등)를 걸치고 고유패시브로 "썬라이트" 버프까지 스스로 얹는 버프 과다형 설계라, 베르딕트나이트 「위상 해석」(적 버프 개수당 받는 피해 증가)이 정상적으로 발동할 여지가 있습니다 — 다만 이 효과가 계산기에서 변동값으로 미추적 처리돼 실전 발동 폭은 상대 버프 상태에 따라 달라집니다.</li>
-      </ul>
-    </div>
-  </div>`;
-}
-
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
@@ -2600,8 +2617,6 @@ function renderResults(){
   }
 
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
-
-  html += renderAIEval();
 
   document.getElementById('results').innerHTML = html;
 }

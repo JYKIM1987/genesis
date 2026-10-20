@@ -185,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -204,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -238,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -551,6 +562,39 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+세타
+
+1. 캐릭터 기믹
+- 아야스-X 드론(소환수):
+  - 게임 시작 시 드론을 소환해요. 드론은 세타 공격력 100%를 쓰고, 지속 피해·쇠약·공포에 면역이고, 통제 영역을 무시해요.
+  - 드론이 죽거나 세타가 죽으면 드론이 터져서 3칸 안의 적에게 공격력 80% 피해를 주고 TP 1을 없애요.
+  - 드론이 없으면 턴이 끝날 때마다 조립이 쌓이고, 2중첩이 되면 옆 칸에 다시 소환해요.
+- 강화 장갑판:
+  - 게임 시작 시 3중첩(3턴)을 얻어요. 공격받을 때 받는 피해 -30%이고, 맞은 뒤 1중첩씩 줄어요.
+  - 자원 회수(전용 무기): 플레이어가 죽을 때마다 장갑판이 다시 쌓이고 체력과 TP 1을 회복해요.
+- 출력 증폭 / 자원 보급(전용 무기):
+  - 스킬을 쓰기 전마다 공격력·물리 관통 버프가 쌓여요(최대 2중첩).
+  - 스킬을 쓴 뒤 TP가 2 이하면 턴당 한 번 집중(행동 종료 시 TP 1)을 얻어요.
+  - 공격받은 뒤 체력이 40% 이하면 공격력 100%만큼 회복해요(쿨타임 3).
+- 아토믹 봄버(오의): 대상 주변 4칸을 때리고 35% 확률로 타오르는 대지를 깔아요. 중심 2칸 안의 적은 추가 피해에 소각(방어력·저항력 -25%)과 기절까지 받아요.
+
+2. 클래스
+- 오토마타 팅커: 아군 기계 유닛이 죽으면 회수 장갑판(보호막)이나 연속 기동(공격 후 재행동) 중 하나를 얻어요. 드론이 터져도 세타는 이득을 보고, 포격 드론 소환(액티브)으로 드론을 하나 더 세울 수 있어요. 자신이 소환한 기계 유닛이 스킬을 쓰면 그 스킬 쿨타임 -2와 집중을 줘요.
+
+3. 상대할 때
+- 드론은 3칸 밖에서 부수세요. 터질 때 3칸 안의 우리 편이 피해를 받고 TP 1을 잃어요. 세타를 잡을 때도 드론 옆이면 같은 일이 생겨요.
+- 드론보다 세타 본체를 먼저 노리세요. 드론은 부숴도 2턴 뒤 다시 나와요.
+- 강화 장갑판은 약한 공격으로 먼저 벗기세요. 맞을 때마다 1중첩씩 줄어요. 처음 3턴만 버티는 장갑이니, 그 뒤에 큰 공격을 몰아도 돼요.
+- 누군가 죽은 직후의 세타는 다시 단단해요. 플레이어가 죽을 때마다 장갑판·체력·TP가 돌아와요.
+- 체력 40% 아래로 떨어뜨렸으면 그 턴에 끝내세요. 맞은 뒤 40% 이하면 크게 회복해요(쿨타임 3).
+- 오의 앞에서 뭉치지 마세요. 중심 2칸은 기절이고, 깔린 타오르는 대지 칸에는 들어가지 마세요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -904,7 +948,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -953,6 +999,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -976,7 +1041,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -2044,6 +2109,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2473,8 +2539,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 캐릭터 추가 시점에 raw_data + 기사단전
-// 기초 정보(`7. 게임_시스템/기사단전.md` — 2026-07-24부터 영구 보관 위치, 예전엔 `_data_upload/`에 있었음)를 참고해 한 번 작성한다. 2026-07-23 신설.
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);

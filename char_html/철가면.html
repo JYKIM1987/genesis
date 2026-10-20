@@ -169,25 +169,6 @@
     font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
     border-top:1px dashed var(--border);
   }
-  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
-  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
-  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
-  .ai-eval .ai-disclaimer{
-    font-size:11px; font-weight:bold; color:var(--danger);
-    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
-    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
-  }
-  .ai-eval .tagline{
-    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
-    border-radius:5px; padding:6px 9px; margin-bottom:10px;
-  }
-  .ai-eval .eval-block{ margin-bottom:9px; }
-  .ai-eval .eval-block .label{
-    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
-    letter-spacing:.03em; margin-bottom:4px;
-  }
-  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
-  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
   select[disabled]{ opacity:.4; }
   .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
   .save-slot{
@@ -204,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -223,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -257,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -496,6 +488,38 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+철가면
+
+1. 캐릭터 기믹
+- 빛의 인도자(치명타):
+  - 치명타 확률이 100%를 넘으면 초과분 1%당 치명타 피해가 1% 올라요. 대상의 받는 치명타 확률도 계산에 들어가요.
+  - 공격이 치명타가 아니면 인과고정을 얻어 다음 공격이 확정 치명타예요. 공격할 때 대상의 받는 피해 감소를 최대 30%까지 무시해요.
+  - 추방·정신 지배에 면역이에요. 다른 아군의 사망 방지는 받지 않는 대신, 백업 프로세스로 게임 중 한 번 체력이 1 아래로 내려가지 않아요.
+- 경계 역전 / 경계 고착:
+  - 게임 시작 시 둘 중 하나를 무작위로 얻어요. 경계 역전은 받는 마법 피해 -40%, 경계 고착은 받는 물리 피해 -40%예요.
+  - 물리 피해를 받으면 경계 고착으로, 마법 피해를 받으면 경계 역전으로 바뀌어요. 방금 맞은 쪽 피해를 막는 상태로 바뀌는 셈이에요.
+- 턴 종료 선택: 턴이 끝날 때마다 기록점 고정·기록점 회귀·시간선 순행 중 하나를 골라요. 시간선 순행이면 썬라이트(피격 시 주위 3칸 적에게 피해와 버프 2개 해제, 아군 회복과 디버프 2개 해제)와 순행(공격력·주문력·관통 +10%, 최대 3중첩)을 얻어요.
+- 여명의 심판(전용 무기): 공격·반격으로 피해를 주면 50% 확률로(치명타면 확정) 주변 5바퀴 안의 무작위 적 4명에게 저항 무시 광휘 피해를 주고 군열(광휘 저항 감소)을 걸어요.
+- 아수라파천무(오의): 주변 3바퀴를 때리고 영혼손상·절망을 걸어요. 쓴 뒤 자신에게 썬라이트를 걸고 체력이 1이 되지만, 그 턴이 끝날 때까지 피해를 받지 않아요.
+- 열세 날개의 성역(아우터스킬): 영역 안의 적은 받는 치명타 확률·치명타 피해 +20%, 광휘 저항 -30%이고, 아우터원·콜라보 적이면 받는 피해도 +20%예요.
+
+2. 클래스
+- 킹: 반격이 무극잔광상으로 바뀌고, 쓸 때마다 잔광이 쌓여 무극잔광상 피해가 계속 커져요. 반격 피해도 여명의 심판을 터뜨려요. 기절·공포에 면역이고 추가 이동·추가 행동 획득 불가를 무시해요.
+- 듀얼마스터: 물리 관통 +40%, 치명타 확률 +30%로 치명타 확률 100% 초과를 맞추기 쉬워요. 초과분이 그대로 치명타 피해로 바뀌어요.
+
+3. 상대할 때
+- 철가면과 싸울 때는 물리·마법 피해를 번갈아 넣으세요. 맞은 쪽 피해를 막는 상태로 바뀌어서, 같은 종류로 연달아 치면 -40%를 계속 맞아요.
+- 오의를 쓴 턴에는 공격하지 마세요. 그 턴 동안은 피해를 받지 않아요. 다음 턴 철가면은 체력 1이지만 썬라이트가 남아 있으니, 3칸 밖에서 원거리로 마무리하세요.
+- 킹 철가면에게는 반격을 받는 공격을 여러 번 하지 마세요. 반격마다 무극잔광상이 세지고, 여명의 심판으로 주변 적까지 맞아요.
+- 받는 피해 감소 버프에만 기대지 마세요. 철가면은 그중 30%를 무시하고, 비치명타가 한 번 나오면 다음 공격은 확정 치명타예요.
+- 추방·정신 지배는 통하지 않아요. 백업 프로세스로 한 번은 체력 1로 버티니 마무리 공격을 한 번 더 남겨 두세요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -849,7 +873,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -898,6 +924,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -921,7 +966,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -1989,6 +2034,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2418,40 +2464,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
-// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
-function renderAIEval(){
-  return `<div class="ai-eval">
-    <h3>🤖 AI 평가</h3>
-    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
-    <div class="tagline">클래스 전환만으로 딜과 생존을 오가는 아우터원 딜탱 — 매 턴 "시간선 순행" 선택에 화력·회복이 함께 걸린 자가강화형</div>
-    <div class="eval-block">
-      <div class="label">강점</div>
-      <ul>
-        <li>✓ Tier3 클래스 3종이 전부 물리 화력 스탯(물리 관통/치명타 확률/공격력)에 상시 방어 스탯을 함께 얹고 있습니다 — 특히 시스템마스터(받는 피해 -40%)와 킹(공격력 +30%, 받는 피해 -30%)은 순수 딜러 클래스와 달리 생존력까지 동시에 챙겨, 상대에 따라 순수 화력형(듀얼마스터)과 딜탱형(킹/시스템마스터)을 자유롭게 오갈 수 있습니다.</li>
-        <li>✓ 고유패시브 「빛의 인도자」가 매 턴 종료 시 "시간선 순행"을 선택하면 공격력/치명타 확률 자버프 외에 주는 피해 증가와 치유량 증가가 함께 켜지고, 2~4초 구간에는 "썬라이트 2" 버프가 최대 3중첩까지 쌓이며 공격력/주문력/물리 관통/마법 관통을 동시에 끌어올립니다 — 화력·생존·자가회복을 한 선택으로 함께 챙기는 구조입니다.</li>
-        <li>✓ 킹 클래스는 반격이 「무극잔광상」으로 자동 교체되고 사용할 때마다 해제 불가 영구 자버프("잔광")가 쌓여, 전투가 길어질수록 스스로 강해지는 장기전형 설계입니다.</li>
-        <li>✓ 아우터스킬 「열세 날개의 성역」이 대상이 아우터원/콜라보 유닛이면 받는 피해를 추가로 +20% 얹어, 아우터원/콜라보가 몰린 상대 진영을 저격하는 용도로 쓸 수 있습니다. 오의 「아수라파천무」도 광역 피해를 주는 동시에 자신을 턴 종료까지 무피해 상태로 만들어, 오의를 쓰는 턴에는 스스로를 보호하며 딜을 넣을 수 있습니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">약점 / 주의점</div>
-      <ul>
-        <li>⚠ 핵심 정체성인 "시간선 순행" 선택이 매 턴 갱신되는 선택형 버프라, 항상 순행을 고를 수 있는 상황이 아니면(디버프 해제가 더 급한 턴 등) 이 계산기가 반영하는 주는 피해/치유량 증가·"썬라이트 2" 중첩 화력이 전부 빠집니다 — 조건 의존도가 높은 캐릭터입니다.</li>
-        <li>⚠ 각 클래스패시브의 게임 시작 부가 효과("쌍극 2", "오버클럭 2"/"언더클럭 2")와 킹 클래스 "잔광" 중첩의 정확한 수치가 raw_data 공백이라, 이 계산기가 보여주는 스탯보다 실전 체감 성능이 더 높을 가능성이 있습니다.</li>
-        <li>⚠ 액티브 대부분(연섬/무쌍관파/단월섬 등)이 순수 물리 피해 계수 위주라 이 계산기가 추적하는 스탯과 무관해, 실전 화력 차이는 대부분 클래스/고유패시브/아티팩트 선택에서 갈립니다.</li>
-        <li>⚠ 아티팩트 「붉은 아네모네」의 핵심 트리거("핏빛 아네모네" 중첩)가 아군 사망을 조건으로 걸려 있어, 아군 손실이 거의 없는 압승 구도에서는 공격력/주는 피해 보너스가 거의 발동하지 않습니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">상성 관계</div>
-      <ul>
-        <li>△ 철가면은 시스템마스터/킹 클래스 선택 시 받는 피해 -30~-40%가 상시로 깔리는 딜탱형 스탯 구조라, 알테어의 액티브 「블랙 미러」(피격 후 주문력 80% 반사)처럼 "공격하면 반사 피해로 역관광당하는" 견제 메커니즘에 대해 상대적으로 덜 취약합니다 — 반사로 받는 피해 자체가 철가면의 상시 피해 감소 스택에 그대로 걸리기 때문입니다. 다만 이 이점은 시스템마스터/킹 클래스를 선택했을 때에 한정되고, 듀얼마스터로 순수 딜러 세팅을 하면 그대로 노출됩니다.</li>
-      </ul>
-    </div>
-  </div>`;
-}
-
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
@@ -2586,8 +2598,6 @@ function renderResults(){
   }
 
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
-
-  html += renderAIEval();
 
   document.getElementById('results').innerHTML = html;
 }

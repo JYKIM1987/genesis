@@ -169,25 +169,6 @@
     font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
     border-top:1px dashed var(--border);
   }
-  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
-  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
-  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
-  .ai-eval .ai-disclaimer{
-    font-size:11px; font-weight:bold; color:var(--danger);
-    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
-    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
-  }
-  .ai-eval .tagline{
-    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
-    border-radius:5px; padding:6px 9px; margin-bottom:10px;
-  }
-  .ai-eval .eval-block{ margin-bottom:9px; }
-  .ai-eval .eval-block .label{
-    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
-    letter-spacing:.03em; margin-bottom:4px;
-  }
-  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
-  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
   select[disabled]{ opacity:.4; }
   .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
   .save-slot{
@@ -204,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -223,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -257,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -579,6 +571,35 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+아네모네
+
+1. 캐릭터 기믹
+- 진홍의 궤적:
+  - 게임 시작 시 얻어요. 적이 대상으로 지정할 수 없고, 이동 방해에 면역이고, 받는 범위 피해가 -30%예요.
+  - 같은 제피르 팰컨 소속 아군에게도 진홍의 궤적을 줘요.
+  - 주위 4칸 안의 다른 아군이 행동을 끝낼 때마다 그 아군의 디버프를 2개 지워요.
+- 진홍의 족쇄: 적이 추가 행동을 하면 2턴 동안 그 적의 공격력·주문력 -50%, 치유량·주는 보호막 -100%이고, 턴이 끝날 때마다 스킬 1개가 쿨다운돼요.
+- 진홍빛 낙원(전용 무기):
+  - 그 턴에 적을 공격하지 않고 행동을 끝내면 다음 턴 시작 시까지 오라를 펼쳐요. 주위 3칸 아군의 물리·마법 관통 +30%, TP 제거 면역이고, 아네모네 자신은 받는 범위 피해가 20% 더 줄어요.
+  - 자신이 준 광휘 버프가 풀리면 턴당 한 번 주위 2칸 아군을 회복시키고 무작위 버프를 줘요.
+- 전술 보급탄 투하(오의): 2턴 동안 주위 4칸 아군의 주문력·마법 관통·범위 피해 +40% 오라를 펼치고, 보급탄 5개를 떨어뜨려요. 보급탄은 3턴 동안 남아 주변 적에게 피해를, 주변 아군에게 회복을 줘요.
+
+2. 클래스
+- 호스피탈러: 주위 3칸 안의 적이 공격받으면 그 적의 방어력·물리 관통 저항 -30%, TP 1 제거예요. 아네모네는 적에게 지정되지 않으니 적 진영 가까이 붙어서 이 효과와 3칸 오라를 계속 유지할 수 있어요.
+
+3. 상대할 때
+- 단일 지정 공격으로는 아네모네를 잡을 수 없어요. 범위 공격으로 깎되, 받는 범위 피해가 -30%이고 오라 중이면 더 줄어드니 시간이 걸린다고 보세요.
+- 아네모네가 있을 때는 추가 행동·재행동을 아끼세요. 쓰는 순간 진홍의 족쇄로 공격력·주문력이 반토막 나고 회복도 막혀요.
+- 아네모네 4칸 안의 적에게 디버프를 걸 거면 그 적이 행동하기 전에 이득을 보세요. 행동을 끝낼 때마다 디버프가 2개씩 지워져요.
+- 아네모네가 공격하지 않고 턴을 넘긴 다음 턴에는 적 전열의 관통이 +30% 올라 있어요. 그 턴에 맞을 우리 편은 미리 물리세요.
+- 오의 보급탄은 부술 수 있으면 먼저 부수세요. 3턴 동안 적을 회복시키고 우리에게 피해를 줘요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -932,7 +953,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -981,6 +1004,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -1004,7 +1046,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -2072,6 +2114,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2501,34 +2544,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
-// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
-function renderAIEval(){
-  return `<div class="ai-eval">
-    <h3>🤖 AI 평가</h3>
-    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
-    <div class="tagline">라이트급 서포터 — 3개 클래스 전부 회복/보호막 성능을 갖추면서도 아군 밀집 시 추가 버프가 붙는 오라형 지원가로, 고유패시브 덕에 게임 시작 직후 2턴간 스스로는 표적이 되지 않는 안정적인 생존력을 지닙니다.</div>
-    <div class="eval-block">
-      <div class="label">강점</div>
-      <ul>
-        <li>✓ 고유패시브 「진홍의 궤적」이 3각부터 즉시 발동하는 해제 불가 버프로, 아군을 제외한 적으로부터 대상 지정 자체가 불가능해지고 이동 방해 면역·받는 범위 피해 -30%까지 갖춰 초반 생존이 사실상 보장됩니다.</li>
-        <li>✓ 카이러전(체력 최저 아군에게 자동 보호막)·호스피탈러(주위 아군 수 비례 치유량 증가)·카탈리스트(2명 이상 적과 인접 시 받는 피해/치유/보호막 대폭 강화) 세 클래스 모두 성격이 다른 회복·보호 메커니즘이라, 상대 조합의 화력 패턴(단일 집중/광역/근접 난전)에 맞춰 대응 방식을 바꿀 수 있습니다.</li>
-        <li>✓ 액티브 스킬 8개 중 「아이언 맨데이트」(2턴 후 재행동+쿨타임 제어 면역 자동 획득)와 「이머전시 에이드」(대상에게 추가 턴 부여)가 팀 전체의 행동 총량을 늘려주고, 「바이탈 이문」은 받는 치유/보호막 효과를 +100%까지 끌어올려 다른 힐러의 회복량까지 증폭시킵니다.</li>
-        <li>✓ 전용무기 「락타 파르바티」와 아티팩트 「보호의 날개」가 각각 관통/관통 저항 오라와 기본공격 피해 감소 오라를 자신 포함 주위 아군에게 제공해, 힐러이면서도 광역 버퍼 역할까지 겸합니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">약점 / 주의점</div>
-      <ul>
-        <li>⚠ 카탈리스트의 "골든 타임 2"는 아군이 적 2명 이상과 인접해야 발동하는 조건이라, 상대가 거리를 벌려 싸우는 원거리 위주 조합에는 이 클래스의 강화 효과가 잘 발동하지 않을 수 있습니다.</li>
-        <li>⚠ 전용무기의 물리/마법 관통 오라와 받는 범위 피해 감소는 "이번 턴에 적을 전혀 공격하지 않았을 때만" 다음 턴에 발동하는 조건부라, 아네모네 본인이 매 턴 공격에 참여하는 운영에서는 이 보너스를 안정적으로 받기 어렵습니다.</li>
-        <li>⚠ 액티브 대부분이 절대 회복량(주문력 %) 산정이라 이 계산기의 스탯 합계에는 잡히지 않으므로, 실전 회복량은 별도로 주문력 수치를 직접 곱해 가늠해야 합니다.</li>
-        <li>⚠ 라이트급 지원형 캐릭터 특성상 직접 딜링 수단이 거의 없어, 상대 진형을 붕괴시키는 순수 화력이 필요한 상황에서는 다른 딜러와의 조합이 필수적입니다.</li>
-      </ul>
-    </div>
-  </div>`;
-}
-
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
@@ -2663,8 +2678,6 @@ function renderResults(){
   }
 
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
-
-  html += renderAIEval();
 
   document.getElementById('results').innerHTML = html;
 }

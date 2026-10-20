@@ -169,25 +169,6 @@
     font-size:10px; color:var(--text-dim); margin-top:10px; padding-top:8px;
     border-top:1px dashed var(--border);
   }
-  /* AI 평가 — 합계 표 아래 고정 카드(정적 콘텐츠, 현재 빌드 선택과 무관). 구자료 마이그레이션 캐릭터 전용 유지. */
-  .ai-eval{ margin-top:14px; padding-top:12px; border-top:2px solid var(--accent); }
-  .ai-eval h3{ font-size:13px; color:var(--accent); margin:0 0 3px; text-transform:none; letter-spacing:0; }
-  .ai-eval .ai-disclaimer{
-    font-size:11px; font-weight:bold; color:var(--danger);
-    background:var(--panel2); border:1px solid var(--danger); border-radius:5px;
-    padding:5px 8px; margin-bottom:8px; display:flex; align-items:center; gap:5px;
-  }
-  .ai-eval .tagline{
-    font-size:12px; font-weight:bold; color:var(--text); background:var(--accent-bg);
-    border-radius:5px; padding:6px 9px; margin-bottom:10px;
-  }
-  .ai-eval .eval-block{ margin-bottom:9px; }
-  .ai-eval .eval-block .label{
-    font-size:10.5px; font-weight:900; color:var(--text-dim); text-transform:uppercase;
-    letter-spacing:.03em; margin-bottom:4px;
-  }
-  .ai-eval ul{ margin:0; padding-left:0; list-style:none; font-size:11.5px; line-height:1.55; }
-  .ai-eval li{ margin-bottom:4px; padding-left:1.1em; text-indent:-1.1em; }
   select[disabled]{ opacity:.4; }
   .save-slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
   .save-slot{
@@ -204,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -223,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -257,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -486,6 +478,44 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+흑태자
+
+1. 캐릭터 기믹
+- 극한의 무 → 이중 방어:
+  - 매 턴 시작 시 극한의 무를 얻어요. 받는 피해 -75%예요.
+  - 적에게 전투 공격을 받으면 공격력 75%만큼 체력을 회복하고 사라져요. 대신 이중 방어(받는 피해 -25%, 고정 피해 저항 +25%)가 붙고, 치명타를 맞거나 턴이 시작되면 풀려요.
+  - 선제 공격이 있고 반격 사정거리가 +1이에요.
+  - 용아 : 여명(아티팩트)을 끼면 게임 중 한 번 체력 80%로 부활하고, 부활할 때 행동 제어가 모두 풀려요.
+- 영자 축적 → 아수라파천무(오의):
+  - 아수라파천무가 아닌 공격으로 적을 처치하면 턴당 한 번 영자 축적이 쌓여요(최대 4중첩).
+  - 1중첩당 오의 TP -1, 2중첩부터 오의가 한 번 더 발동하고, 4중첩이면 피해 +50%예요.
+  - 오의는 주변 3바퀴 안의 적을 때리고, 흑태자가 잃은 체력 비율만큼 피해가 커져요.
+- 검은 불꽃(전용 무기):
+  - 아군 턴이 시작될 때마다 남은 체력 일부를 스스로 잃어요. 잃은 체력은 오의 피해를 키워요.
+  - 치명타를 맞힌 수만큼 검은 불꽃이 쌓여요(최대 3중첩). 전투 후 대상 주변 2바퀴에 추가 피해를 주며 1중첩씩 써요.
+  - 적을 처치하면 체력을 회복하고, 쿨타임이 가장 긴 스킬 1개의 쿨타임이 1 줄어요.
+  - 암명연살검(액티브)을 쓰면 잃은 체력 비율만큼 치명타 확률이 올라요. 대상이 살아남으면 1턴 추방해요.
+- 쿨다운 묶기: 공격 후 주변 1바퀴 안의 무작위 적 3명의 스킬 1개씩을 쿨다운 상태로 만들어요.
+- 궁극 그리마(아우터스킬): 3칸 안으로 이동해 주변 1바퀴에 고정 피해를 주고, 맞힌 적 1명당 TP 1을 얻어요. 쓴 뒤 디버프를 모두 지우고 다음 턴 시작 시까지 디버프에 면역이에요. 침묵 중에도 쓸 수 있고 쿨타임 제어·감소를 받지 않아요.
+
+2. 클래스
+- 데스로드: 스킬로 적 2명 이상에게 피해를 주면 3칸 안으로 순간 이동해요. 아수라파천무·궁극 그리마로 여럿을 때린 뒤 다음 처치 대상 옆으로 바로 붙을 수 있어요.
+- 다크나이트: 범위 스킬로 맞힌 적에게 50% 확률로, 턴이 끝날 때 인접한 적에게 약화를 걸어요. 디버프가 있는 적과 싸울 때 받는 피해가 줄어서, 극한의 무가 벗겨진 뒤에도 근접 난전에서 버티기 쉬워요.
+
+3. 상대할 때
+- 첫 타는 약한 공격으로 극한의 무를 벗기세요. 매 턴 받는 피해 -75%로 시작하고, 한 번 맞으면 회복하며 사라져요. 이어서 치명타로 이중 방어까지 깬 다음 큰 공격을 넣으세요.
+- 흑태자에게 처치당하지 않게 체력 낮은 우리 편을 빼세요. 처치마다 영자 축적이 쌓이고, 4중첩 오의는 두 번 터지면서 피해도 +50%예요. 오의 범위인 3바퀴 밖에 서세요.
+- 체력을 어중간하게 깎아 두지 마세요. 잃은 체력이 많을수록 오의가 세지고 암명연살검 치명타 확률도 올라가요. 깎기 시작했으면 그 턴에 끝내세요.
+- 궁극 그리마 직후에는 디버프를 아끼세요. 다음 턴 시작 시까지 면역이에요. 침묵·쿨타임 제어로 이 스킬을 막을 수도 없어요.
+- 흑태자 옆 1바퀴에 여럿이 모여 있지 마세요. 흑태자가 공격할 때마다 그 안의 우리 편 3명까지 스킬이 하나씩 쿨다운돼요.
+- 용아 : 여명 흑태자는 두 번 잡아야 해요. 부활하면 체력 80%에 행동 제어도 다 풀려요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -839,7 +869,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -888,6 +920,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -911,7 +962,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -1979,6 +2030,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2408,33 +2460,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 구자료 마이그레이션 캐릭터는 예전 파일의
-// renderAIEval() 본문을 그대로 옮겨온다(신규 캐릭터는 이 기능을 쓰지 않음 — add_char SKILL.md 4장 참고).
-function renderAIEval(){
-  return `<div class="ai-eval">
-    <h3>🤖 AI 평가</h3>
-    <div class="ai-disclaimer">⚠ 캐릭터 데이터와 아주 기본적인 기사단전 특성을 통해 추론한 내용입니다. 참고용 또는 재미로 봐주세요.</div>
-    <div class="tagline">"맞아야 강해지는" 역설계 탱커형 아우터원 — 자가 회복과 받는 피해 감소를 스스로 갱신하며 버티다가, 잃은 체력을 화력으로 되돌리는 오의로 마무리</div>
-    <div class="eval-block">
-      <div class="label">강점</div>
-      <ul>
-        <li>✓ 고유패시브 「극한의 무」가 상시 공격력 증가와 받는 피해 -75%(6초 기준)를 동시에 제공하면서, 적 전투 공격을 받을 때마다 공격력의 75%만큼 자동으로 체력을 회복합니다 — 별도 액티브 소모 없이 매 턴 스스로 버티는 구조라 지속 전투에 강합니다.</li>
-        <li>✓ 오의 「아수라파천무」가 잃은 체력 비율만큼 피해량이 늘어나는 설계라, 위 자가 회복 사이클로 깎인 체력이 오히려 오의 한 방의 위력을 키우는 쪽으로 되돌아옵니다 — 버티는 행위 자체가 다음 큰 피해로 이어지는 선순환 구조.</li>
-        <li>✓ 클래스 3종이 서로 다른 강점을 제공합니다 — 검황은 받는 스킬 피해 감소까지 얹은 순수 공/방 극대화형, 다크나이트는 디버프 보유 적 상대로 받는 피해를 추가로 줄이는 대인전형, 데스로드는 물리/마법 관통 저항 +40%를 상시 확보해 관통형 상대에 특히 강한 방어형이라 상대 조합에 맞춰 역할을 바꿀 수 있습니다.</li>
-        <li>✓ 아우터스킬 「궁극 그리마」가 쿨타임 제어·침묵 무시로 언제든 재위치 + 광역 고정 피해 + 자신의 디버프 전부 해제 + 다음 턴까지 디버프 면역을 한 번에 제공해, 위치 선정 실수나 디버프 봉쇄 상황을 스스로 되돌릴 수 있는 비상 탈출구 역할을 합니다.</li>
-      </ul>
-    </div>
-    <div class="eval-block">
-      <div class="label">약점 / 주의점</div>
-      <ul>
-        <li>⚠ 4초부터는 "극한의 무"가 발동한 직후 곧바로 훨씬 약한 "이중 방어"(받는 피해 -20%/-25%)로 전환되고, 치명타 피격이나 다음 턴 시작으로 해제될 때까지 원래의 -70%/-75% 방어력이 돌아오지 않습니다 — 첫 피격 직후 짧은 시간 동안은 오히려 평소보다 훨씬 많이 맞는 취약 구간이 생기므로, 상대가 이 타이밍에 집중 공격을 몰아넣으면 자가 회복만으로 버티기 어려울 수 있습니다.</li>
-        <li>⚠ 핵심 정체성인 "맞아야 강해지는" 사이클 자체가 선제 피격을 전제로 하므로, 선공을 뺏기지 않고 일방적으로 압살하는 상대(예: 초반 화력 집중형 조합)를 만나면 정작 사이클을 한 번도 못 돌리고 무너질 위험이 있습니다.</li>
-        <li>⚠ "영자 축적"(오의 강화 중첩)은 "아수라파천무"가 아닌 다른 공격으로 적을 처치해야만 쌓이는 조건부 자원이라, 처치가 잘 안 나오는 소모전 구도에서는 오의 강화 없이 기본 피해량으로만 오의를 써야 하는 경우가 잦습니다.</li>
-      </ul>
-    </div>
-  </div>`;
-}
-
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
@@ -2569,8 +2594,6 @@ function renderResults(){
   }
 
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
-
-  html += renderAIEval();
 
   document.getElementById('results').innerHTML = html;
 }

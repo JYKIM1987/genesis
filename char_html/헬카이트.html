@@ -185,6 +185,14 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
+  .kit-sum[hidden]{ display:none; }
+  .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
+  .kit-sum .kit-h:first-child{ margin-top:0; }
+  .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
   /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
@@ -204,6 +212,8 @@
     .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
     .results{ height:auto; overflow-y:visible; }
     .memo-box{ margin-top:10px; }
+    .kit-sum{ margin-top:10px; }
+    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -238,6 +248,7 @@
   <div class="col-left" id="left"></div>
   <div class="col-right">
     <div class="results" id="results"></div>
+    <details class="card kit-sum" id="kitCard" hidden></details>
     <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
@@ -572,6 +583,41 @@ const CHARACTERS = {
     ]
   }
 };
+
+/* ================= 핵심 기믹 요약 =================
+   kit_summary 스킬 산출물(char_raw/<이름>_kit.txt)을 그대로 붙인 텍스트. 없으면 null — 요약 박스를 숨긴다.
+   펼침/접힘은 state.kitOpen으로 자동 저장(초기화 버튼·슬롯 불러오기에는 영향받지 않는 화면 상태).
+   첫 줄(캐릭터 이름)은 박스 제목으로 쓰고, "N. " 줄은 칸 제목, 들여쓰기 2칸마다 한 단계씩 들여 그린다. */
+const KIT_SUMMARY = `
+헬카이트
+
+1. 캐릭터 기믹
+- 드래곤 스케일 → 브로큰 스케일:
+  - 게임 시작 시 드래곤 스케일을 얻어요. 받는 스킬 피해 -70%이고, 절대 피해가 아니면 체력이 20% 아래로 내려가지 않아요.
+  - 체력이 20% 아래로 내려갈 피해를 받으면 체력 100%로 복구하고 주변 1바퀴에 화염 피해를 줘요. 디버프가 모두 풀리고 브로큰 스케일(받는 스킬 피해 +10%, 주는 피해 +25%)로 바뀌어요.
+- 용의 격노(최대 10중첩):
+  - 피격당하거나, 다른 대상이 화염 스킬을 쓰거나, 자기 공격이 적을 맞힌 수만큼 쌓여요.
+  - 3중첩부터 이동력 +1, 치명타 확률 +30%에 행동이 끝날 때 블레이즈 오라(주변 2칸 화염 지속 피해)를 얻어요.
+  - 6중첩부터는 적을 처치하면 추가 턴(쿨타임 1), 10중첩이면 TP 제거 면역과 통제 영역 무시가 붙어요.
+- 화룡의 가호:
+  - 장착한 화염 스킬 수(오의 포함)에 따라 강해지고, 3개 이상이면 재행동 획득 불가와 감속을 무시해요.
+  - 게임 시작 시 모든 아군에게 화룡의 가호를 줘요. 치유 방해·침묵·스킬 제어에 면역이에요.
+- 업화 / 살점 붕괴(전용 무기):
+  - 선제 공격이 있고, 턴 시작마다 남은 체력 5%를 잃어요. 화염 공격 뒤에는 파이어 클로로 기본 공격·반격이 화염 피해와 용해로 바뀌어요.
+  - 공격한 적에게 살점 붕괴를 걸어요. 화염 공격을 맞을 때마다 쌓이고, 2중첩부터는 화염 공격을 맞은 뒤 주변 1바퀴에 폭발해요.
+- 초열파천무(오의): 범위 피해와 함께 50% 확률로 파이렉시아(1턴 행동 불가, 받는 피해 +10%)를 걸고, 끝나면 작렬의 고통으로 이어져요. 영역에 마그마 지대가 생겨요. 헬카이트 브레스·임팩트 러쉬·블레이즈 소드(액티브)도 마그마 지대를 깔아요.
+
+2. 클래스
+- 이그니스워든: 공격받으면 서 있는 칸에 마그마 지대를 만들어요(쿨타임 2). 적이 밟으면 피해와 용해, 헬카이트가 밟으면 회복과 보호막이에요. 맞으면서 용의 격노를 쌓는 흐름과 잘 맞아요.
+- 애쉬로드: 주위 3칸 오라로 아군의 화염 지속 피해와 적이 받는 화염 지속 피해를 +50% 올려요. 블레이즈 오라의 지속 피해가 더 세져요.
+
+3. 상대할 때
+- 스킬로 마무리하려 하지 마세요. 받는 스킬 피해가 -70%이고, 절대 피해가 아니면 체력 20% 아래로 내려가지 않아요. 한 번 무너뜨려 브로큰 스케일이 되면 받는 스킬 피해가 +10%로 바뀌니, 그때 스킬로 몰아치세요.
+- 헬카이트를 여러 번 나눠 치지 마세요. 맞을 때마다, 우리가 화염 스킬을 쓸 때마다 용의 격노가 쌓여요. 6중첩부터는 처치마다 추가 턴을 얻어요.
+- 침묵·스킬 제어·치유 방해는 통하지 않아요. 화염 스킬 3개 헬카이트는 재행동 막기와 감속도 무시해요.
+- 살점 붕괴가 걸린 우리 편끼리 붙어 있지 마세요. 화염 공격을 맞을 때마다 쌓이고, 2중첩부터 주변 1바퀴로 터져요.
+- 마그마 지대 칸에 들어가거나 거기서 행동을 끝내지 마세요. 헬카이트에겐 회복 칸이고, 우리에겐 방어 무시 화염 피해와 용해예요.
+`;
 
 /* ================= 방어구 ================= */
 // 2셋/4셋 효과 + 부위별 개별 성급 스탯(투구=받는치명타피해량감소, 갑옷=최대체력, 신발=받는치명타확률감소가 세트 공통 패턴,
@@ -925,7 +971,9 @@ function loadBuildFromSlot(slotIdx){
   const arr = getCharSaves(charName);
   const slot = arr[slotIdx];
   if(!slot) return;
+  const kitOpen = state.kitOpen; // 요약 박스 펼침은 화면 상태라 슬롯을 불러와도 지금 그대로 둔다
   state = JSON.parse(JSON.stringify(slot.state));
+  state.kitOpen = kitOpen;
   render();
 }
 function deleteBuildSlot(slotIdx){
@@ -974,6 +1022,25 @@ function saveMemo(charName, text){
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
 }
+function placeKitSummary(){
+  const box = document.getElementById('kitCard');
+  if(!box || box.dataset.ready || !KIT_SUMMARY) return;
+  const lines = KIT_SUMMARY.replace(/^\n+|\n+$/g,'').split('\n');
+  const title = lines.shift().trim();
+  let body = '';
+  for(const raw of lines){
+    if(!raw.trim()) continue;
+    const lv = raw.match(/^ */)[0].length / 2;
+    const t = raw.trim();
+    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t)}</div>`;
+    else body += `<div class="kit-l" style="--lv:${lv}">${escapeHtml(t)}</div>`;
+  }
+  box.innerHTML = `<summary>${escapeHtml(title)} 핵심 기믹 요약</summary><div class="kit-body">${body}</div>`;
+  box.open = !!state.kitOpen;
+  box.addEventListener('toggle', () => { state.kitOpen = box.open; saveAutosave(); });
+  box.hidden = false;
+  box.dataset.ready = '1';
+}
 function placeMemo(){
   if(memoReady) return;
   const box = document.getElementById('memoCard');
@@ -997,7 +1064,7 @@ let restoredFromAutosave = false;
 function stateForCompare(s){
   const clone = JSON.parse(JSON.stringify(s));
   delete clone.activeMaxMode; delete clone.maxModeLocked;
-  delete clone.openDescLeft; delete clone.openDescRight;
+  delete clone.openDescLeft; delete clone.openDescRight; delete clone.kitOpen;
   return clone;
 }
 function matchesSavedSlot(slot){
@@ -2065,6 +2132,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeKitSummary();
   placeMemo();
   updateMaxBarUI();
   saveAutosave();
@@ -2494,8 +2562,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 캐릭터 추가 시점에 raw_data + 기사단전
-// 기초 정보(`7. 게임_시스템/기사단전.md` — 2026-07-24부터 영구 보관 위치, 예전엔 `_data_upload/`에 있었음)를 참고해 한 번 작성한다. 2026-07-23 신설.
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);

@@ -2517,8 +2517,6 @@ function computeTotals(){
   return {bucket, condLog};
 }
 
-// AI 평가 — 현재 빌드 선택과 무관한 캐릭터 종합 평가(고정 콘텐츠). 캐릭터 추가 시점에 raw_data + 기사단전
-// 기초 정보(`7. 게임_시스템/기사단전.md` — 2026-07-24부터 영구 보관 위치, 예전엔 `_data_upload/`에 있었음)를 참고해 한 번 작성한다. 2026-07-23 신설.
 function renderResults(){
   const c = CHARACTERS[state.character];
   const curClass = c.classes.find(cl=>cl.id===state.classId);
