@@ -2655,15 +2655,38 @@ function renderResults(){
   document.getElementById('results').innerHTML = html;
 }
 
-// 자동 저장값 중 지금 데이터에 없는 선택(삭제된 장비 코드 등)만 "없음"/기본값으로 바꾸고 나머지 선택은 그대로 둔다.
+// 자동 저장값 중 지금 데이터와 맞지 않는 항목만 기본값으로 바꾸고 나머지 선택은 그대로 둔다 — 삭제된 장비 코드,
+// 캐릭터 데이터가 바뀌어 범위를 벗어난 단계·라디오 번호, 예전 버전 저장값에 없던 칸(부위·액티브 등)이 대상이다.
 function sanitizeRestoredState(){
   const c = CHARACTERS[state.character];
   if(!c) return;
-  if(!c.classes.some(k => k.id === state.classId)) state.classId = c.classes[0].id;
-  if(state.artifact !== '없음' && !(c.artifacts||[]).some(a => a.name === state.artifact)) state.artifact = '없음';
+  const saved = JSON.parse(JSON.stringify(state));
+  initState(); // 지금 데이터 기준 기본값
+  const def = JSON.parse(JSON.stringify(state));
+  Object.keys(saved).forEach(k => { if(saved[k] !== undefined) state[k] = saved[k]; });
+  const inRange = (v, n) => Number.isInteger(v) && v >= 0 && v < n;
+  const fix = (k, ok) => { if(!ok) state[k] = JSON.parse(JSON.stringify(def[k])); };
+  fix('classId', c.classes.some(k => k.id === state.classId));
+  fix('artifact', state.artifact === '없음' || (c.artifacts||[]).some(a => a.name === state.artifact));
+  fix('artifactStar', inRange(state.artifactStar - 1, 4));
+  fix('weaponStar', inRange(state.weaponStar - 1, 6));
+  if(c.uniquePassive.stages) fix('uniquePassiveStage', inRange(state.uniquePassiveStage, c.uniquePassive.stages.options.length));
+  if(c.ultimate.stages) fix('ultimateStage', inRange(state.ultimateStage, c.ultimate.stages.options.length));
+  if(c.outerSkill && c.outerSkill.stages) fix('outerSkillStage', inRange(state.outerSkillStage, c.outerSkill.stages.options.length));
+  { const rdCfg = resolveRadioCfg(c.uniquePassive, state.uniquePassiveStage);
+    if(rdCfg && !inRange(state.uniqueRadio, rdCfg.options.length)) state.uniqueRadio = 0; }
+  { const ac = {}; Object.keys(def.activesChecked).forEach(n => ac[n] = !!(state.activesChecked||{})[n]); state.activesChecked = ac; }
+  { const st = Object.assign({}, def.activeStackByName);
+    if(state.activeStackByName && typeof state.activeStackByName === 'object') Object.keys(st).forEach(n => { if(Number.isFinite(state.activeStackByName[n])) st[n] = state.activeStackByName[n]; });
+    state.activeStackByName = st; }
+  { const arm = {};
+    Object.keys(def.armor).forEach(p => {
+      const a = (state.armor && typeof state.armor === 'object') ? state.armor[p] : null;
+      arm[p] = { set: (a && (a.set === '없음' || ARMOR_SETS[a.set])) ? a.set : '없음', star: (a && inRange(a.star - 1, 6)) ? a.star : def.armor[p].star };
+    });
+    state.armor = arm; }
   if(state.accessory !== '없음' && !ACCESSORIES[state.accessory]){ state.accessory = '없음'; state.accessoryStar = 1; state.accessoryStack = 0; state.accessoryModes = null; }
-  if(state.armor) Object.keys(state.armor).forEach(p => { const a = state.armor[p]; if(a && a.set !== '없음' && !ARMOR_SETS[a.set]) a.set = '없음'; });
-  if(Array.isArray(state.runeSlots)) state.runeSlots = state.runeSlots.map(r => (r === '없음' || RUNES[r]) ? r : '없음');
+  state.runeSlots = def.runeSlots.map((d, i) => { const r = Array.isArray(state.runeSlots) ? state.runeSlots[i] : undefined; return (r === '없음' || RUNES[r]) ? r : d; });
 }
 // 첫 렌더는 아래 equipment.js 로딩이 끝난 뒤(실패하면 내장 폴백으로) 한 번만 한다. 먼저 그리면 내장 폴백 사본에
 // 없는 최신 장비 코드를 고른 저장값에서 렌더가 실패해 전체가 기본값으로 초기화되고, 그 기본값이 자동 저장을 덮어쓴다.
@@ -2672,8 +2695,26 @@ let firstRendered = false;
 function firstRender(){
   if(firstRendered) return;
   firstRendered = true;
-  if(restoredFromAutosave) sanitizeRestoredState();
-  try { render(); } catch(e){ if(!restoredFromAutosave) throw e; initState(); render(); }
+  if(!restoredFromAutosave){ render(); return; }
+  sanitizeRestoredState();
+  try { render(); return; } catch(e){ console.warn('자동 저장 복원 — 렌더 실패, 맞지 않는 항목만 기본값으로 되돌립니다', e); }
+  // 정리 후에도 실패하면 항목을 하나씩만 기본값으로 바꿔 보며 다시 그린다(실패를 일으킨 항목만 기본값, 나머지 선택은 유지).
+  // 하나로 안 풀리면 차례로 누적해서 바꾸고, 끝까지 실패할 때만 전체를 기본값으로 그린다.
+  const saved = JSON.parse(JSON.stringify(state));
+  initState();
+  const def = JSON.parse(JSON.stringify(state));
+  const keys = Object.keys(def).filter(k => JSON.stringify(saved[k]) !== JSON.stringify(def[k]));
+  state = JSON.parse(JSON.stringify(saved));
+  for(const k of keys){
+    const keep = state[k];
+    state[k] = JSON.parse(JSON.stringify(def[k]));
+    try { render(); return; } catch(e){ state[k] = keep; }
+  }
+  for(const k of keys){
+    state[k] = JSON.parse(JSON.stringify(def[k]));
+    try { render(); return; } catch(e){}
+  }
+  initState(); render();
 }
 
 // equipment.js가 이 파일과 같은 폴더에 있으면 그 내용을 우선 적용하고, 없으면(또는 로드 실패)
