@@ -50,14 +50,22 @@
   .harness-extra b{ color:var(--accent); }
   .layout{ display:flex; gap:14px; align-items:stretch; flex:1 1 auto; min-height:0; }
   /* render()가 칸 전체를 다시 그리므로 브라우저 스크롤 고정(scroll anchoring)을 끈다 — 켜 두면 버튼을 누를 때마다 스크롤이 밀린다. */
-  html, .col-left, .results{ overflow-anchor:none; }
+  html, .col-left, .col-right{ overflow-anchor:none; }
   .col-left{
     flex:1 1 560px; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:start;
     height:100%; overflow-y:auto; padding-right:6px;
   }
   .col-left .card.full{ grid-column: 1 / -1; }
-  .col-right{ flex:0 0 380px; height:100%; display:flex; flex-direction:column; gap:10px; min-height:0; }
-  .col-right > .results{ flex:1 1 auto; min-height:0; }
+  /* 오른쪽 열(메모 → 합계 → 핵심 기믹 요약)은 열 전체가 하나로 스크롤된다 — 박스 하나만 따로 스크롤되거나 아래에 고정되지 않는다. */
+  .col-right{
+    flex:0 0 380px; height:100%; display:flex; flex-direction:column; gap:10px; min-height:0; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent; /* 오른쪽 탭도 얇은 스크롤바로 표시 */
+  }
+  .col-right > *{ flex:0 0 auto; }
+  .col-right::-webkit-scrollbar{ width:8px; }
+  .col-right::-webkit-scrollbar-track{ background:transparent; }
+  .col-right::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  .col-right::-webkit-scrollbar-thumb:hover{ background:var(--accent); }
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:7px;
     padding:10px 12px; min-width:0;
@@ -128,13 +136,7 @@
 
   .results{
     background:var(--panel); border:1px solid var(--border); border-radius:7px; padding:12px 14px;
-    height:100%; overflow-y:auto;
-    scrollbar-width:thin; scrollbar-color:var(--border) transparent; /* 오른쪽 탭도 얇은 스크롤바로 표시(2026-07-23 재도입) */
   }
-  .results::-webkit-scrollbar{ width:8px; }
-  .results::-webkit-scrollbar-track{ background:transparent; }
-  .results::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
-  .results::-webkit-scrollbar-thumb:hover{ background:var(--accent); }
   .results h2{ font-size:13px; margin:0 0 8px; color:var(--accent); }
   .results h3{ font-size:11px; margin:10px 0 4px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; }
   table.result-table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:6px; }
@@ -185,19 +187,21 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
-  /* 핵심 기믹 요약 — 합계 박스(#results)와 메모 박스 사이의 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘. */
+  /* 핵심 기믹 요약 — 오른쪽 열 맨 아래(합계 박스 #results 아래) 접이식 박스(#kitCard, placeKitSummary 참고). 기본은 접힘.
+     펼치면 자체 스크롤 없이 내용 전체가 그대로 아래로 늘어나고, 오른쪽 열 스크롤로 내려 본다. */
   .kit-sum{ flex:0 0 auto; padding-top:8px; padding-bottom:8px; }
   .kit-sum[hidden]{ display:none; }
   .kit-sum summary{ cursor:pointer; font-size:12.5px; font-weight:bold; color:var(--accent); }
-  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); max-height:45vh; overflow-y:auto; }
+  .kit-sum .kit-body{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--text); }
   .kit-sum .kit-h{ font-weight:bold; color:var(--accent); margin:8px 0 2px; }
   .kit-sum .kit-h:first-child{ margin-top:0; }
   .kit-sum .kit-l{ padding-left:calc(var(--lv) * 14px + 10px); text-indent:-10px; }
-  /* 캐릭터 메모 — PC·모바일 모두 오른쪽 합계 박스(모바일은 스탯확인 탭) 아래 별도 박스(#memoCard, placeMemo 참고). */
+  /* 캐릭터 메모 — PC·모바일 모두 오른쪽 열(모바일은 스탯확인 탭) 맨 위 별도 박스(#memoCard, placeMemo 참고).
+     칸 높이는 고정 — 메모가 길어지면 칸 안에서 스크롤된다(사용자가 모서리를 끌어 직접 늘리는 것만 허용). */
   .memo-box{ flex:0 0 auto; }
   .memo-box .memo-title{ font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:4px; }
   .memo-box textarea{
-    width:100%; box-sizing:border-box; min-height:110px; resize:vertical;
+    width:100%; box-sizing:border-box; height:110px; overflow-y:auto; resize:vertical;
     font:inherit; font-size:12px; line-height:1.5; padding:6px 8px;
     background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:5px;
   }
@@ -209,11 +213,9 @@
     h1, .sub{ flex:none; }
     .layout{ flex-direction:column; height:auto; }
     .col-left{ height:auto; overflow-y:visible; padding-right:0; grid-template-columns:1fr; }
-    .col-right{ width:100%; height:auto; display:block; flex:none; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
-    .results{ height:auto; overflow-y:visible; }
-    .memo-box{ margin-top:10px; }
+    .col-right{ width:100%; height:auto; display:block; flex:none; overflow-y:visible; } /* flex:none — PC용 flex-basis 380px가 세로 배치에선 높이로 먹어 내용이 넘치고 하단 여백이 무시되던 문제 */
+    .results{ margin-top:10px; }
     .kit-sum{ margin-top:10px; }
-    .kit-sum .kit-body{ max-height:none; overflow-y:visible; }
   }
   /* ===== 모바일: 하단 고정 탭(설정저장/캐릭세팅/스탯확인) — 768px 이하에서만 동작, PC 화면은 그대로 =====
      설정저장 = 왼쪽 첫 카드(캐릭터 정보·저장 슬롯·최대 세팅 버튼), 캐릭세팅 = 나머지 왼쪽 카드, 스탯확인 = 오른쪽 결과.
@@ -247,9 +249,9 @@
 <div class="layout">
   <div class="col-left" id="left"></div>
   <div class="col-right">
+    <div class="card memo-box" id="memoCard"></div>
     <div class="results" id="results"></div>
     <details class="card kit-sum" id="kitCard" hidden></details>
-    <div class="card memo-box" id="memoCard"></div>
   </div>
 </div>
 
@@ -539,19 +541,19 @@ const CHARACTERS = {
           {
             name: '1초',
             stat: {
-              dmgIncrease: { v: 10, zone: 'cond', cond: '속죄의 낙인 1 부여 시(오의 사용 대상)' }
+              dmgIncrease: { v: 10, zone: 'cond', cond: '속죄의 낙인 1 부여 시(초필살기 사용 대상)' }
             }
           },
           {
             name: '3초',
             stat: {
-              dmgIncrease: { v: 20, zone: 'cond', cond: '속죄의 낙인 2 부여 시(오의 사용 대상)' }
+              dmgIncrease: { v: 20, zone: 'cond', cond: '속죄의 낙인 2 부여 시(초필살기 사용 대상)' }
             }
           },
           {
             name: '5초',
             stat: {
-              dmgIncrease: { v: 30, zone: 'cond', cond: '속죄의 낙인 3 부여 시(오의 사용 대상)' }
+              dmgIncrease: { v: 30, zone: 'cond', cond: '속죄의 낙인 3 부여 시(초필살기 사용 대상)' }
             }
           }]
       },
@@ -666,7 +668,7 @@ const KIT_SUMMARY = `
   - 발동하면 1중첩 줄어요. 발동 확률은 공격자의 치명타 확률과 알테어의 받는 치명타 확률 감소량에 따라 달라져요.
 - 지원 재행동: 스킬을 쓴 뒤 그 턴에 적을 공격하지 않았다면 재행동을 얻어요(쿨타임 1). 지원 스킬을 한 턴에 두 번 쓸 수 있어요.
 - 공간 격리(생존): 게임 중 한 번 죽을 피해를 받으면 1턴 동안 행동 불가 대신 무적이 돼요. 풀릴 때 3칸 안의 아군 체력을 주문력 80%만큼 회복하고 디버프를 모두 풀어요.
-- 죄의 가시(오의):
+- 죄의 가시(초필살기):
   - 대상 주변 3칸에 피해를 주고 1턴 이동 불가를 걸어요. 쓴 뒤 TP 2를 돌려받아요.
   - 시전 대상에게는 3턴 동안 속죄의 낙인을 걸어요. 받는 피해·받는 지속 피해 +30%이고, 턴이 끝날 때마다 받는 피해 감소를 무시하는 고정 피해를 받아요.
 - 찬란한 마력(전용 무기):
@@ -1076,7 +1078,7 @@ function loadAutosave(charName){
 /* ================= 캐릭터 메모 (localStorage, 캐릭터당 1개) =================
    세팅 저장 3슬롯·자동저장(state)과는 별개 키라 슬롯 불러오기/덮어쓰기/초기화에 영향받지 않는다. 입력할 때마다
    바로 저장돼 창을 닫았다 열어도 남는다. stat.html의 이름으로 서버 저장/일괄저장이 이 키도 함께 다룬다.
-   메모 박스(#memoCard)는 render()가 다시 그리지 않는 고정 요소(합계 박스 #results 바로 아래)라, 처음 한 번만
+   메모 박스(#memoCard)는 render()가 다시 그리지 않는 고정 요소(오른쪽 열 맨 위, 합계 박스 #results 위)라, 처음 한 번만
    채워 두면 입력 중 커서·스크롤이 날아가지 않는다. */
 const MEMO_KEY = 'genesisStatCalcMemo';
 let memoReady = false;
@@ -1228,18 +1230,18 @@ function toggleDesc(side, key){
   state[stKey] = (state[stKey]===key) ? null : key;
   render();
 }
-// 면역/무시(저항) — 캐릭터 킷 전체(클래스 전부/고유패시브/오의/아우터스킬/액티브 전부/아티팩트 전부/전용무기)의
+// 면역/무시(저항) — 캐릭터 킷 전체(클래스 전부/고유패시브/초필살기/아우터스킬/액티브 전부/아티팩트 전부/전용무기)의
 // resist를 모아 "상시"와 "조건부"로 나눈다(계산기_적용원칙.md 10-1장). 상시 = 고유패시브·전용무기·클래스패시브 중
-// cond가 없는 것, 조건부 = 그 외 전부(오의·아우터스킬·액티브·아티팩트, 그리고 위 셋이라도 cond가 있는 것).
+// cond가 없는 것, 조건부 = 그 외 전부(초필살기·아우터스킬·액티브·아티팩트, 그리고 위 셋이라도 cond가 있는 것).
 // name은 툴팁 표기 그대로(면역/무시/저항/불가를 바꾸거나 합치지 않는다).
-const RESIST_CATEGORY_ORDER = ['고유패시브','전용무기','클래스패시브','오의','아우터스킬','아티팩트','액티브 스킬'];
+const RESIST_CATEGORY_ORDER = ['고유패시브','전용무기','클래스패시브','초필살기','아우터스킬','아티팩트','액티브 스킬'];
 const RESIST_ALWAYS_CATEGORIES = ['고유패시브','전용무기','클래스패시브'];
 function collectResistItems(c){
   const items = [];
   const add = (list, category, src) => (list||[]).forEach(r => items.push({name:r.name, category, src, cond:r.cond||null}));
   (c.classes||[]).forEach(cls => add(cls.resist, '클래스패시브', cls.id));
   if(c.uniquePassive) add(c.uniquePassive.resist, '고유패시브', c.uniquePassive.name);
-  if(c.ultimate) add(c.ultimate.resist, '오의', c.ultimate.name);
+  if(c.ultimate) add(c.ultimate.resist, '초필살기', c.ultimate.name);
   if(c.outerSkill) add(c.outerSkill.resist, '아우터스킬', c.outerSkill.name);
   (c.actives||[]).forEach(a => add(a.resist, '액티브 스킬', a.name));
   (c.artifacts||[]).forEach(art => add(art.resist, '아티팩트', art.name));
@@ -1292,7 +1294,7 @@ function collectExtraActionItems(c){
     both(c.uniquePassive).forEach(e => items.push({type:e.type, category:'고유패시브', cond:e.cond||null}));
   }
   if(c.ultimate){
-    both(c.ultimate).forEach(e => items.push({type:e.type, category:'오의', cond:e.cond||null}));
+    both(c.ultimate).forEach(e => items.push({type:e.type, category:'초필살기', cond:e.cond||null}));
   }
   if(c.outerSkill){
     both(c.outerSkill).forEach(e => items.push({type:e.type, category:'아우터스킬', cond:e.cond||null}));
@@ -1930,7 +1932,7 @@ function render(){
   }
   html += `</div>`;
 
-  // 액티브 스킬 (2026-07-23: 오의/아우터 박스 + 액티브 박스를 하나로 통합, 이후 재차 공간 최적화)
+  // 액티브 스킬 (2026-07-23: 초필살기/아우터 박스 + 액티브 박스를 하나로 통합, 이후 재차 공간 최적화)
   // 초필살기 → 아우터스킬(있으면) → 일반 액티브를 전부 동등하게 한 흐름에 놓고, CSS 다단(column-count:2)으로
   // 브라우저가 자동으로 좌우 균형을 맞춘다(캐릭터마다 항목 수가 달라 수동 좌우분할은 비효율적).
   // 이름 앞의 [초필살기]/[아우터] 표기만으로 구분이 충분하다는 판단(2026-07-23) — 별도 박스/구획 없음.
