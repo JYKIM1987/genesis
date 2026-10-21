@@ -212,7 +212,7 @@
   .kit-modal .kit-body{ overflow-y:auto; padding:14px 22px 24px; font-size:15px; line-height:1.7; color:var(--text); }
   body.kit-modal-open{ overflow:hidden; }
   /* 요약 txt 줄 종류(placeKitSummary): "N. " 칸 제목(.kit-h) / "**이름**" 한 줄 항목 제목(.kit-t) / "- " 점 목록(.kit-l, 들여쓰기 2칸마다 한 단계)
-     / "**이름** : 설명" 이름-설명 줄(.kit-p, 이름이 길면 .long으로 두 줄) / 그 외 일반 줄(.kit-x). 빈 줄은 다음 줄 위에 간격(.kit-gap). */
+     / "**이름** : 설명" 이름-설명 줄(.kit-p, 이름이 길면 .long으로 두 줄) / "!! " 경고 줄(.kit-warn, 빨간 굵은 글씨 — 검토 전 AI 작성본 표시) / 그 외 일반 줄(.kit-x). 빈 줄은 다음 줄 위에 간격(.kit-gap). */
   .kit-modal .kit-h{ font-size:16px; font-weight:bold; color:var(--accent); margin:24px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border); }
   .kit-modal .kit-h:first-child{ margin-top:4px; }
   .kit-modal .kit-gap{ margin-top:14px; }
@@ -224,6 +224,7 @@
   .kit-modal .kit-p.long b{ display:block; color:var(--text); margin:0 0 3px; }
   .kit-modal .kit-p.long span{ display:block; padding-left:12px; border-left:2px solid var(--border); }
   .kit-modal .kit-x{ padding-left:calc(var(--lv) * 18px); }
+  .kit-modal .kit-warn{ color:var(--danger); font-weight:bold; margin-bottom:12px; }
   /* 캐릭터 메모 — PC·모바일 모두 합계 박스(모바일은 스탯확인 탭) 바로 아래 별도 박스(#memoCard, placeMemo 참고).
      칸 높이는 고정 — 메모가 길어지면 칸 안에서 스크롤된다(사용자가 모서리를 끌어 직접 늘리는 것만 허용). */
   .memo-box{ flex:0 0 auto; }
@@ -530,6 +531,7 @@ const CHARACTERS = {
    글 안의 **…**는 굵게 그린다. 텍스트는 템플릿 리터럴(`)이므로 백틱과 달러-중괄호 표기를 넣지 않는다. */
 const KIT_SUMMARY = `
 하이델룬
+!! 검토를 거치지 않은 AI 작성 원본입니다.
 
 1. 캐릭터 기믹
 **엔트로피 고스트 (생존)**
@@ -987,7 +989,8 @@ function placeKitSummary(){
     const g = gap ? ' kit-gap' : '';
     gap = false;
     let m;
-    if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t.replace(/\*\*/g,''))}</div>`;
+    if((m = t.match(/^!!\s*(.*)$/))) body += `<div class="kit-warn${g}">${escapeHtml(m[1])}</div>`;
+    else if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t.replace(/\*\*/g,''))}</div>`;
     else if((m = t.match(/^\*\*([^*]+)\*\*$/))) body += `<div class="kit-t${g}">${escapeHtml(m[1])}</div>`;
     else if((m = t.match(/^-\s+(.*)$/))) body += `<div class="kit-l${lv?' sub':''}${g}" style="--lv:${lv}">${inline(m[1])}</div>`;
     else if((m = t.match(/^\*\*([^*]+)\*\*\s*:\s*(.*)$/))) body += `<div class="kit-p${m[1].length>12?' long':''}${g}"><b>${escapeHtml(m[1])}</b><span>${inline(m[2])}</span></div>`;
