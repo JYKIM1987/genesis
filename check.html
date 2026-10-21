@@ -100,17 +100,11 @@
   .notice-item .cond{ display:block; font-weight:normal; font-size:11px; color:#5a4a9c; opacity:.85; margin-top:2px; }
 
   /* 상성 참고 노트 — "강상성 : 아군 (상대, ...)" / "약상성 : ..." / "혼합 : ..." 세 줄(강=파랑, 약=빨강, 혼합=아군 주황).
-     PC: 결과 영역 맨 위, 접이식(기본 접힘, 제목 클릭으로 펼침).
-     모바일: 주의할 아군 탭에서 출전시 주의사항 밑·주의할 아군 위, 항상 펼침(아래 미디어쿼리). */
+     PC·모바일 공통: 결과 영역 맨 위(상성 참고 노트 → 출전시 주의사항 → 출전시 주의할 아군 확인), 항상 펼침. */
   .matchup-box{ background:#eff7f4; border:1.5px solid #b9dccd; border-radius:10px; padding:16px; margin-bottom:16px; }
   .matchup-box[hidden]{ display:none; }
-  .matchup-box h2{ font-size:20px; margin:0; color:#2e6b55; font-weight:900; cursor:pointer; user-select:none; }
-  .matchup-box.open h2{ margin-bottom:12px; }
-  .matchup-box h2 .h2-note, .matchup-box h2 .cnt{ font-size:12px; font-weight:normal; color:var(--text-dim); }
-  .matchup-box h2 .cnt{ margin-left:6px; }
-  .matchup-box h2 .arrow{ display:inline-block; font-size:12px; margin-right:6px; vertical-align:3px; }
-  .matchup-box.open h2 .arrow{ transform:rotate(90deg); }
-  .matchup-box:not(.open) #matchupHost{ display:none; }
+  .matchup-box h2{ font-size:20px; margin:0 0 12px; color:#2e6b55; font-weight:900; }
+  .matchup-box h2 .h2-note{ font-size:12px; font-weight:normal; color:var(--text-dim); }
   #matchupHost{ display:grid; gap:8px; }
   .matchup-item{ background:var(--panel); border:1px solid #cfe6dc; border-radius:6px; padding:8px 10px; font-size:12.5px; }
   .matchup-item .line{ word-break:keep-all; line-height:1.6; }
@@ -124,8 +118,13 @@
   .matchup-item .line.mixed .w{ color:#d32f2f; }
 
   .ally-box{ background:var(--ally-tint); border:1.5px solid var(--ally-border); border-radius:10px; padding:16px; margin-bottom:16px; }
-  .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; }
+  /* 출전시 주의할 아군 확인 — 접이식(기본 접힘, 제목 클릭으로 펼침). PC·모바일 공통. */
+  .ally-box h2{ font-size:20px; margin:0 0 12px; color:var(--title); font-weight:900; cursor:pointer; user-select:none; }
+  .ally-box:not(.open) h2{ margin-bottom:0; }
   .ally-box h2 .h2-note{ font-size:12px; font-weight:normal; color:var(--text-dim); }
+  .ally-box h2 .arrow{ display:inline-block; font-size:12px; margin-right:6px; vertical-align:3px; }
+  .ally-box.open h2 .arrow{ transform:rotate(90deg); }
+  .ally-box:not(.open) .ally-col{ display:none; }
   .ally-col{ border:1px solid var(--border); border-radius:6px; padding:10px; }
   .ally-col.risk{ background:transparent; border:none; padding:0; }
   .ally-col h4{ margin:0 0 8px; font-size:12.5px; }
@@ -177,14 +176,8 @@
     body.tab-pick .mo-pickbar{ display:none; }
     body.tab-risk .matrix-box{ display:none; }
     body.tab-matrix .ally-box{ display:none; }
-    body.tab-matrix .notice-box{ display:none !important; } /* 출전시 주의사항은 주의할 아군 탭에서만 */
-    body.tab-matrix .matchup-box{ display:none !important; } /* 상성 참고 노트는 주의할 아군 탭에서만 */
-    /* 모바일에선 출전시 주의사항 → 상성 참고 노트 → 주의할 아군 순서로 두고 상성 노트는 항상 펼친다 */
-    .main{ display:flex; flex-direction:column; }
-    .notice-box{ order:-1; }
-    .matchup-box h2{ cursor:default; }
-    .matchup-box h2 .arrow, .matchup-box h2 .cnt{ display:none; }
-    .matchup-box:not(.open) #matchupHost{ display:grid; }
+    body.tab-matrix .notice-box{ display:none !important; } /* 출전시 주의사항은 주의할 사항 탭에서만 */
+    body.tab-matrix .matchup-box{ display:none !important; } /* 상성 참고 노트는 주의할 사항 탭에서만 */
 
     /* 결과 탭 상단에 붙는 선택 요약 바 — 탭하면 공격할 방덱 탭으로 이동 */
     .mo-pickbar{ display:flex; align-items:center; gap:8px; width:100%; position:sticky; top:0; z-index:20;
@@ -266,7 +259,7 @@
 
   <div class="main">
     <div class="matchup-box" id="matchupBox" hidden>
-      <h2 onclick="this.parentElement.classList.toggle('open')"><span class="arrow">▶</span>📝 상성 참고 노트 <span class="h2-note">(by. 아델라이데, 네냐플 채팅, 카페)</span><span class="cnt" id="matchupCount"></span></h2>
+      <h2>📝 상성 참고 노트 <span class="h2-note">(by. 아델라이데, 네냐플 채팅, 카페)</span></h2>
       <div id="matchupHost"></div>
     </div>
 
@@ -276,7 +269,7 @@
     </div>
 
     <div class="ally-box">
-      <h2>⚠ 출전시 주의할 아군 <span class="h2-note">(제피르 이후 캐릭터만 표시됩니다)</span></h2>
+      <h2 onclick="this.parentElement.classList.toggle('open')"><span class="arrow">▶</span>⚠ 출전시 주의할 아군 확인 <span class="h2-note">(제피르 이후 캐릭터만 표시됩니다)</span></h2>
       <div class="ally-col risk">
         <div id="riskHost"><div class="placeholder">적을 선택하면 표시됩니다</div></div>
       </div>
@@ -291,7 +284,7 @@
 
 <div class="mo-tabbar">
   <button type="button" data-tab="pick" onclick="setTab('pick')">공격할 방덱</button>
-  <button type="button" data-tab="risk" onclick="setTab('risk')">주의할 아군</button>
+  <button type="button" data-tab="risk" onclick="setTab('risk')">주의할 사항</button>
   <button type="button" data-tab="matrix" onclick="setTab('matrix')">적저항 요약</button>
 </div>
 
@@ -679,7 +672,7 @@ function syncPickerUI(){
     l.querySelector('input').checked = isPicked;
   });
 }
-// 모바일 전용 — 하단 탭(공격할 방덱 / 주의할 아군 / 적저항 요약) 전환.
+// 모바일 전용 — 하단 탭(공격할 방덱 / 주의할 사항 / 적저항 요약) 전환.
 // 페이지를 열면 항상 공격할 방덱(tab-pick)부터 시작(<body class="tab-pick">).
 // PC에서는 이 클래스를 쓰는 CSS가 미디어쿼리 안에만 있어서 영향 없음.
 function setTab(tab){
@@ -727,7 +720,6 @@ function renderMatchup(){
     return;
   }
   box.hidden = false;
-  document.getElementById('matchupCount').textContent = `${total}건`;
   const names = vs => vs.sort((x, y) => x.order - y.order).map(v => v.name).join(', ');
   const line = (cls, mark, items) => items.length ? `<div class="line ${cls}"><b>${mark}</b> : ${items.join(', ')}</div>` : '';
   const strong = Array.from(groups.strong.entries()).filter(([a]) => !mixed.includes(a))
