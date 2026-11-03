@@ -222,6 +222,7 @@
   .kit-modal .kit-t{ font-weight:bold; font-size:15.5px; color:var(--text); margin-bottom:3px; }
   .kit-modal .kit-l{ position:relative; padding-left:calc(var(--lv) * 18px + 16px); margin:2px 0; }
   .kit-modal .kit-l::before{ content:'•'; position:absolute; left:calc(var(--lv) * 18px + 3px); color:var(--accent); }
+  .kit-modal .kit-l.kit-sub::before{ content:'–'; color:var(--text-dim); }
   .kit-modal .kit-p b{ color:var(--accent); margin-right:8px; }
   .kit-modal .kit-p.long b{ display:block; color:var(--text); margin:0 0 3px; }
   .kit-modal .kit-p.long span{ display:block; padding-left:12px; border-left:2px solid var(--border); }
@@ -1028,7 +1029,7 @@ function placeKitSummary(){
     if((m = t.match(/^!!\s*(.*)$/))) body += `<div class="kit-warn${g}">${escapeHtml(m[1])}</div>`;
     else if(/^\d+\.\s/.test(t)) body += `<div class="kit-h">${escapeHtml(t.replace(/\*\*/g,''))}</div>`;
     else if((m = t.match(/^\*\*([^*]+)\*\*$/))) body += `<div class="kit-t${g}">${escapeHtml(m[1])}</div>`;
-    else if((m = t.match(/^-\s+(.*)$/))) body += `<div class="kit-l${lv?' sub':''}${g}" style="--lv:${lv}">${inline(m[1])}</div>`;
+    else if((m = t.match(/^-\s+(.*)$/))) body += `<div class="kit-l${lv?' kit-sub':''}${g}" style="--lv:${lv}">${inline(m[1])}</div>`;
     else if((m = t.match(/^\*\*([^*]+)\*\*\s*:\s*(.*)$/))) body += `<div class="kit-p${m[1].length>12?' long':''}${g}"><b>${escapeHtml(m[1])}</b><span>${inline(m[2])}</span></div>`;
     else body += `<div class="kit-x${g}" style="--lv:${lv}">${inline(t)}</div>`;
   }
