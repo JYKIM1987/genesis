@@ -365,11 +365,10 @@ const CHARACTERS = {
     charOrder: 12,
     weightClass: '미디엄',
     weaponName: '에어리얼',
-    baseCritAssumed: true,
     classes: [
       {
         id: '비프로스트 챔피언', resist:[{name:'통제 영역 무시'},{name:'쇠약 효과 면역', cond:'"검의 긍지 2" 보유 중(적에게 공격당한 후 획득, 영구)'}],
-        baseCrit: 10,  // 미확인 가정값
+        baseCrit: 10,
         stat: {
           dmgReduction: { v: 40, zone: 'cond', cond: '"검의 긍지 2" 미보유 시(보유 중에는 받는 피해 -20%)' },
           atk: { v: 40, zone: 'cond', cond: '"검의 긍지 2" 보유 중(적에게 공격당한 후 획득, 영구)' },
@@ -380,7 +379,7 @@ const CHARACTERS = {
       },
       {
         id: '발키리 커맨더', resist:[{name:'통제 영역 무시'}],
-        baseCrit: 10,  // 미확인 가정값
+        baseCrit: 10,
         stat: {
           atk: { v: 40, zone: 'always' },
           crit: { v: 40, zone: 'always' },
@@ -393,7 +392,7 @@ const CHARACTERS = {
       },
       {
         id: '템페스트 발키리', resist:[{name:'통제 영역 무시'}],
-        baseCrit: 10,  // 미확인 가정값
+        baseCrit: 10,
         stat: {},
         stack: {
           label: '이동력', shortName: '이동력',
