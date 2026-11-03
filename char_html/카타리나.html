@@ -30,8 +30,11 @@
   /* 2026-07-23: 제목/설명(.sub)은 항상 고정, 왼쪽/오른쪽 탭이 각각 독립적으로 휠 스크롤되도록 재구성
      — 왼쪽 탭 휠을 굴려도 오른쪽 탭 내용이 밀리지 않고, 오른쪽 탭은 스크롤바를 숨기되 휠로는 계속 움직인다. */
   .wrap{ max-width:1180px; margin:0 auto; width:100%; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
-  h1{ font-size:18px; margin:0 0 4px; color:var(--accent); flex:0 0 auto; }
+  h1{ font-size:18px; margin:0 0 10px; color:var(--accent); flex:0 0 auto; }
   .sub{ color:var(--text-dim); font-size:12px; margin-bottom:10px; flex:0 0 auto; }
+  /* 클래스 기본 치명타 확률(baseCrit)이 미확인이라 가정값을 쓴 캐릭터만(CHARACTERS[이름].baseCritAssumed) 제목 아래 붉은 표기 */
+  .crit-note{ color:#c62828; font-weight:700; margin-top:-6px; }
+  .crit-note[hidden]{ display:none; }
   .maxbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .maxbar button{
     background:var(--panel); color:var(--accent); border:1.5px solid var(--accent); border-radius:6px;
@@ -276,7 +279,7 @@
 <div class="wrap">
 
 <h1>카타리나 스탯 계산기</h1>
-<div class="sub">모든 선택지가 항상 펼쳐져 있습니다. 항목 옆 흐린 글씨는 선택 시 합계에 더해지는 증감치(치명타확률·물리관통·마법관통은 강조색)이고, <span class="info-btn" style="display:inline-flex;align-items:center;justify-content:center;">?</span> 버튼으로 원문 설명을 볼 수 있어요. <span style="color:#c62828;font-weight:700;">클래스 기본 치명확률이 확인 되지 않아 10으로 가정함</span></div>
+<div class="sub crit-note" id="critNote" hidden></div>
 
 <div class="layout">
   <div class="col-left" id="left"></div>
@@ -361,6 +364,7 @@ const CHARACTERS = {
     charOrder: 12,
     weightClass: '미디엄',
     weaponName: '에어리얼',
+    baseCritAssumed: true,
     classes: [
       {
         id: '비프로스트 챔피언', resist:[{name:'통제 영역 무시'},{name:'쇠약 효과 면역', cond:'"검의 긍지 2" 보유 중(적에게 공격당한 후 획득, 영구)'}],
@@ -990,6 +994,18 @@ function saveMemo(charName, text){
     if(text) all[charName] = text; else delete all[charName];
     localStorage.setItem(MEMO_KEY, JSON.stringify(all));
   } catch(e){ /* 저장 실패는 조용히 무시(자동저장과 동일) */ }
+}
+// 클래스 기본 치명타 확률 가정값 표기 — CHARACTERS[이름].baseCritAssumed가 true일 때만 제목 아래에 보인다.
+// 가정값은 classes[].baseCrit에 들어 있는 값(가정값은 모든 클래스에 같은 값을 넣는다).
+function placeCritNote(){
+  const el = document.getElementById('critNote');
+  if(!el) return;
+  const c = CHARACTERS[state.character];
+  if(!c || !c.baseCritAssumed){ el.hidden = true; return; }
+  const v = c.classes[0].baseCrit;
+  const josa = /[013678]$/.test(String(v)) ? '으로' : '로';
+  el.textContent = `클래스 기본 치명확률이 확인 되지 않아 ${v}${josa} 가정함`;
+  el.hidden = false;
 }
 function placeKitSummary(){
   const box = document.getElementById('kitCard');
@@ -2147,6 +2163,7 @@ function render(){
 
   document.getElementById('left').innerHTML = html;
   renderResults();
+  placeCritNote();
   placeKitSummary();
   placeMemo();
   updateMaxBarUI();
