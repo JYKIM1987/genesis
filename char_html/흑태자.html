@@ -187,7 +187,7 @@
   }
   .mini-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
-  /* 핵심 기믹 요약 — 오른쪽 열 맨 아래(합계 → 메모 → 요약) 버튼 카드(#kitCard). 누르면 화면 위에 크게 덮는 창(#kitModal)으로 연다.
+  /* 핵심 기믹 요약 — 합계 박스 안 "★ 주요 스탯" 박스 바로 아래(#kitSlot)로 옮겨 붙이는 버튼 카드(#kitCard). 누르면 화면 위에 크게 덮는 창(#kitModal)으로 연다.
      PC는 가운데 넓은 창, 모바일(768px 이하)은 화면 전체. ✕·바깥 클릭·ESC로 닫는다(placeKitSummary 참고). */
   .kit-sum{ flex:0 0 auto; padding:8px 12px; }
   .kit-sum[hidden]{ display:none; }
@@ -196,6 +196,7 @@
     padding:9px 10px; font-size:13px; font-weight:bold; cursor:pointer;
   }
   .kit-sum button:hover{ background:var(--accent-bg); }
+  #kitSlot .kit-sum{ background:none; border:none; padding:0; margin:0 0 12px; }
   .kit-modal{
     position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.45);
     display:flex; align-items:center; justify-content:center; padding:24px 16px;
@@ -2662,6 +2663,8 @@ function renderResults(){
   // 2026-07-23 재조정: 박스화는 "주요 스탯"(HL_ROW_STATS 7개) 하나에만 적용하고, 그 아래 전체 목록은
   // 최초 버전대로 박스 없이 나열(주요 스탯은 아래 목록에도 중복 표기됨 — 의도된 것).
   html += tableFor(HL_ROW_STATS, '★ 주요 스탯', true);
+  // 핵심 기믹 요약 버튼은 주요 스탯 박스 바로 아래 — 아래 renderResults 끝에서 #kitCard를 이 자리로 옮긴다.
+  html += '<div id="kitSlot"></div>';
 
   html += tableFor([...BASE_STATS,'move'], '기본 스탯', false, true);
 
@@ -2680,7 +2683,11 @@ function renderResults(){
   html += `<div class="formula-note">합계 = 마을 + 인게임 + 조건부 단순 합산.<br>각 행 맨 오른쪽 <b>?</b>를 누르면 그 스탯에 잡힌 마을·인게임·조건부 항목 출처(어디서 얼마나 왔는지, 조건부는 조건까지)가 나옵니다. 선택지 자체의 조건 설명은 왼쪽 패널의 각 항목 <b>?</b>에서 확인하세요.<br>상단 MAX 버튼은 해당 스탯에 기여하는 선택지만 자동으로 골라주고, 관련 없는 항목은 "없음"으로 정리합니다.</div>`;
 
   document.getElementById('results').innerHTML = html;
+  if(!kitCardEl) kitCardEl = document.getElementById('kitCard');
+  const kitSlot = document.getElementById('kitSlot');
+  if(kitCardEl && kitSlot) kitSlot.appendChild(kitCardEl);
 }
+let kitCardEl = null;
 
 // 자동 저장값 중 지금 데이터와 맞지 않는 항목만 기본값으로 바꾸고 나머지 선택은 그대로 둔다 — 삭제된 장비 코드,
 // 캐릭터 데이터가 바뀌어 범위를 벗어난 단계·라디오 번호, 예전 버전 저장값에 없던 칸(부위·액티브 등)이 대상이다.
